@@ -1,0 +1,25 @@
+Package: matchr
+Title: Fast and Reliable Matching of Images
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "David",
+           family = "Wachsmuth",
+           role = c("aut", "cre"),
+           email = "david.wachsmuth@mcgill.ca",
+           comment = c(ORCID = "http://orcid.org/0000-0001-5689-9527"))
+Author: David Wachsmuth
+Maintainer: David Wachsmuth <david.wachsmuth@mcgill.ca>
+Description: Fast and reliable matching of images. It creates unique colour
+    signatures for images by finding average colour values for horizontal bands.
+    This allows two or more images to be compared to each other using
+    correlations of colour values, and the comparisons are insensitive to
+    file format, resolution, or compression.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+URL: https://github.com/UPGo-McGill/matchr
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.0
+Imports: 
+    imager (>= 0.42.3)
+BugReports: https://github.com/UPGo-McGill/matchr/issues
