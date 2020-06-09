@@ -22,4 +22,9 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.0
 Imports: 
     imager (>= 0.42.3)
+Suggests:
+    crayon (>= 1.3.4),
+    future (>= 1.17.0),
+    future.apply (>= 1.5.0),
+    progressr (>= 0.6.0)
 BugReports: https://github.com/UPGo-McGill/matchr/issues

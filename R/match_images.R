@@ -60,11 +60,6 @@ match_images <- function(x, y = NULL, bands = 25, quiet = FALSE) {
   pb <- function() NULL
 
 
-  ## Disable progress reporting for fewer than 10 items ------------------------
-
-  if (length(file) < 10) quiet <- TRUE
-
-
   ## Set up progress bar -------------------------------------------------------
 
   if (!quiet) {
@@ -106,11 +101,7 @@ match_images <- function(x, y = NULL, bands = 25, quiet = FALSE) {
 
     progressr::with_progress({
 
-      if (!missing(y)) {
-        total_img <- length(x) + length(y)
-      } else total_img <- length(x)
-
-      pb <- progressr::progressor(steps = total_img)
+      pb <- progressr::progressor(steps = length(x))
 
       x_ids <- lapply(x, function(x) {
         pb()
@@ -131,9 +122,11 @@ match_images <- function(x, y = NULL, bands = 25, quiet = FALSE) {
 
       progressr::with_progress({
 
+        pb <- progressr::progressor(steps = length(y))
+
         y_ids <- lapply(y, function(x) {
           pb()
-          identify_image(y, bands = bands)
+          identify_image(x, bands = bands)
         })
       })
     } else y_ids <- lapply(y, identify_image, bands = bands)
@@ -148,6 +141,21 @@ match_images <- function(x, y = NULL, bands = 25, quiet = FALSE) {
 
   # Currently single-threaded with no progress reporting
 
-  if (missing(y)) stats::cor(x_ids) else stats::cor(x_ids, y_ids)
+  # if (requireNamespace("future", quietly = TRUE) &&
+  #     requireNamespace("future.apply", quietly = TRUE)) {
+  #
+  #   future.apply::future_lapply(x_ids, function())
+  #
+  #
+  #
+  #
+  # } else {
+
+    if (missing(y)) stats::cor(x_ids) else stats::cor(x_ids, y_ids)
+
+  # }
+
+
+
 
 }
