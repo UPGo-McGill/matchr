@@ -2,20 +2,35 @@
 % Please edit documentation in R/identify_image.R
 \name{identify_image}
 \alias{identify_image}
+\alias{identify_image.cimg}
+\alias{identify_image.character}
+\alias{identify_image.list}
 \title{Generate a unique colour signature for an image}
 \usage{
-identify_image(image, bands = 25)
+identify_image(image, bands = 25, ...)
+
+\method{identify_image}{cimg}(image, bands = 25, ...)
+
+\method{identify_image}{character}(image, bands = 25, quiet = FALSE, ...)
+
+\method{identify_image}{list}(image, bands = 25, quiet = FALSE, ...)
 }
 \arguments{
-\item{image}{Object of class 'cimg', probably imported using
-\code{load_image} or \code{imager::load.image}, or file path or URL of an
-image.}
+\item{image}{Object (or list of objects) of class 'cimg', probably imported
+using \code{load_image} or \code{imager::load.image}, or file path
+or URL (or vector/list of file paths or URLs) of an image.}
 
 \item{bands}{Integer scalar. The number of horizontal bands the image should
 be split into for processing. Higher values will produce a more distinctive
 colour signature, potentially decreasing the rate of matching false
 positives, but at the cost of increased processing time and an increased rate
 of matching false negatives.}
+
+\item{...}{Additional arguments passed to methods. E.g. \code{quiet} to control
+whether the function provides progress updates.}
+
+\item{quiet}{A logical scalar. Should the function execute quietly, or should
+it return status updates throughout the function (default)?}
 }
 \value{
 A numeric vector of length \code{bands}.

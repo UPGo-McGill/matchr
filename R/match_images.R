@@ -60,6 +60,11 @@ match_images <- function(x, y = NULL, bands = 25, quiet = FALSE) {
   pb <- function() NULL
 
 
+  ## Disable progress reporting for fewer than 10 items ------------------------
+
+  if (length(x + y) < 20) quiet <- TRUE
+
+
   ## Set up progress bar -------------------------------------------------------
 
   if (!quiet) {

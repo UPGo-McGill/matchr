@@ -4,7 +4,7 @@ test_that("remote images are loaded", {
     )
   })
 
-test_that("garbage strings produce NULL", {
+test_that("garbage strings produce NA", {
   expect_equal(load_image("fdalkj"), NA)
   expect_warning(load_image("fdalkj"))
 })
