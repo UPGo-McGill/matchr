@@ -94,11 +94,21 @@ load_image <- function(file, quiet = FALSE) {
 
       imgs <- lapply(file, function(x) {
         pb()
-        imager::load.image(x)
+        tryCatch(imager::load.image(x), error = function(e) {
+          warning("Input '", x, "' is invalid; output is NULL.", call. = FALSE)
+          NULL
+          })
       })
     })
 
-  } else imgs <- lapply(file, imager::load.image)
+  } else imgs <- lapply(file, function(x) {
+
+    tryCatch(imager::load.image(x), error = function(e) {
+      warning("Input '", x, "' is invalid; output is NULL.", call. = FALSE)
+      NULL
+    })
+
+    })
 
 
   ## Name list elements with file names ----------------------------------------
