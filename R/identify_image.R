@@ -23,11 +23,11 @@
 
 identify_image <- function(image, bands = 25) {
 
-  # If `image` is NA, return a vector of NAs
-  if (is.na(image)) return(rep(NA, times = bands))
-
   # If `image` isn't class `cimg`, try to load it as path instead
   if (!inherits(image, "cimg")) image <- load_image(image)
+
+  # If `image` is NA, return a vector of NAs
+  if (is.na(image)) return(rep(NA, times = bands))
 
   image_split <- imager::imsplit(image, "x", bands)
   image_means <- lapply(image_split, rowMeans)
