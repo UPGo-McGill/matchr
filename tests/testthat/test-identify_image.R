@@ -18,8 +18,11 @@ test_that("a list of cimg objects works", {
 
 test_that("a single path works", {
   expect_equal(
-    ceiling(sum(identify_image(
-      "https://upgo.lab.mcgill.ca/img/UPGo_logo.png"))), 15)
+    ceiling(
+      sum(
+        unlist(
+          identify_image(
+            "https://upgo.lab.mcgill.ca/img/UPGo_logo.png")))), 15)
 })
 
 test_that("a vector of path works", {

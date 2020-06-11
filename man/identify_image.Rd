@@ -11,7 +11,7 @@ identify_image(image, bands = 25, ...)
 
 \method{identify_image}{cimg}(image, bands = 25, ...)
 
-\method{identify_image}{character}(image, bands = 25, quiet = FALSE, ...)
+\method{identify_image}{character}(image, bands = 25, mem_limit = 50, quiet = FALSE, ...)
 
 \method{identify_image}{list}(image, bands = 25, quiet = FALSE, ...)
 }
@@ -26,8 +26,14 @@ colour signature, potentially decreasing the rate of matching false
 positives, but at the cost of increased processing time and an increased rate
 of matching false negatives.}
 
-\item{...}{Additional arguments passed to methods. E.g. \code{quiet} to control
-whether the function provides progress updates.}
+\item{...}{Additional arguments passed to methods.}
+
+\item{mem_limit}{An integer scalar. How many images should the function load
+into memory before extracting image signatures and releasing the associated
+memory? Higher values will lead to the function executing more quickly, but
+can result in enormous memory requirements. The function uses approximately
+10 MB per image, so the default value of 50 will cause peak memory usage of
+approximately 5 GB.}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}
