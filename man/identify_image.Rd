@@ -5,6 +5,7 @@
 \alias{identify_image.cimg}
 \alias{identify_image.character}
 \alias{identify_image.list}
+\alias{identify_image.logical}
 \title{Generate a unique colour signature for an image}
 \usage{
 identify_image(image, bands = 25, ...)
@@ -14,6 +15,8 @@ identify_image(image, bands = 25, ...)
 \method{identify_image}{character}(image, bands = 25, mem_limit = 50, quiet = FALSE, ...)
 
 \method{identify_image}{list}(image, bands = 25, quiet = FALSE, ...)
+
+\method{identify_image}{logical}(image, bands = 25, ...)
 }
 \arguments{
 \item{image}{Object (or list of objects) of class 'cimg', probably imported

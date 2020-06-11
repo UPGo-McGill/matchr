@@ -3,6 +3,7 @@
 S3method(identify_image,character)
 S3method(identify_image,cimg)
 S3method(identify_image,list)
+S3method(identify_image,logical)
 export(identify_image)
 export(identify_matches)
 export(load_image)

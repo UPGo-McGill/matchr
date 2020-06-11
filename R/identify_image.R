@@ -203,3 +203,14 @@ identify_image.list <- function(image, bands = 25, quiet = FALSE, ...) {
   return(results)
 }
 
+
+#' @rdname identify_image
+#' @method identify_image logical
+#' @export
+
+identify_image.logical <- function(image, bands = 25, ...) {
+
+  rep(NA, times = bands)
+
+}
+
