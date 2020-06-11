@@ -26,7 +26,7 @@ identify_matches <- function(image_matrix, threshold = 0.99) {
 
   # Add names
   matches$x_name <- rownames(image_matrix)[matches$x_index]
-  matches$y_name <- rownames(image_matrix)[matches$y_index]
+  matches$y_name <- colnames(image_matrix)[matches$y_index]
 
   # Arrange output
   matches <- matches[order(matches$x_index, matches$y_index),]
