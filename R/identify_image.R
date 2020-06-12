@@ -81,7 +81,6 @@ identify_image.character <- function(image, bands = 20, batch_size = 100,
 
   iterations <- ceiling(length(image) / batch_size)
 
-  suppressWarnings({data_list <- split(image, seq_len(iterations))})
   results <- vector("list", iterations)
 
 
@@ -89,7 +88,10 @@ identify_image.character <- function(image, bands = 20, batch_size = 100,
 
   for (i in seq_len(iterations)) {
 
-    results[[i]] <- load_image(data_list[[i]], quiet = quiet)
+    start <- (i - 1) * batch_size + 1
+    end <- min(i * batch_size, length(image))
+
+    results[[i]] <- load_image(image[start:end], quiet = quiet)
 
     if (inherits(results[[i]], "list")) {
 
