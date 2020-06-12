@@ -22,7 +22,7 @@ test_that("a single path works", {
       sum(
         unlist(
           identify_image(
-            "https://upgo.lab.mcgill.ca/img/UPGo_logo.png")))), 12)
+            "https://upgo.lab.mcgill.ca/img/UPGo_logo.png")))), 24)
   })
 
 test_that("a vector of path works", {
@@ -45,6 +45,6 @@ test_that("a list of paths works", {
             list(
               "https://upgo.lab.mcgill.ca/img/UPGo_logo.png",
               "https://upgo.lab.mcgill.ca/img/mcgill.png"
-              ))))), 17)
+              ))))), 34)
   })
 

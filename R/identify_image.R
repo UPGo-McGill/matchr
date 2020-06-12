@@ -48,17 +48,15 @@ identify_image.cimg <- function(image, bands = 20, ...) {
 
 #' @rdname identify_image
 #' @method identify_image character
-#' @param mem_limit An integer scalar. How many images should the function load
-#' into memory before extracting image signatures and releasing the associated
-#' memory? Higher values will lead to the function executing more quickly, but
-#' can result in enormous memory requirements. The function uses approximately
-#' 10 MB per image, so the default value of 50 will cause peak memory usage of
-#' approximately 5 GB.
+#' @param batch_size An integer scalar. How many images should the function
+#' load into memory before extracting image signatures and releasing the
+#' associated memory? Higher values will lead to the function executing more
+#' quickly, but can result in enormous memory requirements.
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
 #' @export
 
-identify_image.character <- function(image, bands = 20, mem_limit = 50,
+identify_image.character <- function(image, bands = 20, batch_size = 100,
                                      quiet = FALSE, ...) {
 
   ### Handle future options ####################################################
@@ -79,9 +77,9 @@ identify_image.character <- function(image, bands = 20, mem_limit = 50,
   }
 
 
-  ### Prepare iterations and results according to mem_limit argument ###########
+  ### Prepare iterations and results according to batch_size argument ##########
 
-  iterations <- ceiling(length(image) / mem_limit)
+  iterations <- ceiling(length(image) / batch_size)
 
   suppressWarnings({data_list <- split(image, seq_len(iterations))})
   results <- vector("list", iterations)
@@ -99,17 +97,18 @@ identify_image.character <- function(image, bands = 20, mem_limit = 50,
 
     } else {
 
-      image_split <- imager::imsplit(results[[i]], "x", bands)
-      image_means <- lapply(image_split, rowMeans)
-      image_means <- sapply(image_means, mean)
-      results[[i]] <- image_means
+      row_split <- imager::imsplit(results[[i]], "x", bands)
+      row_means <- lapply(row_split, rowMeans)
+      col_split <- imager::imsplit(results[[i]], "y", bands)
+      col_means <- lapply(col_split, colMeans)
+      results[[i]] <- c(sapply(row_means, mean), sapply(col_means, mean))
 
       }
   }
 
   results <- unlist(results, recursive = FALSE)
 
-  names(results) <- image
+  if (inherits(results, "list")) names(results) <- image
 
   return(results)
 
