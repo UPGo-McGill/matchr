@@ -14,19 +14,20 @@
 identify_matches <- function(image_matrix, threshold = 0.99) {
 
   # Find matches
-  matches <- which(image_matrix >= threshold, arr.ind = TRUE)
+  match_index <- which(image_matrix >= threshold, arr.ind = TRUE)
 
   # Name results
-  dimnames(matches)[[2]] <- c("x_index", "y_index")
+  dimnames(match_index)[[2]] <- c("x_index", "y_index")
 
   # Convert to tibble or data frame
   if (requireNamespace("tibble", quietly = TRUE)) {
-    matches <- tibble::as_tibble(matches)
-  } else matches <- as.data.frame()
+    matches <- tibble::as_tibble(match_index)
+  } else matches <- as.data.frame(match_index)
 
   # Add names
   matches$x_name <- rownames(image_matrix)[matches$x_index]
   matches$y_name <- colnames(image_matrix)[matches$y_index]
+  matches$correlation <- image_matrix[match_index]
 
   # Arrange output
   matches <- matches[order(matches$x_index, matches$y_index),]
@@ -36,17 +37,17 @@ identify_matches <- function(image_matrix, threshold = 0.99) {
     if (mean(rownames(image_matrix) == colnames(image_matrix)) == 1) {
       # Remove self matches
       matches <- matches[matches$x_index != matches$y_index,]
-
-      # Remove duplicate matches
-      pairs <-
-        mapply(function(x, y) c(x, y)[order(c(x, y))],
-               matches$x_index,
-               matches$y_index,
-               SIMPLIFY = FALSE)
-
-      matches <- matches[!duplicated(pairs),]
     }
   }
+
+  # Remove duplicate matches
+  pairs <-
+    mapply(function(x, y) c(x, y)[order(c(x, y))],
+           matches$x_index,
+           matches$y_index,
+           SIMPLIFY = FALSE)
+
+  matches <- matches[!duplicated(pairs),]
 
   return(matches)
 
