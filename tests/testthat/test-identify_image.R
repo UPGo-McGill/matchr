@@ -1,8 +1,8 @@
 test_that("a single cimg works", {
   expect_equal(
     ceiling(sum(identify_image(load_image(
-      "https://upgo.lab.mcgill.ca/img/UPGo_logo.png")))), 15)
-})
+      "https://upgo.lab.mcgill.ca/img/UPGo_logo.png")))), 24)
+  })
 
 test_that("a list of cimg objects works", {
   expect_equal(
@@ -13,8 +13,8 @@ test_that("a list of cimg objects works", {
             load_image(
               c("https://upgo.lab.mcgill.ca/img/UPGo_logo.png",
                 "https://upgo.lab.mcgill.ca/img/mcgill.png"
-              )))))), 21)
-})
+              )))))), 34)
+  })
 
 test_that("a single path works", {
   expect_equal(
@@ -22,8 +22,8 @@ test_that("a single path works", {
       sum(
         unlist(
           identify_image(
-            "https://upgo.lab.mcgill.ca/img/UPGo_logo.png")))), 15)
-})
+            "https://upgo.lab.mcgill.ca/img/UPGo_logo.png")))), 12)
+  })
 
 test_that("a vector of path works", {
   expect_equal(
@@ -33,7 +33,7 @@ test_that("a vector of path works", {
           identify_image(
             c("https://upgo.lab.mcgill.ca/img/UPGo_logo.png",
               "https://upgo.lab.mcgill.ca/img/mcgill.png"
-              ))))), 21)
+              ))))), 34)
   })
 
 test_that("a list of paths works", {
@@ -45,6 +45,6 @@ test_that("a list of paths works", {
             list(
               "https://upgo.lab.mcgill.ca/img/UPGo_logo.png",
               "https://upgo.lab.mcgill.ca/img/mcgill.png"
-              ))))), 21)
-})
+              ))))), 17)
+  })
 

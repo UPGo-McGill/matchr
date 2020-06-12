@@ -32,18 +32,20 @@ identify_matches <- function(image_matrix, threshold = 0.99) {
   matches <- matches[order(matches$x_index, matches$y_index),]
 
   # Remove redundant matches if the matrix is generated from a single list
-  if (mean(rownames(image_matrix) == colnames(image_matrix)) == 1) {
-    # Remove self matches
-    matches <- matches[matches$x_index != matches$y_index,]
+  if (dim(image_matrix)[[1]] == dim(image_matrix)) {
+    if (mean(rownames(image_matrix) == colnames(image_matrix)) == 1) {
+      # Remove self matches
+      matches <- matches[matches$x_index != matches$y_index,]
 
-    # Remove duplicate matches
-    pairs <-
-      mapply(function(x, y) c(x, y)[order(c(x, y))],
-             matches$x_index,
-             matches$y_index,
-             SIMPLIFY = FALSE)
+      # Remove duplicate matches
+      pairs <-
+        mapply(function(x, y) c(x, y)[order(c(x, y))],
+               matches$x_index,
+               matches$y_index,
+               SIMPLIFY = FALSE)
 
-    matches <- matches[!duplicated(pairs),]
+      matches <- matches[!duplicated(pairs),]
+    }
   }
 
   return(matches)

@@ -22,7 +22,7 @@
 #' @return A numeric vector of length `bands`.
 #' @export
 
-identify_image <- function(image, bands = 25, ...) {
+identify_image <- function(image, bands = 20, ...) {
 
   UseMethod("identify_image")
 
@@ -33,11 +33,13 @@ identify_image <- function(image, bands = 25, ...) {
 #' @method identify_image cimg
 #' @export
 
-identify_image.cimg <- function(image, bands = 25, ...) {
+identify_image.cimg <- function(image, bands = 20, ...) {
 
-  image_split <- imager::imsplit(image, "x", bands)
-  image_means <- lapply(image_split, rowMeans)
-  image_means <- sapply(image_means, mean)
+  row_split <- imager::imsplit(image, "x", bands)
+  row_means <- lapply(row_split, rowMeans)
+  col_split <- imager::imsplit(image, "y", bands)
+  col_means <- lapply(col_split, colMeans)
+  image_means <- c(sapply(row_means, mean), sapply(col_means, mean))
 
   return(image_means)
 
@@ -56,7 +58,7 @@ identify_image.cimg <- function(image, bands = 25, ...) {
 #' it return status updates throughout the function (default)?
 #' @export
 
-identify_image.character <- function(image, bands = 25, mem_limit = 50,
+identify_image.character <- function(image, bands = 20, mem_limit = 50,
                                      quiet = FALSE, ...) {
 
   ### Handle future options ####################################################
@@ -120,7 +122,7 @@ identify_image.character <- function(image, bands = 25, mem_limit = 50,
 #' it return status updates throughout the function (default)?
 #' @export
 
-identify_image.list <- function(image, bands = 25, quiet = FALSE, ...) {
+identify_image.list <- function(image, bands = 20, quiet = FALSE, ...) {
 
   ### Handle future options ####################################################
 
@@ -208,9 +210,9 @@ identify_image.list <- function(image, bands = 25, quiet = FALSE, ...) {
 #' @method identify_image logical
 #' @export
 
-identify_image.logical <- function(image, bands = 25, ...) {
+identify_image.logical <- function(image, bands = 20, ...) {
 
-  rep(NA, times = bands)
+  rep(NA, times = bands * 2)
 
 }
 
