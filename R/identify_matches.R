@@ -32,7 +32,7 @@ identify_matches <- function(image_matrix, threshold = 0.99) {
   matches <- matches[order(matches$x_index, matches$y_index),]
 
   # Remove redundant matches if the matrix is generated from a single list
-  if (dim(image_matrix)[[1]] == dim(image_matrix)) {
+  if (dim(image_matrix)[[1]] == dim(image_matrix)[[2]]) {
     if (mean(rownames(image_matrix) == colnames(image_matrix)) == 1) {
       # Remove self matches
       matches <- matches[matches$x_index != matches$y_index,]
