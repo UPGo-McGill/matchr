@@ -167,7 +167,7 @@ match_signatures <- function(x, y = NULL, quiet = FALSE) {
       y_matrix <- matrix(unlist(y), ncol = length(y))
       result <- lapply(data_list, function(.x) {
         pb(amount = length(.x))
-        stats::cor(x, y_matrix)
+        stats::cor(.x, y_matrix)
       })
     }
   })})
