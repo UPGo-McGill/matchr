@@ -94,7 +94,7 @@ load_image <- function(file, quiet = FALSE) {
 
       imgs <- lapply(file, function(x) {
         pb()
-        tryCatch(imager::load.image(x), error = function(e) {
+        tryCatch(suppressMessages(imager::load.image(x)), error = function(e) {
           warning("Input '", x, "' is invalid; output is NA.", call. = FALSE)
           NA
           })
@@ -103,7 +103,7 @@ load_image <- function(file, quiet = FALSE) {
 
   } else imgs <- lapply(file, function(x) {
 
-    tryCatch(imager::load.image(x), error = function(e) {
+    tryCatch(suppressMessages(imager::load.image(x)), error = function(e) {
       warning("Input '", x, "' is invalid; output is NA.", call. = FALSE)
       NA
     })
