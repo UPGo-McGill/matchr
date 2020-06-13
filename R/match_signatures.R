@@ -41,7 +41,9 @@ match_signatures <- function(x, y = NULL, quiet = FALSE) {
   }
 
   # Calculate correlation matrix
-  if (missing(y)) result <- stats::cor(x) else result <- stats::cor(x, y)
+  suppressWarnings({
+    if (missing(y)) result <- stats::cor(x) else result <- stats::cor(x, y)
+    })
 
   # Add names
   rownames(result) <- x_names
