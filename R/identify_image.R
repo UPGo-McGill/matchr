@@ -124,6 +124,8 @@ identify_image.character <- function(image, bands = 20, rm_black_bars = TRUE,
     start <- (i - 1) * batch_size + 1
     end <- min(i * batch_size, length(image))
 
+    if (iterations > 1) message("Processing batch ", i, " of ", iterations, ".")
+
     # Produce list of cimg objects
     result[[i]] <- load_image(image[start:end], quiet = quiet)
 
