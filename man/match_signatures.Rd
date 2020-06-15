@@ -4,14 +4,16 @@
 \alias{match_signatures}
 \title{Match images based on colour signatures}
 \usage{
-match_signatures(x, y = NULL, quiet = FALSE)
+match_signatures(x, y = NULL, compare_aspect_ratios = TRUE, quiet = FALSE)
 }
 \arguments{
-\item{x, y}{Lists of 'cimg' objects to be matched, or file paths and URLs
-pointing to images which can be imported as 'cimg' objects. If \code{y} is missing
+\item{x, y}{Lists of 'matchr_sig' objects to be matched. If \code{y} is missing
 (default), each object in \code{x} will be matched against each other object in
 \code{x.} If \code{y} is present, each object in \code{x} will be matched against each
 object in \code{y}.}
+
+\item{compare_aspect_ratios}{A logical scalar. Should signatures only be
+compared for images with similar aspect ratios (default)?}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}
@@ -30,12 +32,17 @@ correlation matrix to identify matches.
 }
 \details{
 A function for identifying matching images. The function takes a list of
-images (objects of class 'cimg) and compares their colour signatures to find
-matches.
+images signatures (objects of class 'matchr_sig') and compares their colour
+signatures to find matches.
 
 The comparison is done by creating colour signatures for each input image
 using \code{\link{identify_image}} and then computing the Pearson correlation
 coefficient between these signatures. In general, pairs of images which were
 identical prior to arbitrary resampling and compression will have correlation
 coefficients of at least 0.99.
+
+The function can optionally filter images by aspect ratio, so only images
+with very similar aspect ratios will be compared. This can remove potential
+false positives and possibly speed up function execution, if images are
+relatively evenly split between aspect ratios.
 }

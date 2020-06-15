@@ -5,29 +5,41 @@
 \alias{identify_image.cimg}
 \alias{identify_image.character}
 \alias{identify_image.list}
-\alias{identify_image.logical}
+\alias{identify_image.default}
 \title{Generate a unique colour signature for an image}
 \usage{
-identify_image(image, bands = 20, ...)
+identify_image(image, bands = 20, rm_black_bars = TRUE, ...)
 
-\method{identify_image}{cimg}(image, bands = 20, ...)
+\method{identify_image}{cimg}(image, bands = 20, rm_black_bars = TRUE, ...)
 
-\method{identify_image}{character}(image, bands = 20, batch_size = 100, quiet = FALSE, ...)
+\method{identify_image}{character}(
+  image,
+  bands = 20,
+  rm_black_bars = TRUE,
+  batch_size = 100,
+  quiet = FALSE,
+  ...
+)
 
-\method{identify_image}{list}(image, bands = 20, quiet = FALSE, ...)
+\method{identify_image}{list}(image, bands = 20, rm_black_bars = TRUE, quiet = FALSE, ...)
 
-\method{identify_image}{logical}(image, bands = 20, ...)
+\method{identify_image}{default}(image, bands = 20, rm_black_bars = TRUE, ...)
 }
 \arguments{
 \item{image}{Object (or list of objects) of class 'cimg', probably imported
 using \code{load_image} or \code{imager::load.image}, or file path
 or URL (or vector/list of file paths or URLs) of an image.}
 
-\item{bands}{Integer scalar. The number of horizontal bands the image should
-be split into for processing. Higher values will produce a more distinctive
-colour signature, potentially decreasing the rate of matching false
-positives, but at the cost of increased processing time and an increased rate
-of matching false negatives.}
+\item{bands}{Integer scalar. The number of horizontal and vertical bands the
+image should be split into for processing. Higher values will produce a more
+distinctive colour signature, potentially decreasing the rate of matching
+false positives, but at the cost of increased processing time and an
+increased rate of matching false negatives.}
+
+\item{rm_black_bars}{Logical scalar. Should horizontal black bars be
+detected and removed from the image signature? Because these bands lead to an
+image signature dominated by black values, leaving them in the signature can
+lead to false positive matches.}
 
 \item{...}{Additional arguments passed to methods.}
 
@@ -40,7 +52,8 @@ quickly, but can result in enormous memory requirements.}
 it return status updates throughout the function (default)?}
 }
 \value{
-A numeric vector of length \code{bands}.
+An object of class \code{matchr_sig}, which contains a numeric vector of
+length \code{bands} * 2, a file name (optionally), and an aspect ratio.
 }
 \description{
 \code{identify_image} takes an image file and generates a numeric vector of

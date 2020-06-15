@@ -4,9 +4,11 @@
 #' optionally supports parallel processing (via \code{future} and
 #' \code{future.apply}) and progress reporting (via \code{progressr}).
 #'
-#' The function is a wrapper around \code{imager::load.image} with three
+#' The function is a wrapper around \code{imager::load.image} with four
 #' enhancements. It can take a vector of input paths instead a single path, it
-#' supports parallel processing, and it support progress reporting.
+#' supports parallel processing, it support progress reporting, and it appends
+#' the file path of the image as an attribute for subsequent processing or
+#' recordkeeping.
 #'
 #' @param file A vector of file paths or URLs to be passed to
 #' \code{imager::load.image}.
@@ -18,6 +20,12 @@
 #' @export
 
 load_image <- function(file, quiet = FALSE) {
+
+  ### Error checking ###########################################################
+
+  stopifnot(is.character(file))
+  stopifnot(is.logical(quiet))
+
 
   ### Handle future options ####################################################
 
@@ -39,9 +47,10 @@ load_image <- function(file, quiet = FALSE) {
 
   ### Handle progressr options #################################################
 
-  ## Create NULL progress bar in case progressr is not installed ---------------
+  ## Create NULL progress functions in case {progressr} is not installed -------
 
-  pb <- function() NULL
+  with_progress <- function(expr) expr
+  progressor <- function(...) function(...) NULL
 
 
   ## Disable progress reporting for fewer than 10 items ------------------------
@@ -54,6 +63,9 @@ load_image <- function(file, quiet = FALSE) {
   if (!quiet) {
 
     if (requireNamespace("progressr", quietly = TRUE)) {
+
+      with_progress <- progressr::with_progress
+      progressor <- progressr::progressor
 
       if (requireNamespace("crayon", quietly = TRUE)) {
 
@@ -86,34 +98,25 @@ load_image <- function(file, quiet = FALSE) {
 
   ## Import images with proper progress handling -------------------------------
 
-  if (!quiet) {
+ with_progress({
 
-    progressr::with_progress({
+   pb <- progressor(steps = length(file))
 
-      pb <- progressr::progressor(steps = length(file))
+   imgs <- lapply(file, function(x) {
+     pb()
+     tryCatch(suppressMessages(imager::load.image(x)), error = function(e) {
+       warning("Input '", x, "' is invalid; output is NA.", call. = FALSE)
+       NA
+       })
+     })
 
-      imgs <- lapply(file, function(x) {
-        pb()
-        tryCatch(suppressMessages(imager::load.image(x)), error = function(e) {
-          warning("Input '", x, "' is invalid; output is NA.", call. = FALSE)
-          NA
-          })
-      })
-    })
-
-  } else imgs <- lapply(file, function(x) {
-
-    tryCatch(suppressMessages(imager::load.image(x)), error = function(e) {
-      warning("Input '", x, "' is invalid; output is NA.", call. = FALSE)
-      NA
-    })
-
-    })
+   })
 
 
-  ## Name list elements with file names ----------------------------------------
+  ## Add file names ------------------------------------------------------------
 
-  names(imgs) <- file
+  imgs <- mapply(function(x, y) structure(x, file = y), imgs, file,
+                 SIMPLIFY = FALSE)
 
 
   ## Collapse list if length == 1 ----------------------------------------------

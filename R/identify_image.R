@@ -13,16 +13,21 @@
 #' @param image Object (or list of objects) of class 'cimg', probably imported
 #' using \code{load_image} or \code{imager::load.image}, or file path
 #' or URL (or vector/list of file paths or URLs) of an image.
-#' @param bands Integer scalar. The number of horizontal bands the image should
-#' be split into for processing. Higher values will produce a more distinctive
-#' colour signature, potentially decreasing the rate of matching false
-#' positives, but at the cost of increased processing time and an increased rate
-#' of matching false negatives.
+#' @param bands Integer scalar. The number of horizontal and vertical bands the
+#' image should be split into for processing. Higher values will produce a more
+#' distinctive colour signature, potentially decreasing the rate of matching
+#' false positives, but at the cost of increased processing time and an
+#' increased rate of matching false negatives.
+#' @param rm_black_bars Logical scalar. Should horizontal black bars be
+#' detected and removed from the image signature? Because these bands lead to an
+#' image signature dominated by black values, leaving them in the signature can
+#' lead to false positive matches.
 #' @param ... Additional arguments passed to methods.
-#' @return A numeric vector of length `bands`.
+#' @return An object of class `matchr_sig`, which contains a numeric vector of
+#' length `bands` * 2, a file name (optionally), and an aspect ratio.
 #' @export
 
-identify_image <- function(image, bands = 20, ...) {
+identify_image <- function(image, bands = 20, rm_black_bars = TRUE, ...) {
 
   UseMethod("identify_image")
 
@@ -33,15 +38,47 @@ identify_image <- function(image, bands = 20, ...) {
 #' @method identify_image cimg
 #' @export
 
-identify_image.cimg <- function(image, bands = 20, ...) {
+identify_image.cimg <- function(image, bands = 20, rm_black_bars = TRUE, ...) {
 
-  row_split <- imager::imsplit(image, "x", bands)
+  stopifnot(is.numeric(bands))
+  stopifnot(is.logical(rm_black_bars))
+
+  row_split <- imager::imsplit(image, "y", bands)
   row_means <- lapply(row_split, rowMeans)
-  col_split <- imager::imsplit(image, "y", bands)
-  col_means <- lapply(col_split, colMeans)
-  image_means <- c(sapply(row_means, mean), sapply(col_means, mean))
+  row_means <- sapply(row_means, mean)
 
-  return(image_means)
+  # Check for black bars
+  if (rm_black_bars) {
+
+    if (sum(row_means == 0) > 0) {
+
+      black_strips <- which(row_means == 0)
+      top_bound <- max(black_strips[black_strips <= bands / 2]) + 1
+      bottom_bound <- min(black_strips[black_strips > bands / 2]) - 1
+
+      image <- structure(
+        imager::imappend(row_split[top_bound:bottom_bound], "y"),
+        file = attr(image, "file")
+      )
+
+      row_split <- imager::imsplit(image, "y", bands)
+      row_means <- lapply(row_split, rowMeans)
+      row_means <- sapply(row_means, mean)
+
+    }
+  }
+
+  col_split <- imager::imsplit(image, "x", bands)
+  col_means <- lapply(col_split, colMeans)
+  col_means <- sapply(col_means, mean)
+  result <- c(row_means, col_means)
+
+  result <- new_matchr_sig(
+    result,
+    if (is.null(attr(image, "file"))) NA_character_ else attr(image, "file"),
+    imager::width(image) / imager::height(image))
+
+  return(result)
 
 }
 
@@ -56,32 +93,19 @@ identify_image.cimg <- function(image, bands = 20, ...) {
 #' it return status updates throughout the function (default)?
 #' @export
 
-identify_image.character <- function(image, bands = 20, batch_size = 100,
-                                     quiet = FALSE, ...) {
+identify_image.character <- function(image, bands = 20, rm_black_bars = TRUE,
+                                     batch_size = 100, quiet = FALSE, ...) {
 
-  ### Handle future options ####################################################
+  ### Error checking ###########################################################
 
-  if (requireNamespace("future", quietly = TRUE)) {
-
-    if (!requireNamespace("future.apply", quietly = TRUE)) {
-      warning("Please install the `future.apply` package to enable ",
-              "parallel processing.", call. = FALSE, immediate. = TRUE)
-    }
-
-    if (requireNamespace("future.apply", quietly = TRUE)) {
-
-      # Overwrite lapply with future.lapply for parallel processing
-      lapply <- future.apply::future_lapply
-
-    }
-  }
+  stopifnot(is.numeric(bands))
+  stopifnot(is.logical(rm_black_bars))
 
 
-  ### Prepare iterations and results according to batch_size argument ##########
+  ### Prepare iterations and result according to batch_size argument ###########
 
   iterations <- ceiling(length(image) / batch_size)
-
-  results <- vector("list", iterations)
+  result <- vector("list", iterations)
 
 
   ### Run function #############################################################
@@ -91,28 +115,22 @@ identify_image.character <- function(image, bands = 20, batch_size = 100,
     start <- (i - 1) * batch_size + 1
     end <- min(i * batch_size, length(image))
 
-    results[[i]] <- load_image(image[start:end], quiet = quiet)
+    # Produce list of cimg objects
+    result[[i]] <- load_image(image[start:end], quiet = quiet)
 
-    if (inherits(results[[i]], "list")) {
+    # Send list through the identify_image.list method
+    result[[i]] <- identify_image(result[[i]], bands,
+                                  rm_black_bars = rm_black_bars, quiet = quiet)
 
-      results[[i]] <- identify_image(results[[i]], bands, quiet = quiet)
-
-    } else {
-
-      row_split <- imager::imsplit(results[[i]], "x", bands)
-      row_means <- lapply(row_split, rowMeans)
-      col_split <- imager::imsplit(results[[i]], "y", bands)
-      col_means <- lapply(col_split, colMeans)
-      results[[i]] <- c(sapply(row_means, mean), sapply(col_means, mean))
-
-      }
   }
 
-  results <- unlist(results, recursive = FALSE)
+  if (inherits(result[[1]], "list")) {
+    result <- unlist(result, recursive = FALSE)
+  } else {
+    result <- result[[1]]
+  }
 
-  if (inherits(results, "list")) names(results) <- image
-
-  return(results)
+  return(result)
 
 }
 
@@ -123,7 +141,8 @@ identify_image.character <- function(image, bands = 20, batch_size = 100,
 #' it return status updates throughout the function (default)?
 #' @export
 
-identify_image.list <- function(image, bands = 20, quiet = FALSE, ...) {
+identify_image.list <- function(image, bands = 20, rm_black_bars = TRUE,
+                                quiet = FALSE, ...) {
 
   ### Handle future options ####################################################
 
@@ -145,9 +164,10 @@ identify_image.list <- function(image, bands = 20, quiet = FALSE, ...) {
 
   ### Handle progressr options #################################################
 
-  ## Create NULL progress bar in case {progressr} is not installed -------------
+  ## Create NULL progress functions in case {progressr} is not installed -------
 
-  pb <- function() NULL
+  with_progress <- function(expr) expr
+  progressor <- function(...) function(...) NULL
 
 
   ## Disable progress reporting for fewer than 10 items ------------------------
@@ -190,30 +210,31 @@ identify_image.list <- function(image, bands = 20, quiet = FALSE, ...) {
 
   ### Run function #############################################################
 
-  if (!quiet) {
+  with_progress({
 
-    progressr::with_progress({
-
-        pb <- progressr::progressor(along = image)
-        results <- lapply(image, function(x) {
-          pb()
-          identify_image(x, bands)
-        })
+    pb <- progressor(along = image)
+    result <- lapply(image, function(x) {
+      pb()
+      identify_image(x, bands, rm_black_bars = rm_black_bars)
       })
 
-    } else results <- lapply(image, function(x) identify_image(x, bands))
+  })
 
-  return(results)
+  return(result)
 }
 
 
 #' @rdname identify_image
-#' @method identify_image logical
+#' @method identify_image default
 #' @export
 
-identify_image.logical <- function(image, bands = 20, ...) {
+identify_image.default <- function(image, bands = 20, rm_black_bars = TRUE,
+                                   ...) {
 
-  rep(NA, times = bands * 2)
-
+  new_matchr_sig(
+    rep(NA_real_, times = bands * 2),
+    if (is.null(attr(image, "file"))) NA_character_ else attr(image, "file"),
+    NA_real_
+  )
 }
 

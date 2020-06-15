@@ -24,7 +24,9 @@ optionally supports parallel processing (via \code{future} and
 \code{future.apply}) and progress reporting (via \code{progressr}).
 }
 \details{
-The function is a wrapper around \code{imager::load.image} with three
+The function is a wrapper around \code{imager::load.image} with four
 enhancements. It can take a vector of input paths instead a single path, it
-supports parallel processing, and it support progress reporting.
+supports parallel processing, it support progress reporting, and it appends
+the file path of the image as an attribute for subsequent processing or
+recordkeeping.
 }

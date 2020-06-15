@@ -4,8 +4,8 @@
 #' correlation matrix to identify matches.
 #'
 #' A function for identifying matching images. The function takes a list of
-#' images (objects of class 'cimg) and compares their colour signatures to find
-#' matches.
+#' images signatures (objects of class 'matchr_sig') and compares their colour
+#' signatures to find matches.
 #'
 #' The comparison is done by creating colour signatures for each input image
 #' using \code{\link{identify_image}} and then computing the Pearson correlation
@@ -13,11 +13,17 @@
 #' identical prior to arbitrary resampling and compression will have correlation
 #' coefficients of at least 0.99.
 #'
-#' @param x,y Lists of 'cimg' objects to be matched, or file paths and URLs
-#' pointing to images which can be imported as 'cimg' objects. If `y` is missing
+#' The function can optionally filter images by aspect ratio, so only images
+#' with very similar aspect ratios will be compared. This can remove potential
+#' false positives and possibly speed up function execution, if images are
+#' relatively evenly split between aspect ratios.
+#'
+#' @param x,y Lists of 'matchr_sig' objects to be matched. If `y` is missing
 #' (default), each object in `x` will be matched against each other object in
 #' `x.` If `y` is present, each object in `x` will be matched against each
 #' object in `y`.
+#' @param compare_aspect_ratios A logical scalar. Should signatures only be
+#' compared for images with similar aspect ratios (default)?
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
 #' @return A correlation matrix. If `x` and `y` are both present, the matrix
@@ -28,7 +34,8 @@
 #' `x[[j]]`.
 #' @export
 
-match_signatures <- function(x, y = NULL, quiet = FALSE) {
+match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
+                             quiet = FALSE) {
 
   ### Handle future options ####################################################
 
@@ -57,7 +64,7 @@ match_signatures <- function(x, y = NULL, quiet = FALSE) {
   ## Create NULL progress functions in case {progressr} is not installed -------
 
   with_progress <- function(expr) expr
-  progressor <- function(...) NULL
+  progressor <- function(...) function(...) NULL
 
 
   ## Disable progress reporting for single thread or fewer than 100 items ------
@@ -100,10 +107,13 @@ match_signatures <- function(x, y = NULL, quiet = FALSE) {
     } else quiet <- TRUE
   }
 
+
+  ### Prepare objects for processing ###########################################
+
   ## Process names -------------------------------------------------------------
 
-  x_names <- names(x)
-  if (!missing(y)) y_names <- names(y)
+  x_names <- sapply(x, attr, "file")
+  if (!missing(y)) y_names <- sapply(y, attr, "file")
 
 
   ## Convert to matrix for single thread ---------------------------------------
