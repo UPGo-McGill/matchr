@@ -50,6 +50,9 @@ identify_image.cimg <- function(image, bands = 20, rm_black_bars = TRUE, ...) {
   # Check for black bars
   if (rm_black_bars) {
 
+    # First check for all black image and return NA if so
+    if (sum(row_means) == 0) return(identify_image.default(image))
+
     if (sum(row_means == 0) > 0) {
 
       black_strips <- which(row_means == 0)
