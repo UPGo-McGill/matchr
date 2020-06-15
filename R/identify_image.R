@@ -63,7 +63,7 @@ identify_image.cimg <- function(image, bands = 20, rm_black_bars = TRUE, ...) {
       suppressWarnings({
         bottom_bound <- min(black_strips[black_strips > bands / 2]) - 1
       })
-      if (is.infinite(top_bound)) bottom_bound <- bands
+      if (is.infinite(bottom_bound)) bottom_bound <- bands
 
       image <- structure(
         imager::imappend(row_split[top_bound:bottom_bound], "y"),
