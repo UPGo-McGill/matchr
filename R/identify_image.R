@@ -53,8 +53,14 @@ identify_image.cimg <- function(image, bands = 20, rm_black_bars = TRUE, ...) {
     if (sum(row_means == 0) > 0) {
 
       black_strips <- which(row_means == 0)
-      top_bound <- max(black_strips[black_strips <= bands / 2]) + 1
-      bottom_bound <- min(black_strips[black_strips > bands / 2]) - 1
+      suppressWarnings({
+        top_bound <- max(black_strips[black_strips <= bands / 2]) + 1
+      })
+      if (is.infinite(top_bound)) top_bound <- 1
+      suppressWarnings({
+        bottom_bound <- min(black_strips[black_strips > bands / 2]) - 1
+      })
+      if (is.infinite(top_bound)) bottom_bound <- bands
 
       image <- structure(
         imager::imappend(row_split[top_bound:bottom_bound], "y"),
@@ -180,6 +186,9 @@ identify_image.list <- function(image, bands = 20, rm_black_bars = TRUE,
   if (!quiet) {
 
     if (requireNamespace("progressr", quietly = TRUE)) {
+
+      with_progress <- progressr::with_progress
+      progressor <- progressr::progressor
 
       if (requireNamespace("crayon", quietly = TRUE)) {
 
