@@ -13,16 +13,27 @@ match_signatures(x, y = NULL, compare_aspect_ratios = TRUE, quiet = FALSE)
 object in \code{y}.}
 
 \item{compare_aspect_ratios}{A logical scalar. Should signatures only be
-compared for images with similar aspect ratios (default)?}
+compared for images with similar aspect ratios (default)? If TRUE, k-means
+clustering is used to identify breakpoints between aspect ratios that
+maximize between-group distance and minimize the total number of calculations
+that the function needs to execute. (Values of k between 3 and 15 are
+evaluated.) Image signatures from \code{x} are split into lists between these
+break points. In order to catch matches that would fall across a break point,
+image signatures from \code{y} are split into lists between the break point / 1.2
+on the lower bound and the break point * 1.2 on the upper bound. This
+argument is currently only implemented when both \code{x} and \code{y} are provided to
+the function.}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}
 }
 \value{
-A correlation matrix. If \code{x} and \code{y} are both present, the matrix
-will have \code{length(x)} rows and \code{length(y)} columns, and for the matrix \code{Q}
-the cell \code{Q[i, j]} will be the Pearson correlation coefficient between images
-\code{x[[i]]} and \code{y[[j]]}. If \code{y} is not present, the matrix will be square, and
+An object of class \code{matchr_matrix}. This object is a list containing
+a number of correlation matrices equal to the number of aspect-ratio
+categories. If \code{x} and \code{y} are both present, each matrix will have
+\code{length(x)} rows and \code{length(y)} columns, and for the matrix \code{Q} the cell
+\code{Q[i, j]} will be the Pearson correlation coefficient between images \code{x[[i]]}
+and \code{y[[j]]}. If \code{y} is not present, each matrix will be square, and
 the cell \code{Q[i, j]} will be the correlation between images \code{x[[i]]} and
 \code{x[[j]]}.
 }

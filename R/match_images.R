@@ -31,7 +31,6 @@
 #' `x[[i]]` and `y[[j]]`. If `y` is not present, the matrix will be square, and
 #' the cell `Q[i, j]` will be the correlation between images `x[[i]]` and
 #' `x[[j]]`.
-#' @export
 
 match_images <- function(x, y = NULL, bands = 25, quiet = FALSE) {
 

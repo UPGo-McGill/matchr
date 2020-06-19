@@ -4,7 +4,7 @@
 \alias{identify_matches}
 \title{Identify matches from a matchr image matrix}
 \usage{
-identify_matches(image_matrix, threshold = 0.99)
+identify_matches(image_matrix, threshold = 0.99, quiet = FALSE)
 }
 \arguments{
 \item{image_matrix}{A matrix of image correlations produced by
@@ -12,6 +12,9 @@ identify_matches(image_matrix, threshold = 0.99)
 
 \item{threshold}{A numeric scalar. The minimum correlation constant to
 consider to images to be matched.}
+
+\item{quiet}{A logical scalar. Should the function execute quietly, or should
+it return status updates throughout the function (default)?}
 }
 \value{
 TKTK
