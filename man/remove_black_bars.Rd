@@ -4,7 +4,7 @@
 \alias{remove_black_bars}
 \title{Remove horizontal black bars from an image}
 \usage{
-remove_black_bars(image, bands)
+remove_black_bars(image, bands = 20)
 }
 \arguments{
 \item{image}{Object of class 'cimg', probably imported using

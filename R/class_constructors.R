@@ -1,12 +1,14 @@
-new_matchr_sig <- function(x, file, aspect_ratio) {
+new_matchr_sig <- function(x, file, method, aspect_ratio) {
 
   stopifnot(is.numeric(x))
   stopifnot(is.character(file))
+  stopifnot(is.character(method))
   stopifnot(is.numeric(aspect_ratio))
 
   structure(x,
             class = c("matchr_sig", "numeric"),
             file = file,
+            method = method,
             aspect_ratio = aspect_ratio
             )
 

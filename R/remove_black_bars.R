@@ -12,7 +12,7 @@
 #' @return An object of class `cimg`.
 #' @export
 
-remove_black_bars <- function(image, bands) {
+remove_black_bars <- function(image, bands = 20) {
 
   row_split <- imager::imsplit(image, "y", bands)
   row_means <- lapply(row_split, rowMeans)
@@ -20,11 +20,15 @@ remove_black_bars <- function(image, bands) {
 
   if (sum(row_means == 0) > 0) {
 
+    # Save file name to reappend later
+    file <- attr(image, "file")
+
     black_strips <- which(row_means == 0)
     top_bound <- max(black_strips[black_strips <= bands / 2]) + 1
     bottom_bound <- min(black_strips[black_strips > bands / 2]) - 1
 
     image <- imager::imappend(row_split[top_bound:bottom_bound], "y")
+    attr(image, "file") <- file
 
   }
 

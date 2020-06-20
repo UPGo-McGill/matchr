@@ -8,12 +8,25 @@
 \alias{identify_image.default}
 \title{Generate a unique colour signature for an image}
 \usage{
-identify_image(image, bands = 20, rm_black_bars = TRUE, ...)
+identify_image(
+  image,
+  method = "greyscale",
+  bands = 20,
+  rm_black_bars = TRUE,
+  ...
+)
 
-\method{identify_image}{cimg}(image, bands = 20, rm_black_bars = TRUE, ...)
+\method{identify_image}{cimg}(
+  image,
+  method = "greyscale",
+  bands = 20,
+  rm_black_bars = TRUE,
+  ...
+)
 
 \method{identify_image}{character}(
   image,
+  method = "greyscale",
   bands = 20,
   rm_black_bars = TRUE,
   batch_size = 100,
@@ -21,14 +34,33 @@ identify_image(image, bands = 20, rm_black_bars = TRUE, ...)
   ...
 )
 
-\method{identify_image}{list}(image, bands = 20, rm_black_bars = TRUE, quiet = FALSE, ...)
+\method{identify_image}{list}(
+  image,
+  method = "greyscale",
+  bands = 20,
+  rm_black_bars = TRUE,
+  quiet = FALSE,
+  ...
+)
 
-\method{identify_image}{default}(image, bands = 20, rm_black_bars = TRUE, ...)
+\method{identify_image}{default}(
+  image,
+  method = "greyscale",
+  bands = 20,
+  rm_black_bars = TRUE,
+  ...
+)
 }
 \arguments{
 \item{image}{Object (or list of objects) of class 'cimg', probably imported
 using \code{load_image} or \code{imager::load.image}, or file path
 or URL (or vector/list of file paths or URLs) of an image.}
+
+\item{method}{Character string. The method to be used to create image
+signatures. Valid options are "greyscale" or "rgb". The former will take
+a single average darkness value for each band while the latter will take
+average values for each of the red, green and blue colour channels for each
+band.}
 
 \item{bands}{Integer scalar. The number of horizontal and vertical bands the
 image should be split into for processing. Higher values will produce a more
@@ -62,8 +94,8 @@ average colour values, so that the image can be compared to others.
 \details{
 The function works as follows. An image is decomposed into horizontal bands
 (with the number of bands controlled by the \code{bands} argument), and for each
-band an average colour is calculated. The vector of these colour averages
-becomes a distinctive signature that can identify a given image even if the
-image is rescaled or compressed, and thus serves as a reliable indicator of
-whether two images are the same.
+band an average greyscale or colour value is calculated. The vector of these
+averages becomes a distinctive signature that can identify a given image even
+if the image is rescaled or compressed, and thus serves as a reliable
+indicator of whether two images are the same.
 }

@@ -4,26 +4,54 @@
 print.matchr_sig <- function(x, ...) {
 
   max_chars <- getOption("width")
-  first_line_chars <- max_chars - 48
+  method <- if (attr(x, "method") == "greyscale") "Greyscale" else "RGB"
+  first_line_chars <- max_chars - 49 - (if (method == "Greyscale") 9 else 3)
   file_length <- nchar(attr(x, "file"))
   file_trunc <- substr(attr(x, "file"), max(1, file_length - first_line_chars),
                        file_length)
 
- msg <- sprintf('Image signature from file "%s". Aspect ratio %.2f.',
-                file_trunc, attr(x, "aspect_ratio"))
+  msg <- sprintf('%s image signature from file "%s". Aspect ratio %.2f.',
+                 method, file_trunc, attr(x, "aspect_ratio"))
 
  values <- sprintf("%.2f", as.numeric(x))
- values <- paste0(values, collapse = ", ")
- values <- substr(values, 1, nchar(msg) - 3)
- values <- paste0(values, '...')
 
  if (requireNamespace("crayon", quietly = TRUE)) {
-   values <- crayon::silver(crayon::italic(values))
- }
+
+   if (crayon::has_color() && method == "Greyscale") {
+
+     values <- substr(values, 3, 4)
+     values <- sapply(values, function(x) crayon::style("\u25a0",
+                                                        paste0("grey", x)))
+
+     if (length(values) > max_chars) {
+       values <- values[seq_len(max_chars - 3)]
+       values <- paste0(values, collapse = "")
+       values <- paste0(values, '...')
+
+     } else values <- paste0(values, collapse = "")
+
+   } else {
+
+     values <- paste0(values, collapse = ", ")
+     values <- substr(values, 1, nchar(msg) - 3)
+     values <- paste0(values, '...')
+
+     values <- crayon::silver(crayon::italic(values))
+
+     }
+
+   } else {
+
+     values <- paste0(values, collapse = ", ")
+     values <- substr(values, 1, nchar(msg) - 3)
+     values <- paste0(values, '...')
+
+   }
 
  cat(msg)
  cat("\n")
  cat(values)
+ cat("\n")
 
  invisible(x)
 

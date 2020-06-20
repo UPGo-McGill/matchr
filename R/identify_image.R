@@ -5,14 +5,19 @@
 #'
 #' The function works as follows. An image is decomposed into horizontal bands
 #' (with the number of bands controlled by the `bands` argument), and for each
-#' band an average colour is calculated. The vector of these colour averages
-#' becomes a distinctive signature that can identify a given image even if the
-#' image is rescaled or compressed, and thus serves as a reliable indicator of
-#' whether two images are the same.
+#' band an average greyscale or colour value is calculated. The vector of these
+#' averages becomes a distinctive signature that can identify a given image even
+#' if the image is rescaled or compressed, and thus serves as a reliable
+#' indicator of whether two images are the same.
 #'
 #' @param image Object (or list of objects) of class 'cimg', probably imported
 #' using \code{load_image} or \code{imager::load.image}, or file path
 #' or URL (or vector/list of file paths or URLs) of an image.
+#' @param method Character string. The method to be used to create image
+#' signatures. Valid options are "greyscale" or "rgb". The former will take
+#' a single average darkness value for each band while the latter will take
+#' average values for each of the red, green and blue colour channels for each
+#' band.
 #' @param bands Integer scalar. The number of horizontal and vertical bands the
 #' image should be split into for processing. Higher values will produce a more
 #' distinctive colour signature, potentially decreasing the rate of matching
@@ -27,7 +32,8 @@
 #' length `bands` * 2, a file name (optionally), and an aspect ratio.
 #' @export
 
-identify_image <- function(image, bands = 20, rm_black_bars = TRUE, ...) {
+identify_image <- function(image, method = "greyscale", bands = 20,
+                           rm_black_bars = TRUE, ...) {
 
   UseMethod("identify_image")
 
@@ -38,13 +44,15 @@ identify_image <- function(image, bands = 20, rm_black_bars = TRUE, ...) {
 #' @method identify_image cimg
 #' @export
 
-identify_image.cimg <- function(image, bands = 20, rm_black_bars = TRUE, ...) {
+identify_image.cimg <- function(image, method = "greyscale", bands = 20,
+                                rm_black_bars = TRUE, ...) {
 
   stopifnot(is.numeric(bands))
   stopifnot(is.logical(rm_black_bars))
+  stopifnot(method %in% c("greyscale", "rgb"))
 
   row_split <- imager::imsplit(image, "y", bands)
-  row_means <- lapply(row_split, rowMeans)
+  row_means <- base::lapply(row_split, rowMeans)
   row_means <- sapply(row_means, mean)
 
   # Check for black bars
@@ -70,21 +78,45 @@ identify_image.cimg <- function(image, bands = 20, rm_black_bars = TRUE, ...) {
         file = attr(image, "file")
       )
 
-      row_split <- imager::imsplit(image, "y", bands)
-      row_means <- lapply(row_split, rowMeans)
-      row_means <- sapply(row_means, mean)
+      if (method == "greyscale") {
+        row_split <- imager::imsplit(image, "y", bands)
+        row_means <- base::lapply(row_split, rowMeans)
+        row_means <- sapply(row_means, mean)
+      }
+
 
     }
   }
 
-  col_split <- imager::imsplit(image, "x", bands)
-  col_means <- lapply(col_split, colMeans)
-  col_means <- sapply(col_means, mean)
-  result <- c(row_means, col_means)
+  if (method == "greyscale") {
+    col_split <- imager::imsplit(image, "x", bands)
+    col_means <- base::lapply(col_split, colMeans)
+    col_means <- sapply(col_means, mean)
+    result <- c(row_means, col_means)
+  }
+
+  if (method == "rgb") {
+
+    colour_split <- imager::channels(image, 1:3)
+
+    row_split <- base::lapply(colour_split, imager::imsplit, "y", bands)
+    row_split <- unlist(row_split, recursive = FALSE)
+    row_means <- base::lapply(row_split, rowMeans)
+    row_means <- sapply(row_means, mean)
+
+    col_split <- base::lapply(colour_split, imager::imsplit, "x", bands)
+    col_split <- unlist(col_split, recursive = FALSE)
+    col_means <- base::lapply(col_split, colMeans)
+    col_means <- sapply(col_means, mean)
+
+    result <- c(row_means, col_means)
+
+  }
 
   result <- new_matchr_sig(
     result,
     if (is.null(attr(image, "file"))) NA_character_ else attr(image, "file"),
+    method,
     imager::width(image) / imager::height(image))
 
   return(result)
@@ -102,7 +134,8 @@ identify_image.cimg <- function(image, bands = 20, rm_black_bars = TRUE, ...) {
 #' it return status updates throughout the function (default)?
 #' @export
 
-identify_image.character <- function(image, bands = 20, rm_black_bars = TRUE,
+identify_image.character <- function(image, method = "greyscale", bands = 20,
+                                     rm_black_bars = TRUE,
                                      batch_size = 100, quiet = FALSE, ...) {
 
   ### Error checking ###########################################################
@@ -130,7 +163,7 @@ identify_image.character <- function(image, bands = 20, rm_black_bars = TRUE,
     result[[i]] <- load_image(image[start:end], quiet = quiet)
 
     # Send list through the identify_image.list method
-    result[[i]] <- identify_image(result[[i]], bands,
+    result[[i]] <- identify_image(result[[i]], method, bands,
                                   rm_black_bars = rm_black_bars, quiet = quiet)
 
   }
@@ -152,8 +185,8 @@ identify_image.character <- function(image, bands = 20, rm_black_bars = TRUE,
 #' it return status updates throughout the function (default)?
 #' @export
 
-identify_image.list <- function(image, bands = 20, rm_black_bars = TRUE,
-                                quiet = FALSE, ...) {
+identify_image.list <- function(image, method = "greyscale", bands = 20,
+                                rm_black_bars = TRUE, quiet = FALSE, ...) {
 
   ### Handle future options ####################################################
 
@@ -229,7 +262,7 @@ identify_image.list <- function(image, bands = 20, rm_black_bars = TRUE,
     pb <- progressor(along = image)
     result <- lapply(image, function(x) {
       pb()
-      identify_image(x, bands, rm_black_bars = rm_black_bars)
+      identify_image(x, method, bands, rm_black_bars = rm_black_bars)
       })
 
   })
@@ -242,12 +275,13 @@ identify_image.list <- function(image, bands = 20, rm_black_bars = TRUE,
 #' @method identify_image default
 #' @export
 
-identify_image.default <- function(image, bands = 20, rm_black_bars = TRUE,
-                                   ...) {
+identify_image.default <- function(image, method = "greyscale", bands = 20,
+                                   rm_black_bars = TRUE, ...) {
 
   new_matchr_sig(
-    rep(NA_real_, times = bands * 2),
+    rep(NA_real_, times = bands * if (method == "greyscale") 2 else 3),
     if (is.null(attr(image, "file"))) NA_character_ else attr(image, "file"),
+    NA_character_,
     NA_real_
   )
 }
