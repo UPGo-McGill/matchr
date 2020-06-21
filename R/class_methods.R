@@ -13,12 +13,11 @@ print.matchr_sig <- function(x, ...) {
   msg <- sprintf('%s image signature from file "%s". Aspect ratio %.2f.',
                  method, file_trunc, attr(x, "aspect_ratio"))
 
- values <- sprintf("%.2f", as.numeric(x))
-
  if (requireNamespace("crayon", quietly = TRUE)) {
 
    if (crayon::has_color() && method == "Greyscale") {
 
+     values <- sprintf("%.2f", as.numeric(x))
      values <- substr(values, 3, 4)
      values <- sapply(values, function(x) crayon::style("\u25a0",
                                                         paste0("grey", x)))
@@ -30,8 +29,40 @@ print.matchr_sig <- function(x, ...) {
 
      } else values <- paste0(values, collapse = "")
 
+   } else if (crayon::has_color() && method == "RGB") {
+
+     values <- ceiling(unclass(x) * 16) * 11
+     values <- as.character(unname(c(values, recursive = TRUE)))
+     values <- ifelse(values == "110", "AA", values)
+     values <- ifelse(values == "121", "BB", values)
+     values <- ifelse(values == "132", "CC", values)
+     values <- ifelse(values == "143", "DD", values)
+     values <- ifelse(values == "154", "EE", values)
+     values <- ifelse(values == "165", "FF", values)
+     values <- ifelse(values == "176", "FF", values)
+
+     values[1:(length(values) / 3)] <-
+       paste0("#", values[1:(length(values) / 3)], "0000")
+
+     values[(1 + length(values) / 3):(2 * length(values) / 3)] <-
+       paste0("#00", values[(1 + length(values) / 3):(2 * length(values) / 3)],
+              "00")
+
+     values[(1 + 2 * length(values) / 3):length(values)] <-
+       paste0("#0000", values[(1 + 2 * length(values) / 3):length(values)])
+
+     values <- sapply(values, function(x) crayon::style("\u25a0", crayon::make_style(x, colors = 256)))
+
+     if (length(values) > max_chars) {
+       values <- values[seq_len(max_chars - 3)]
+       values <- paste0(values, collapse = "")
+       values <- paste0(values, '...')
+
+     } else values <- paste0(values, collapse = "")
+
    } else {
 
+     values <- sprintf("%.2f", as.numeric(x))
      values <- paste0(values, collapse = ", ")
      values <- substr(values, 1, nchar(msg) - 3)
      values <- paste0(values, '...')

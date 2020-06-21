@@ -1,3 +1,16 @@
+#' Confirm matches using a more detailed colour signature
+#'
+#' \code{confirm_matches} TKTK
+#'
+#' TKTK
+#'
+#' @param data TKTK
+#' @param check_threshold TKTK
+#' @param confirm_thresholds TKTK
+#' @param quiet TKTK
+#' @return TKTK
+#' @export
+
 confirm_matches <- function(data, check_threshold = 0.99,
                             confirm_thresholds = c(0.95, 0.98), quiet = FALSE) {
 
