@@ -19,9 +19,9 @@ print.matchr_sig <- function(x, ...) {
 
      values <- sprintf("%.2f", as.numeric(x))
      values <- substr(values, 3, 4)
+     values <- ifelse(values == "00", "0", values)
      values <- sapply(values, function(x) crayon::style("\u25a0",
                                                         paste0("grey", x)))
-     values <- ifelse(values == "grey00", "grey0", values)
 
      if (length(values) > max_chars) {
        values <- values[seq_len(max_chars - 3)]
