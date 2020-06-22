@@ -126,7 +126,7 @@ identify_image.cimg <- function(image, method = "greyscale", bands = 20,
 
     # Fail safe in case image is greyscale
     if (dim(image)[[4]] == 1) {
-      colour_split <- imager::as.imlist(image, image, image)
+      colour_split <- imager::as.imlist(list(image, image, image))
       } else colour_split <- imager::channels(image, 1:3)
 
     row_split <- base::lapply(colour_split, imager::imsplit, "y", bands)
