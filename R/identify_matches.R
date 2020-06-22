@@ -13,7 +13,7 @@
 #' @return TKTK
 #' @export
 
-identify_matches <- function(image_matrix, threshold = 0.99, quiet = FALSE) {
+identify_matches <- function(image_matrix, threshold = 0.975, quiet = FALSE) {
 
   ### Error handling and object initialization #################################
 
