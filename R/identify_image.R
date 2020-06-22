@@ -47,9 +47,30 @@ identify_image <- function(image, method = "greyscale", bands = 20,
 identify_image.cimg <- function(image, method = "greyscale", bands = 20,
                                 rm_black_bars = TRUE, ...) {
 
+  ### Error checking ###########################################################
+
   stopifnot(is.numeric(bands))
   stopifnot(is.logical(rm_black_bars))
   stopifnot(method %in% c("greyscale", "rgb"))
+
+
+  ### Return NA if the image doesn't have enough rows or columns ###############
+
+  if (dim(image)[[1]] < bands || dim(image)[[2]] < bands) {
+
+    return(
+      new_matchr_sig(
+        rep(NA_real_, times = bands * if (method == "greyscale") 2 else 3),
+        if (is.null(attr(image, "file"))) NA_character_ else attr(image,
+                                                                  "file"),
+        NA_character_,
+        NA_real_)
+    )
+
+  }
+
+
+  ### Split the image then check for black bars ################################
 
   row_split <- imager::imsplit(image, "y", bands)
   row_means <- base::lapply(row_split, rowMeans)
@@ -88,6 +109,9 @@ identify_image.cimg <- function(image, method = "greyscale", bands = 20,
     }
   }
 
+
+  ### Finish process if method is "greyscale" ##################################
+
   if (method == "greyscale") {
     col_split <- imager::imsplit(image, "x", bands)
     col_means <- base::lapply(col_split, colMeans)
@@ -95,9 +119,15 @@ identify_image.cimg <- function(image, method = "greyscale", bands = 20,
     result <- c(row_means, col_means)
   }
 
+
+  ### Finish process if method is "rgb" ########################################
+
   if (method == "rgb") {
 
-    colour_split <- imager::channels(image, 1:3)
+    # Fail safe in case image is greyscale
+    if (dim(image)[[4]] == 1) {
+      colour_split <- imager::as.imlist(image, image, image)
+      } else colour_split <- imager::channels(image, 1:3)
 
     row_split <- base::lapply(colour_split, imager::imsplit, "y", bands)
     row_split <- unlist(row_split, recursive = FALSE)
@@ -112,6 +142,9 @@ identify_image.cimg <- function(image, method = "greyscale", bands = 20,
     result <- c(row_means, col_means)
 
   }
+
+
+  ### Construct matchr_sig object and return result ############################
 
   result <- new_matchr_sig(
     result,
