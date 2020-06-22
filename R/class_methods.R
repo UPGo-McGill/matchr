@@ -19,7 +19,7 @@ print.matchr_sig <- function(x, ...) {
 
      values <- sprintf("%.2f", as.numeric(x))
      values <- substr(values, 3, 4)
-     values <- ifelse(values == "00", "0", values)
+     values <- ifelse(substr(values, 1, 1) == "0", substr(values, 2, 2), values)
      values <- sapply(values, function(x) crayon::style("\u25a0",
                                                         paste0("grey", x)))
 
