@@ -4,7 +4,7 @@
 \alias{identify_matches}
 \title{Identify matches from a matchr image matrix}
 \usage{
-identify_matches(image_matrix, threshold = 0.99, quiet = FALSE)
+identify_matches(image_matrix, threshold = 0.975, quiet = FALSE)
 }
 \arguments{
 \item{image_matrix}{A matrix of image correlations produced by

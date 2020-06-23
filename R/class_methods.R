@@ -89,6 +89,39 @@ print.matchr_sig <- function(x, ...) {
 
 }
 
+#' @method print matchr_sig_list
+#' @export
+
+print.matchr_sig_list <- function(x, ...) {
+
+  list_msg <- paste0('# An image signature list: ',
+                     prettyNum(length(x), ","),
+                     " signatures")
+
+  if (length(x) > 12) {
+
+    extra_row <- paste0("# \u2026 with ", length(x) - 10,
+                        " more signatures")
+
+    x_display <- x[1:10]
+
+  } else {
+
+    extra_row <- NULL
+    x_display <- x
+
+  }
+
+  cat(list_msg)
+  cat("\n")
+  lapply(x_display, print)
+  cat(extra_row)
+
+  invisible(x)
+
+}
+
+
 
 #' @method print matchr_matrix
 #' @export

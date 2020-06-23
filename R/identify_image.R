@@ -203,6 +203,7 @@ identify_image.character <- function(image, method = "greyscale", bands = 20,
 
   if (inherits(result[[1]], "list")) {
     result <- unlist(result, recursive = FALSE)
+    result <- new_matchr_sig_list(result)
   } else {
     result <- result[[1]]
   }
@@ -299,6 +300,8 @@ identify_image.list <- function(image, method = "greyscale", bands = 20,
       })
 
   })
+
+  result <- new_matchr_sig_list(result)
 
   return(result)
 }

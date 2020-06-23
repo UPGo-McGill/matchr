@@ -14,6 +14,16 @@ new_matchr_sig <- function(x, file, method, aspect_ratio) {
 
 }
 
+
+new_matchr_sig_list <- function(x) {
+
+  stopifnot(is.list(x))
+
+  structure(x, class = c("matchr_sig_list", "list"))
+
+}
+
+
 new_matchr_matrix <- function(x, x_aspect_ratio, y_aspect_ratio) {
 
   stopifnot(is.matrix(x))
