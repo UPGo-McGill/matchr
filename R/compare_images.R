@@ -10,9 +10,9 @@
 
 compare_images <- function(result) {
 
-  ### Prepare viewer ###########################################################
+  ### Error checking ###########################################################
 
-  viewer <- getOption("viewer")
+  stopifnot(is.data.frame(result))
 
 
   ### Create temp folder and file path #########################################
@@ -48,6 +48,32 @@ compare_images <- function(result) {
   y_paths <- strsplit(result$y_name, '/')
   y_paths <- sapply(y_paths, function(x) x[[length(x)]])
   y_paths <- paste0("y/", y_paths)
+
+
+
+
+  ### Launch Shiny app if Shiny is present #####################################
+
+  if (requireNamespace("shiny", quietly = TRUE)) {
+
+    shiny::shinyOptions(result = result, x_dir = x_dir, y_dir = y_dir,
+                        x_paths = x_paths, y_paths = y_paths)
+
+    output <-
+      shiny::runApp(appDir = system.file("compare_images", package = "matchr"))
+
+    output <- new_matchr_change_table(output)
+
+    return(output)
+
+  }
+
+
+  ### Issue warning and prepare viewer #########################################
+
+  warning("For interactive image comparison, install the \"shiny\" package.")
+
+  viewer <- getOption("viewer")
 
 
   ### Create header and footer strings #########################################

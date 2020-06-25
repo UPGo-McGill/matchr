@@ -221,7 +221,8 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
 
     x_list <- base::lapply(x_list, function(x_elem) {
 
-      chunks <- min(future::nbrOfWorkers() * 2, floor(length(x_elem) / 4))
+      chunks <- min(future::nbrOfWorkers() * 2,
+                    max(floor(length(x_elem) / 4), 1))
 
       chunk_size <- ceiling(length(x_elem) / chunks)
 

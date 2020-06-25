@@ -28,6 +28,7 @@ Suggests:
     future (>= 1.17.0),
     future.apply (>= 1.5.0),
     progressr (>= 0.6.0),
+    shiny (>= 1.4.0),
     testthat (>= 2.3.2),
     tibble (>= 3.0.1)
 BugReports: https://github.com/UPGo-McGill/matchr/issues

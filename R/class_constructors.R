@@ -52,3 +52,14 @@ new_matchr_matrix_list <- function(x, x_files, y_files) {
             )
 
 }
+
+
+new_matchr_change_table <- function(x) {
+
+  stopifnot(is.data.frame(x))
+
+  structure(x,
+            class = c("matchr_change_table", class(x))
+            )
+
+}

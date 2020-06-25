@@ -48,6 +48,14 @@ confirm_matches <- function(data, check_threshold = 0.99,
 
   to_check <- data[data$correlation < check_threshold,]
 
+  # Exit early if to_check is empty
+  if (nrow(to_check) == 0) {
+
+    data$confirmation <- "match"
+    return(data)
+
+  }
+
   x_samples <- identify_image(to_check$x_name, method = "rgb")
   y_samples <- identify_image(to_check$y_name, method = "rgb")
 
@@ -79,11 +87,6 @@ confirm_matches <- function(data, check_threshold = 0.99,
   data$colour <- NULL
 
   data <- data[order(data$matrix, data$x_index, data$y_index),]
-
-  data$confirmation <- factor(data$confirmation,
-                              levels = c("no match", "possible match",
-                                         "likely match", "match"),
-                              ordered = TRUE)
 
 
   ## Return result -------------------------------------------------------------
