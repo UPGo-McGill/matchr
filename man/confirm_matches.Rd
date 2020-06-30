@@ -8,6 +8,7 @@ confirm_matches(
   data,
   check_threshold = 0.99,
   confirm_thresholds = c(0.95, 0.98),
+  batch_size = 100,
   quiet = FALSE
 )
 }
@@ -17,6 +18,8 @@ confirm_matches(
 \item{check_threshold}{TKTK}
 
 \item{confirm_thresholds}{TKTK}
+
+\item{batch_size}{TKTK}
 
 \item{quiet}{TKTK}
 }

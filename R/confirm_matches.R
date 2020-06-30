@@ -7,12 +7,15 @@
 #' @param data TKTK
 #' @param check_threshold TKTK
 #' @param confirm_thresholds TKTK
+#' @param batch_size TKTK
 #' @param quiet TKTK
 #' @return TKTK
 #' @export
 
 confirm_matches <- function(data, check_threshold = 0.99,
-                            confirm_thresholds = c(0.95, 0.98), quiet = FALSE) {
+                            confirm_thresholds = c(0.95, 0.98),
+                            batch_size = 100,
+                            quiet = FALSE) {
 
   ### Error handling and object initialization #################################
 
@@ -56,8 +59,10 @@ confirm_matches <- function(data, check_threshold = 0.99,
 
   }
 
-  x_samples <- identify_image(to_check$x_name, method = "rgb")
-  y_samples <- identify_image(to_check$y_name, method = "rgb")
+  x_samples <- identify_image(to_check$x_name, method = "rgb",
+                              batch_size = batch_size)
+  y_samples <- identify_image(to_check$y_name, method = "rgb",
+                              batch_size = batch_size)
 
   to_check$colour <- match_signatures_pairwise(x_samples, y_samples)
 
