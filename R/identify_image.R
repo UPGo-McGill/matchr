@@ -180,6 +180,14 @@ identify_image.character <- function(image, method = "greyscale", bands = 20,
   ### Prepare iterations and result according to batch_size argument ###########
 
   iterations <- ceiling(length(image) / batch_size)
+
+  # With >= 10 batches, replace progress reporting
+  if (iterations >= 10) {
+
+
+
+  }
+
   result <- vector("list", iterations)
 
 
@@ -189,6 +197,43 @@ identify_image.character <- function(image, method = "greyscale", bands = 20,
 
     start <- (i - 1) * batch_size + 1
     end <- min(i * batch_size, length(image))
+
+    ## With >= 10 batches, replace progress reporting --------------------------
+
+    if (iterations >= 10 && !quiet) {
+
+      if (requireNamespace("progressr", quietly = TRUE)) {
+
+        with_progress <- progressr::with_progress
+        progressor <- progressr::progressor
+
+        if (requireNamespace("crayon", quietly = TRUE)) {
+
+          # Used styled text if crayon package is present
+          progressr::handlers(
+            progressr::handler_progress(
+              format = crayon::silver(crayon::italic(paste0(
+                "Analyzing image :current of :total ",
+                "(:tick_rate/s) [:bar] :percent, ETA: :eta"))),
+              show_after = 0
+            ))
+
+        } else {
+
+          # Otherwise use default text
+          progressr::handlers(
+            progressr::handler_progress(
+              format = paste0(
+                "Analyzing image :current of :total ",
+                "(:tick_rate/s) [:bar] :percent, ETA: :eta"),
+              show_after = 0
+            ))
+        }
+
+      } else quiet <- TRUE
+    }
+
+
 
     if (iterations > 1) message("Processing batch ", i, " of ", iterations, ".")
 

@@ -1,3 +1,14 @@
+#' Create a new matchr_sig object
+#'
+#' @param x A numeric vector.
+#' @param file A character string, corresponding to the path or URL of the file
+#' from which the signature has been generated.
+#' @param method A character string, either "greyscale" or "rgb", depending on
+#' the method of signature generation used.
+#' @param aspect_ratio A numeric scalar, giving the aspect ratio of the image.
+#' @return An object of class `matchr_sig`.
+#' @export
+
 new_matchr_sig <- function(x, file, method, aspect_ratio) {
 
   stopifnot(is.numeric(x))
@@ -14,6 +25,11 @@ new_matchr_sig <- function(x, file, method, aspect_ratio) {
 
 }
 
+#' Create a new matchr_sig_list object
+#'
+#' @param x A list of matchr_sig objects.
+#' @return An object of class `matchr_sig_list`.
+#' @export
 
 new_matchr_sig_list <- function(x) {
 

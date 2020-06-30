@@ -160,7 +160,6 @@ print.matchr_matrix <- function(x, ...) {
 }
 
 
-
 #' @method print matchr_matrix_list
 #' @export
 
@@ -228,5 +227,15 @@ print.matchr_matrix_list <- function(x, ...) {
   lapply(element_msgs, cat)
 
   invisible(x)
+
+}
+
+
+#' @method c matchr_sig_list
+#' @export
+
+c.matchr_sig_list <- function(...) {
+
+  new_matchr_sig_list(c(...))
 
 }
