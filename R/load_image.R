@@ -23,86 +23,20 @@ load_image <- function(file, quiet = FALSE) {
 
   ### Error checking ###########################################################
 
-  stopifnot(is.character(file))
-  stopifnot(is.logical(quiet))
-
-
-  ### Handle future options ####################################################
-
-  if (requireNamespace("future", quietly = TRUE)) {
-
-    if (!requireNamespace("future.apply", quietly = TRUE)) {
-      warning("Please install the `future.apply` package to enable ",
-              "parallel processing.", call. = FALSE, immediate. = TRUE)
-    }
-
-    if (requireNamespace("future.apply", quietly = TRUE)) {
-
-      # Overwrite lapply with future.lapply for parallel processing
-      lapply <- future.apply::future_lapply
-
-    }
-  }
-
-
-  ### Handle progressr options #################################################
-
-  ## Create NULL progress functions in case {progressr} is not installed -------
-
-  with_progress <- function(expr) expr
-  progressor <- function(...) function(...) NULL
-
-
-  ## Disable progress reporting for fewer than 10 items ------------------------
-
-  if (length(file) < 10) quiet <- TRUE
-
-
-  ## Set up progress bar -------------------------------------------------------
-
-  if (!quiet) {
-
-    if (requireNamespace("progressr", quietly = TRUE)) {
-
-      with_progress <- progressr::with_progress
-      progressor <- progressr::progressor
-
-      if (requireNamespace("crayon", quietly = TRUE)) {
-
-        # Used styled text if crayon package is present
-        progressr::handlers(
-          progressr::handler_progress(
-            format = crayon::silver(crayon::italic(paste0(
-              "Loading image :current of :total ",
-              "(:tick_rate/s) [:bar] :percent, ETA: :eta"))),
-            show_after = 0
-          ))
-
-      } else {
-
-        # Otherwise use default text
-        progressr::handlers(
-          progressr::handler_progress(
-            format = paste0(
-              "Loading image :current of :total ",
-              "(:tick_rate/s) [:bar] :percent, ETA: :eta"),
-            show_after = 0
-          ))
-      }
-
-    } else quiet <- TRUE
-  }
+  stopifnot(is.character(file), is.logical(quiet))
 
 
   ### Import and process images ################################################
 
-  ## Import images with proper progress handling -------------------------------
+  ## Import images with proper progress handling -------------------------------z
 
- with_progress({
+  handler_matchr("Loading image")
+
+  with_progress({
 
    pb <- progressor(steps = length(file))
 
-   imgs <- lapply(file, function(x) {
+   imgs <- par_lapply(file, function(x) {
      pb()
      tryCatch(suppressMessages(imager::load.image(x)), error = function(e) {
        warning("Input '", x, "' is invalid; output is NA.", call. = FALSE)

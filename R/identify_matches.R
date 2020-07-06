@@ -17,93 +17,21 @@ identify_matches <- function(image_matrix, threshold = 0.975, quiet = FALSE) {
 
   ### Error handling and object initialization #################################
 
-  stopifnot(inherits(image_matrix, "matchr_matrix_list"))
-  stopifnot(is.numeric(threshold))
-  stopifnot(is.logical(quiet))
-
-
-  ### Handle future options ####################################################
-
-  parallel <- FALSE
-
-  if (requireNamespace("future", quietly = TRUE)) {
-
-    options(future.globals.maxSize = +Inf)
-
-    if (!requireNamespace("future.apply", quietly = TRUE)) {
-      warning("Please install the `future.apply` package to enable ",
-              "parallel processing.", call. = FALSE, immediate. = TRUE)
-    }
-
-    if (requireNamespace("future.apply", quietly = TRUE)) {
-
-      if (future::nbrOfWorkers() > 1) parallel <- TRUE
-
-      # Overwrite *apply with future.apply for parallel processing
-      lapply <- future.apply::future_lapply
-
-    }
-  }
-
-
-  ### Handle progressr options #################################################
-
-  ## Create NULL progress functions in case {progressr} is not installed -------
-
-  with_progress <- function(expr) expr
-  progressor <- function(...) function(...) NULL
-
-
-  ## Disable progress reporting for single thread or fewer than 100 items ------
-
-  if (length(image_matrix) < 5 || !parallel) quiet <- TRUE
-
-
-  ## Set up progress bar -------------------------------------------------------
-
-  if (!quiet) {
-
-    if (requireNamespace("progressr", quietly = TRUE)) {
-
-      with_progress <- progressr::with_progress
-      progressor <- progressr::progressor
-
-      if (requireNamespace("crayon", quietly = TRUE)) {
-
-        # Used styled text if crayon package is present
-        progressr::handlers(
-          progressr::handler_progress(
-            format = crayon::silver(crayon::italic(paste0(
-              "Identifying matches, batch :current of :total ",
-              "(:tick_rate/s) [:bar] :percent, ETA: :eta"))),
-            show_after = 0
-          ))
-
-      } else {
-
-        # Otherwise use default text
-        progressr::handlers(
-          progressr::handler_progress(
-            format = paste0(
-              "Identifying matches, batch :current of :total ",
-              "(:tick_rate/s) [:bar] :percent, ETA: :eta"),
-            show_after = 0
-          ))
-      }
-
-    } else quiet <- TRUE
-  }
+  stopifnot(inherits(image_matrix, "matchr_matrix_list"), is.numeric(threshold),
+            is.logical(quiet))
 
 
   ### Find matches #############################################################
 
   ## Run lapply loop -----------------------------------------------------------
 
+  handler_matchr("Identifying matches")
+
   with_progress({
 
     pb <- progressor(along = image_matrix)
 
-    match_list <- lapply(image_matrix, function(x) {
+    match_list <- par_lapply(image_matrix, function(x) {
 
       pb()
 
@@ -114,8 +42,8 @@ identify_matches <- function(image_matrix, threshold = 0.975, quiet = FALSE) {
       dimnames(match_index)[[2]] <- c("x_index", "y_index")
 
       # Convert to tibble or data frame
-      if (requireNamespace("tibble", quietly = TRUE)) {
-        matches <- tibble::as_tibble(match_index)
+      if (requireNamespace("dplyr", quietly = TRUE)) {
+        matches <- dplyr::as_tibble(match_index)
       } else matches <- as.data.frame(match_index)
 
       # Add names

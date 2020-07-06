@@ -24,29 +24,6 @@ confirm_matches <- function(data, check_threshold = 0.99,
   stopifnot(is.logical(quiet))
 
 
-  ### Handle future options ####################################################
-
-  parallel <- FALSE
-
-  if (requireNamespace("future", quietly = TRUE)) {
-
-    options(future.globals.maxSize = +Inf)
-
-    if (!requireNamespace("future.apply", quietly = TRUE)) {
-      warning("Please install the `future.apply` package to enable ",
-              "parallel processing.", call. = FALSE, immediate. = TRUE)
-    }
-
-    if (requireNamespace("future.apply", quietly = TRUE)) {
-
-      if (future::nbrOfWorkers() > 1) parallel <- TRUE
-
-      # Overwrite *apply with future.apply for parallel processing
-      lapply <- future.apply::future_lapply
-    }
-  }
-
-
   ### Subset data and load relevant images #####################################
 
   to_check <- data[data$correlation < check_threshold,]
@@ -99,6 +76,3 @@ confirm_matches <- function(data, check_threshold = 0.99,
   return(data)
 
 }
-
-
-

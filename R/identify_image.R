@@ -49,9 +49,8 @@ identify_image.cimg <- function(image, method = "greyscale", bands = 20,
 
   ### Error checking ###########################################################
 
-  stopifnot(is.numeric(bands))
-  stopifnot(is.logical(rm_black_bars))
-  stopifnot(method %in% c("greyscale", "rgb"))
+  stopifnot(method %in% c("greyscale", "rgb"), is.numeric(bands),
+            is.logical(rm_black_bars))
 
 
   ### Return NA if the image doesn't have enough rows or columns ###############
@@ -73,7 +72,7 @@ identify_image.cimg <- function(image, method = "greyscale", bands = 20,
   ### Split the image then check for black bars ################################
 
   row_split <- imager::imsplit(image, "y", bands)
-  row_means <- base::lapply(row_split, rowMeans)
+  row_means <- lapply(row_split, rowMeans)
   row_means <- sapply(row_means, mean)
 
   # Check for black bars
@@ -101,7 +100,7 @@ identify_image.cimg <- function(image, method = "greyscale", bands = 20,
 
       if (method == "greyscale") {
         row_split <- imager::imsplit(image, "y", bands)
-        row_means <- base::lapply(row_split, rowMeans)
+        row_means <- lapply(row_split, rowMeans)
         row_means <- sapply(row_means, mean)
       }
 
@@ -114,7 +113,7 @@ identify_image.cimg <- function(image, method = "greyscale", bands = 20,
 
   if (method == "greyscale") {
     col_split <- imager::imsplit(image, "x", bands)
-    col_means <- base::lapply(col_split, colMeans)
+    col_means <- lapply(col_split, colMeans)
     col_means <- sapply(col_means, mean)
     result <- c(row_means, col_means)
   }
@@ -129,14 +128,14 @@ identify_image.cimg <- function(image, method = "greyscale", bands = 20,
       colour_split <- imager::as.imlist(list(image, image, image))
       } else colour_split <- imager::channels(image, 1:3)
 
-    row_split <- base::lapply(colour_split, imager::imsplit, "y", bands)
+    row_split <- lapply(colour_split, imager::imsplit, "y", bands)
     row_split <- unlist(row_split, recursive = FALSE)
-    row_means <- base::lapply(row_split, rowMeans)
+    row_means <- lapply(row_split, rowMeans)
     row_means <- sapply(row_means, mean)
 
-    col_split <- base::lapply(colour_split, imager::imsplit, "x", bands)
+    col_split <- lapply(colour_split, imager::imsplit, "x", bands)
     col_split <- unlist(col_split, recursive = FALSE)
-    col_means <- base::lapply(col_split, colMeans)
+    col_means <- lapply(col_split, colMeans)
     col_means <- sapply(col_means, mean)
 
     result <- c(row_means, col_means)
@@ -173,8 +172,9 @@ identify_image.character <- function(image, method = "greyscale", bands = 20,
 
   ### Error checking ###########################################################
 
-  stopifnot(is.numeric(bands))
-  stopifnot(is.logical(rm_black_bars))
+  stopifnot(method %in% c("greyscale", "rgb"), is.numeric(bands),
+            is.logical(rm_black_bars), is.numeric(batch_size),
+            is.logical(quiet))
 
 
   ### Prepare iterations and result according to batch_size argument ###########
@@ -197,43 +197,6 @@ identify_image.character <- function(image, method = "greyscale", bands = 20,
 
     start <- (i - 1) * batch_size + 1
     end <- min(i * batch_size, length(image))
-
-    ## With >= 10 batches, replace progress reporting --------------------------
-
-    if (iterations >= 10 && !quiet) {
-
-      if (requireNamespace("progressr", quietly = TRUE)) {
-
-        with_progress <- progressr::with_progress
-        progressor <- progressr::progressor
-
-        if (requireNamespace("crayon", quietly = TRUE)) {
-
-          # Used styled text if crayon package is present
-          progressr::handlers(
-            progressr::handler_progress(
-              format = crayon::silver(crayon::italic(paste0(
-                "Analyzing image :current of :total ",
-                "(:tick_rate/s) [:bar] :percent, ETA: :eta"))),
-              show_after = 0
-            ))
-
-        } else {
-
-          # Otherwise use default text
-          progressr::handlers(
-            progressr::handler_progress(
-              format = paste0(
-                "Analyzing image :current of :total ",
-                "(:tick_rate/s) [:bar] :percent, ETA: :eta"),
-              show_after = 0
-            ))
-        }
-
-      } else quiet <- TRUE
-    }
-
-
 
     if (iterations > 1) message("Processing batch ", i, " of ", iterations, ".")
 
@@ -267,79 +230,20 @@ identify_image.character <- function(image, method = "greyscale", bands = 20,
 identify_image.list <- function(image, method = "greyscale", bands = 20,
                                 rm_black_bars = TRUE, quiet = FALSE, ...) {
 
-  ### Handle future options ####################################################
+  ### Error checking ###########################################################
 
-  if (requireNamespace("future", quietly = TRUE)) {
-
-    if (!requireNamespace("future.apply", quietly = TRUE)) {
-      warning("Please install the `future.apply` package to enable ",
-              "parallel processing.", call. = FALSE, immediate. = TRUE)
-    }
-
-    if (requireNamespace("future.apply", quietly = TRUE)) {
-
-      # Overwrite lapply with future.lapply for parallel processing
-      lapply <- future.apply::future_lapply
-
-    }
-  }
-
-
-  ### Handle progressr options #################################################
-
-  ## Create NULL progress functions in case {progressr} is not installed -------
-
-  with_progress <- function(expr) expr
-  progressor <- function(...) function(...) NULL
-
-
-  ## Disable progress reporting for fewer than 10 items ------------------------
-
-  if (length(image) < 10) quiet <- TRUE
-
-
-  ## Set up progress bar -------------------------------------------------------
-
-  if (!quiet) {
-
-    if (requireNamespace("progressr", quietly = TRUE)) {
-
-      with_progress <- progressr::with_progress
-      progressor <- progressr::progressor
-
-      if (requireNamespace("crayon", quietly = TRUE)) {
-
-        # Used styled text if crayon package is present
-        progressr::handlers(
-          progressr::handler_progress(
-            format = crayon::silver(crayon::italic(paste0(
-              "Analyzing image :current of :total ",
-              "(:tick_rate/s) [:bar] :percent, ETA: :eta"))),
-            show_after = 0
-          ))
-
-      } else {
-
-        # Otherwise use default text
-        progressr::handlers(
-          progressr::handler_progress(
-            format = paste0(
-              "Analyzing image :current of :total ",
-              "(:tick_rate/s) [:bar] :percent, ETA: :eta"),
-            show_after = 0
-          ))
-      }
-
-    } else quiet <- TRUE
-  }
+  stopifnot(method %in% c("greyscale", "rgb"), is.numeric(bands),
+            is.logical(rm_black_bars), is.logical(quiet))
 
 
   ### Run function #############################################################
 
+  handler_matchr("Analyzing image")
+
   with_progress({
 
     pb <- progressor(along = image)
-    result <- lapply(image, function(x) {
+    result <- par_lapply(image, function(x) {
       pb()
       identify_image(x, method, bands, rm_black_bars = rm_black_bars)
       })
@@ -359,6 +263,9 @@ identify_image.list <- function(image, method = "greyscale", bands = 20,
 identify_image.default <- function(image, method = "greyscale", bands = 20,
                                    rm_black_bars = TRUE, ...) {
 
+  stopifnot(method %in% c("greyscale", "rgb"), is.numeric(bands),
+            is.logical(rm_black_bars))
+
   new_matchr_sig(
     rep(NA_real_, times = bands * if (method == "greyscale") 2 else 3),
     if (is.null(attr(image, "file"))) NA_character_ else attr(image, "file"),
@@ -366,4 +273,3 @@ identify_image.default <- function(image, method = "greyscale", bands = 20,
     NA_real_
   )
 }
-

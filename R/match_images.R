@@ -34,85 +34,26 @@
 
 match_images <- function(x, y = NULL, bands = 25, quiet = FALSE) {
 
-  ### Handle future options ####################################################
+  ### Error checking ###########################################################
 
-  if (requireNamespace("future", quietly = TRUE)) {
-
-    if (!requireNamespace("future.apply", quietly = TRUE)) {
-      warning("Please install the `future.apply` package to enable ",
-              "parallel processing.", call. = FALSE, immediate. = TRUE)
-    }
-
-    if (requireNamespace("future.apply", quietly = TRUE)) {
-
-      # Overwrite lapply with future.lapply for parallel processing
-      lapply <- future.apply::future_lapply
-
-    }
-  }
-
-
-  ### Handle progressr options #################################################
-
-  ## Create NULL progress bar in case {progressr} is not installed -------------
-
-  pb <- function() NULL
-
-
-  ## Disable progress reporting for fewer than 10 items ------------------------
-
-  if (length(x + y) < 20) quiet <- TRUE
-
-
-  ## Set up progress bar -------------------------------------------------------
-
-  if (!quiet) {
-
-    if (requireNamespace("progressr", quietly = TRUE)) {
-
-      if (requireNamespace("crayon", quietly = TRUE)) {
-
-        # Used styled text if crayon package is present
-        progressr::handlers(
-          progressr::handler_progress(
-            format = crayon::silver(crayon::italic(paste0(
-              "Analyzing image :current of :total ",
-              "(:tick_rate/s) [:bar] :percent, ETA: :eta"))),
-            show_after = 0
-          ))
-
-      } else {
-
-        # Otherwise use default text
-        progressr::handlers(
-          progressr::handler_progress(
-            format = paste0(
-              "Analyzing image :current of :total ",
-              "(:tick_rate/s) [:bar] :percent, ETA: :eta"),
-            show_after = 0
-          ))
-      }
-
-    } else quiet <- TRUE
-  }
+  stopifnot(is.numeric(bands), is.logical(quiet))
 
 
   ### Get image signatures #####################################################
 
   ## Get signatures for x ------------------------------------------------------
 
-  if (!quiet) {
+  handler_matchr("Analyzing image")
 
-    progressr::with_progress({
+  with_progress({
 
-      pb <- progressr::progressor(steps = length(x))
+      pb <- progressor(steps = length(x))
 
-      x_ids <- lapply(x, function(x) {
+      x_ids <- par_lapply(x, function(x) {
         pb()
         identify_image(x, bands = bands)
       })
     })
-  } else x_ids <- lapply(x, identify_image, bands = bands)
 
   # Create matrix
   x_ids <- matrix(unlist(x_ids), ncol = length(x))
@@ -122,18 +63,15 @@ match_images <- function(x, y = NULL, bands = 25, quiet = FALSE) {
 
   if (!missing(y)) {
 
-    if (!quiet) {
+    with_progress({
 
-      progressr::with_progress({
+      pb <- progressor(steps = length(y))
 
-        pb <- progressr::progressor(steps = length(y))
-
-        y_ids <- lapply(y, function(x) {
+        y_ids <- par_lapply(y, function(x) {
           pb()
           identify_image(x, bands = bands)
         })
       })
-    } else y_ids <- lapply(y, identify_image, bands = bands)
 
     # Create matrix
     y_ids <- matrix(unlist(y_ids), ncol = length(y))
@@ -144,22 +82,6 @@ match_images <- function(x, y = NULL, bands = 25, quiet = FALSE) {
   ### Calculate correlation ####################################################
 
   # Currently single-threaded with no progress reporting
-
-  # if (requireNamespace("future", quietly = TRUE) &&
-  #     requireNamespace("future.apply", quietly = TRUE)) {
-  #
-  #   future.apply::future_lapply(x_ids, function())
-  #
-  #
-  #
-  #
-  # } else {
-
-    if (missing(y)) stats::cor(x_ids) else stats::cor(x_ids, y_ids)
-
-  # }
-
-
-
+  if (missing(y)) stats::cor(x_ids) else stats::cor(x_ids, y_ids)
 
 }

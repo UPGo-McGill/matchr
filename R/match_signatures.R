@@ -50,85 +50,10 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
 
   ### Error handling and object initialization #################################
 
-  stopifnot(is.logical(compare_aspect_ratios))
-  stopifnot(is.logical(quiet))
+  stopifnot(is.logical(compare_aspect_ratios), is.logical(quiet))
 
   # Temporarily disable compare_aspect_ratios unless y is provided
   if (missing(y)) compare_aspect_ratios <- FALSE
-
-
-  ### Handle future options ####################################################
-
-  parallel <- FALSE
-
-  if (requireNamespace("future", quietly = TRUE)) {
-
-    options(future.globals.maxSize = +Inf)
-
-    if (!requireNamespace("future.apply", quietly = TRUE)) {
-      warning("Please install the `future.apply` package to enable ",
-              "parallel processing.", call. = FALSE, immediate. = TRUE)
-    }
-
-    if (requireNamespace("future.apply", quietly = TRUE)) {
-
-      if (future::nbrOfWorkers() > 1) parallel <- TRUE
-
-      # Overwrite *apply with future.apply for parallel processing
-      lapply <- future.apply::future_lapply
-      mapply <- future.apply::future_mapply
-
-    }
-  }
-
-
-  ### Handle progressr options #################################################
-
-  ## Create NULL progress functions in case {progressr} is not installed -------
-
-  with_progress <- function(expr) expr
-  progressor <- function(...) function(...) NULL
-
-
-  ## Disable progress reporting for single thread or fewer than 100 items ------
-
-  if (length(x) < 100 || !parallel) quiet <- TRUE
-
-
-  ## Set up progress bar -------------------------------------------------------
-
-  if (!quiet) {
-
-    if (requireNamespace("progressr", quietly = TRUE)) {
-
-      with_progress <- progressr::with_progress
-      progressor <- progressr::progressor
-
-      if (requireNamespace("crayon", quietly = TRUE)) {
-
-        # Used styled text if crayon package is present
-        progressr::handlers(
-          progressr::handler_progress(
-            format = crayon::silver(crayon::italic(paste0(
-              "Correlating images, batch :current of :total ",
-              "(:tick_rate/s) [:bar] :percent, ETA: :eta"))),
-            show_after = 0
-          ))
-
-      } else {
-
-        # Otherwise use default text
-        progressr::handlers(
-          progressr::handler_progress(
-            format = paste0(
-              "Correlating images, batch :current of :total ",
-              "(:tick_rate/s) [:bar] :percent, ETA: :eta"),
-            show_after = 0
-          ))
-      }
-
-    } else quiet <- TRUE
-  }
 
 
   ### Split clusters for compare_aspect_ratios == TRUE #########################
@@ -217,35 +142,27 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
 
   ### Subdivide x lists for parallel processing ################################
 
-  if (parallel) {
+  x_list <- lapply(x_list, function(x_elem) {
 
-    x_list <- base::lapply(x_list, function(x_elem) {
+    chunks <- min(nbrOfWorkers() * 2, max(floor(length(x_elem) / 4), 1))
+    chunk_size <- ceiling(length(x_elem) / chunks)
 
-      chunks <- min(future::nbrOfWorkers() * 2,
-                    max(floor(length(x_elem) / 4), 1))
+    # Check to make sure the last chunk won't be empty
+    while (chunk_size * (chunks - 1) >= length(x_elem)) chunks <- chunks - 1
 
-      chunk_size <- ceiling(length(x_elem) / chunks)
+    data_list <- vector("list", chunks)
 
-      # Check to make sure the last chunk won't be empty
-      while (chunk_size * (chunks - 1) >= length(x_elem)) chunks <- chunks - 1
+    for (i in seq_len(chunks)) {
 
-      data_list <- vector("list", chunks)
-
-      for (i in seq_len(chunks)) {
-
-        start <- (i - 1) * chunk_size + 1
-        end <- min(i * chunk_size, length(x_elem))
-
-        data_list[[i]] <- x_elem[start:end]
+      start <- (i - 1) * chunk_size + 1
+      end <- min(i * chunk_size, length(x_elem))
+      data_list[[i]] <- x_elem[start:end]
 
       }
 
-      data_list
+    data_list
 
     })
-
-  # If list isn't being split, just nest each list element in its own list
-  } else x_list <- lapply(x_list, list)
 
 
   ### Calculate correlations ###################################################
@@ -253,6 +170,8 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
   ## Version for x and y -------------------------------------------------------
 
   if (!missing(y)) {
+
+    handler_matchr("Correlating images, batch")
 
     with_progress({
 
@@ -269,14 +188,14 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
         y_names <- sapply(y_list[[n]], attr, "file")
 
         # Prepare matrices
-        x_matrix <- base::lapply(x_list[[n]], function(x) {
+        x_matrix <- lapply(x_list[[n]], function(x) {
           matrix(unlist(x), ncol = length(x))})
 
         y_matrix <- matrix(unlist(y_list[[n]]), ncol = length(y_list[[n]]))
 
         # Calculate correlation matrix
         suppressWarnings({
-          result[[n]] <- mapply(function(x, names) {
+          result[[n]] <- par_mapply(function(x, names) {
 
             output <- stats::cor(x, y_matrix)
             rownames(output) <- names
@@ -314,49 +233,15 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
 
   ### Construct matchr_matrix objects of out list elements #####################
 
-  ## Set up new progress bar ---------------------------------------------------
+  ## rbind ---------------------------------------------------------------------
 
-  if (!quiet) {
-
-    if (requireNamespace("progressr", quietly = TRUE)) {
-
-      with_progress <- progressr::with_progress
-      progressor <- progressr::progressor
-
-      if (requireNamespace("crayon", quietly = TRUE)) {
-
-        # Used styled text if crayon package is present
-        progressr::handlers(
-          progressr::handler_progress(
-            format = crayon::silver(crayon::italic(paste0(
-              "Combining results, batch :current of :total ",
-              "(:tick_rate/s) [:bar] :percent, ETA: :eta"))),
-            show_after = 0
-          ))
-
-      } else {
-
-        # Otherwise use default text
-        progressr::handlers(
-          progressr::handler_progress(
-            format = paste0(
-              "Combining results, batch :current of :total ",
-              "(:tick_rate/s) [:bar] :percent, ETA: :eta"),
-            show_after = 0
-          ))
-      }
-
-    } else quiet <- TRUE
-  }
-
-
-  ## Rbind ---------------------------------------------------------------------
+  handler_matchr("Combining results, batch")
 
   with_progress({
 
     pb <- progressor(along = result)
 
-    result <- base::lapply(result, function(x) {
+    result <- lapply(result, function(x) {
       pb()
       do.call(rbind, x)
       })
@@ -366,8 +251,8 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
 
   ## Assign class --------------------------------------------------------------
 
-  result <- base::mapply(new_matchr_matrix, result, x_aspect_ratios,
-                         y_aspect_ratios, SIMPLIFY = FALSE)
+  result <- mapply(new_matchr_matrix, result, x_aspect_ratios, y_aspect_ratios,
+                   SIMPLIFY = FALSE)
 
 
   ### Construct matchr_matrix_list object out of result ########################
