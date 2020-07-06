@@ -1,3 +1,5 @@
 ^matchr\.Rproj$
 ^LICENSE\.md$
 ^\.Rproj\.user$
+^README\.Rmd$
+^\.github$
