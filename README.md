@@ -7,6 +7,7 @@
 
 [![R build
 status](https://github.com/UPGo-McGill/matchr/workflows/R-CMD-check/badge.svg)](https://github.com/UPGo-McGill/matchr/actions)
+[![codecov](https://codecov.io/gh/UPGo-McGill/matchr/branch/master/graph/badge.svg)](https://codecov.io/gh/UPGo-McGill/matchr)
 <!-- badges: end -->
 
 The goal of matchr is to …
