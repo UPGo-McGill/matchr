@@ -129,7 +129,7 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
 
     }
 
-  } else {
+  } else if (!missing(y)) {
 
     x_list <- list(x)
     y_list <- list(y)
@@ -140,29 +140,33 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
   }
 
 
-  ### Subdivide x lists for parallel processing ################################
+  ### Subdivide x_list for parallel processing #################################
 
-  x_list <- lapply(x_list, function(x_elem) {
+  if (!missing(y)) {
 
-    chunks <- min(nbrOfWorkers() * 2, max(floor(length(x_elem) / 4), 1))
-    chunk_size <- ceiling(length(x_elem) / chunks)
+    x_list <- lapply(x_list, function(x_elem) {
 
-    # Check to make sure the last chunk won't be empty
-    while (chunk_size * (chunks - 1) >= length(x_elem)) chunks <- chunks - 1
+      chunks <- min(number_of_threads() * 2, max(floor(length(x_elem) / 4), 1))
+      chunk_size <- ceiling(length(x_elem) / chunks)
 
-    data_list <- vector("list", chunks)
+      # Check to make sure the last chunk won't be empty
+      while (chunk_size * (chunks - 1) >= length(x_elem)) chunks <- chunks - 1
 
-    for (i in seq_len(chunks)) {
+      data_list <- vector("list", chunks)
 
-      start <- (i - 1) * chunk_size + 1
-      end <- min(i * chunk_size, length(x_elem))
-      data_list[[i]] <- x_elem[start:end]
+      for (i in seq_len(chunks)) {
+
+        start <- (i - 1) * chunk_size + 1
+        end <- min(i * chunk_size, length(x_elem))
+        data_list[[i]] <- x_elem[start:end]
 
       }
 
-    data_list
+      data_list
 
     })
+
+  }
 
 
   ### Calculate correlations ###################################################
@@ -226,7 +230,9 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
     colnames(result) <- x_names
 
     # Return result and exit function
-    result <- list(result)
+    result <- new_matchr_matrix(result, NULL, NULL)
+    result <- new_matchr_matrix_list(list(result), length(x), length(x))
+    return(result)
 
     }
 

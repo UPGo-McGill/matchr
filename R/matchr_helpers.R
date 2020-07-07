@@ -31,7 +31,7 @@ progressor <-
 
 # Wrapper for future::nbrOfWorkers
 
-nbrOfWorkers <- function() {
+number_of_threads <- function() {
 
   if (requireNamespace("future", quietly = TRUE) &&
       requireNamespace("future.apply", quietly = TRUE)) {

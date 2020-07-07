@@ -25,7 +25,7 @@ identify_matches <- function(image_matrix, threshold = 0.975, quiet = FALSE) {
 
   ## Run lapply loop -----------------------------------------------------------
 
-  handler_matchr("Identifying matches")
+  handler_matchr("Identifying matches, batch")
 
   with_progress({
 

@@ -133,27 +133,42 @@ print.matchr_matrix <- function(x, ...) {
                 ' x ',
                 prettyNum(dim(x)[[2]], ","))
 
-  x_ratio <- attr(x, "x_aspect_ratio")
-  x_ratio <- round(x_ratio, 2)
-  x_ratio <- paste0(x_ratio, collapse = " - ")
-  x_ratio <- paste0("x aspect ratios: ", x_ratio)
-
-  y_ratio <- attr(x, "y_aspect_ratio")
-  y_ratio <- round(y_ratio, 2)
-  y_ratio <- paste0(y_ratio, collapse = " - ")
-  y_ratio <- paste0("y aspect ratios: ", y_ratio)
-
-  if (requireNamespace("crayon", quietly = TRUE)) {
-    x_ratio <- crayon::silver(crayon::italic(x_ratio))
-    y_ratio <- crayon::silver(crayon::italic(y_ratio))
-  }
-
   cat(msg)
   cat("\n")
-  cat(x_ratio)
-  cat("\n")
-  cat(y_ratio)
-  cat("\n")
+
+  x_ratio <- attr(x, "x_aspect_ratio")
+
+  if (!is.null(x_ratio)) {
+
+    x_ratio <- round(x_ratio, 2)
+    x_ratio <- paste0(x_ratio, collapse = " - ")
+    x_ratio <- paste0("x aspect ratios: ", x_ratio)
+
+    if (requireNamespace("crayon", quietly = TRUE)) {
+      x_ratio <- crayon::silver(crayon::italic(x_ratio))
+    }
+
+    cat(x_ratio)
+    cat("\n")
+
+  }
+
+  y_ratio <- attr(x, "y_aspect_ratio")
+
+  if (!is.null(y_ratio)) {
+
+    y_ratio <- round(y_ratio, 2)
+    y_ratio <- paste0(y_ratio, collapse = " - ")
+    y_ratio <- paste0("y aspect ratios: ", y_ratio)
+
+    if (requireNamespace("crayon", quietly = TRUE)) {
+      y_ratio <- crayon::silver(crayon::italic(y_ratio))
+    }
+
+    cat(y_ratio)
+    cat("\n")
+
+  }
 
   invisible(x)
 
@@ -171,7 +186,7 @@ print.matchr_matrix_list <- function(x, ...) {
                      prettyNum(attr(x, "y_files"), ","),
                      " in ",
                      length(x),
-                     " matrices")
+                     if (length(x) > 1) " matrices" else " matrix")
 
   # Get max digits
   max_lead <- nchar(length(x))
@@ -189,21 +204,27 @@ print.matchr_matrix_list <- function(x, ...) {
     y_number <- formatC(dim(x[[n]])[[2]], width = max_y, format = "fg",
                         big.mark = ",")
 
-    x_ratios <- round(attr(x[[n]], "x_aspect_ratio"), 2)
-    x_ratios <- paste0(formatC(x_ratios, 2, format = "f"), collapse = " - ")
-    y_ratios <- round(attr(x[[n]], "y_aspect_ratio"), 2)
-    y_ratios <- paste0(formatC(y_ratios, 2, format = "f"), collapse = " - ")
+    x_ratio <- attr(x[[n]], "x_aspect_ratio")
+    y_ratio <- attr(x[[n]], "y_aspect_ratio")
+
+    if (is.null(x_ratio) && is.null(y_ratio)) ratios <- "" else {
+
+      x_ratio <- round(x_ratio, 2)
+      x_ratio <- paste0(formatC(x_ratio, 2, format = "f"), collapse = " - ")
+
+      y_ratio <- round(y_ratio, 2)
+      y_ratio <- paste0(formatC(y_ratio, 2, format = "f"), collapse = " - ")
+
+      ratios <- paste0(" (aspect ratios: x ", x_ratio, ", y ", y_ratio, ")")
+      }
 
     msg <- paste0(lead_number,
                   ": ",
                   x_number,
                   " x ",
                   y_number,
-                  " (aspect ratios: x ",
-                  x_ratios,
-                  ", y ",
-                  y_ratios,
-                  ")\n")
+                  ratios,
+                  "\n")
 
     if (requireNamespace("crayon", quietly = TRUE)) {
       msg <- crayon::silver(crayon::italic(msg))
