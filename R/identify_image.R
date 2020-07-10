@@ -158,6 +158,8 @@ identify_image.cimg <- function(image, method = "greyscale", bands = 20,
 
 #' @rdname identify_image
 #' @method identify_image character
+#' @param image A character vector, representing local paths or remote URLs to
+#' images which should be loaded via \code{load_image} then identified.
 #' @param batch_size An integer scalar. How many images should the function
 #' load into memory before extracting image signatures and releasing the
 #' associated memory? Higher values will lead to the function executing more
