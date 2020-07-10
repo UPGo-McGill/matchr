@@ -159,10 +159,17 @@ if (remove_duplicates) {
 
   colnames(y_table)[colnames(y_table) == "x_name"] <- "y_name"
 
+
+  ## Join IDs to result table --------------------------------------------------
+
   result <- merge(result, y_table, all = TRUE)
 
-  # Create trimmed result table
+
+  ## Create trimmed result table -----------------------------------------------
+
   result_b <- result[!is.na(result$x_id) & !is.na(result$y_id),]
+  result_b <-
+    result_b[order(result_b$x_id, result_b$y_id, -1 * result_b$correlation),]
 
   result <- rbind(result_b[!duplicated(result_b[c("x_id", "y_id")]),],
                   result[is.na(result$x_id) | is.na(result$y_id),])
@@ -170,6 +177,11 @@ if (remove_duplicates) {
   result <- result[order(result$.UID),]
 
 }
+
+### Remove matches with perfect correlation ####################################
+
+result_corr <- result[result$correlation == 1,]
+result <- result[result$correlation != 1,]
 
 
 ### Copy images to temp folders ################################################
@@ -417,14 +429,17 @@ server <- function(input, output) {
         change_table$x_id <- NULL
         change_table$y_id <- NULL
 
-        result <- result_full
+        result <- result_full[result_full$correlation != 1,]
 
-        }
+      }
+
+      change_table <- merge(change_table, result[c(".UID", "confirmation")])
+
+      change_table <- change_table[change_table$new_match_status !=
+                                     change_table$confirmation,]
 
       change_table$.UID <- NULL
-
-      change_table <-
-        change_table[change_table$new_match_status != result$confirmation,]
+      change_table$confirmation <- NULL
 
       if (requireNamespace("dplyr", quietly = TRUE)) {
         change_table <- dplyr::as_tibble(change_table)
