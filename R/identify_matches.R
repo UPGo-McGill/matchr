@@ -17,8 +17,11 @@ identify_matches <- function(image_matrix, threshold = 0.975, quiet = FALSE) {
 
   ### Error handling and object initialization #################################
 
-  stopifnot(inherits(image_matrix, "matchr_matrix_list"), is.numeric(threshold),
-            is.logical(quiet))
+  stopifnot(
+    inherits(image_matrix, "matchr_matrix_list"),
+    is.numeric(threshold),
+    is.logical(quiet)
+    )
 
 
   ### Find matches #############################################################

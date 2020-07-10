@@ -52,9 +52,8 @@ identify_image(
 )
 }
 \arguments{
-\item{image}{Object (or list of objects) of class 'cimg', probably imported
-using \code{load_image} or \code{imager::load.image}, or file path
-or URL (or vector/list of file paths or URLs) of an image.}
+\item{image}{A character vector, representing local paths or remote URLs to
+images which should be loaded via \code{load_image} then identified.}
 
 \item{method}{Character string. The method to be used to create image
 signatures. Valid options are "greyscale" or "rgb". The former will take

@@ -4,10 +4,16 @@
 \alias{compare_images}
 \title{Compare image matches in the viewer window}
 \usage{
-compare_images(result)
+compare_images(result, x_sigs = NULL, y_sigs = NULL, remove_duplicates = TRUE)
 }
 \arguments{
 \item{result}{TKTK}
+
+\item{x_sigs}{TKTK}
+
+\item{y_sigs}{TKTK}
+
+\item{remove_duplicates}{TKTK}
 }
 \value{
 TKTK
