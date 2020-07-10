@@ -47,7 +47,7 @@ if (remove_duplicates) {
       }
 
       return(acc)
-    }, Map(list, img_list))
+    }, img_list)
   }
 
   ## Identify x images with correlation ~= 1 -----------------------------------
@@ -58,14 +58,34 @@ if (remove_duplicates) {
 
   x_matches <- match_signatures(x_sigs)
   x_matches <- identify_matches(x_matches)
-  x_matches <- x_matches[x_matches$correlation >= 0.999,]
+  x_matches <- x_matches[x_matches$correlation >= 0.9995,]
 
   ## Group x images together by correlation ------------------------------------
 
   x_matches <- mapply(function(x, y) c(x, y), x_matches$x_name,
                       x_matches$y_name, SIMPLIFY = FALSE)
 
-  x_matches <- reduce_fun(x_matches)
+  x_matches <- reduce_fun(Map(list, x_matches))
+
+
+  ## Check for duplication -----------------------------------------------------
+
+  while (length(unique(unlist(x_matches))) !=
+      length(unlist(lapply(x_matches, unique)))) {
+
+    x_all <- unlist(lapply(x_matches, unique))
+
+    x_pos <-
+      x_matches[sapply(
+        x_matches, function(x) any(x_all[which(duplicated(x_all))] %in% x))]
+
+    x_neg <-
+      x_matches[!sapply(
+        x_matches, function(x) any(x_all[which(duplicated(x_all))] %in% x))]
+
+    x_matches <- reduce_fun(c(list(x_neg), lapply(x_pos, list)))
+
+  }
 
 
   ## Create x table ------------------------------------------------------------
@@ -95,7 +115,7 @@ if (remove_duplicates) {
 
   y_matches <- match_signatures(y_sigs)
   y_matches <- identify_matches(y_matches)
-  y_matches <- y_matches[y_matches$correlation >= 0.999,]
+  y_matches <- y_matches[y_matches$correlation >= 0.9995,]
 
 
   ## Group y images together by correlation ------------------------------------
@@ -103,7 +123,27 @@ if (remove_duplicates) {
   y_matches <- mapply(function(x, y) c(x, y), y_matches$x_name,
                       y_matches$y_name, SIMPLIFY = FALSE)
 
-  y_matches <- reduce_fun(y_matches)
+  y_matches <- reduce_fun(Map(list, y_matches))
+
+
+  ## Check for duplication -----------------------------------------------------
+
+  while (length(unique(unlist(y_matches))) !=
+         length(unlist(lapply(y_matches, unique)))) {
+
+    y_all <- unlist(lapply(y_matches, unique))
+
+    y_pos <-
+      y_matches[sapply(
+        y_matches, function(x) any(y_all[which(duplicated(y_all))] %in% x))]
+
+    y_neg <-
+      y_matches[!sapply(
+        y_matches, function(x) any(y_all[which(duplicated(y_all))] %in% x))]
+
+    y_matches <- reduce_fun(c(list(y_neg), lapply(y_pos, list)))
+
+  }
 
 
   ## Create y table ------------------------------------------------------------
