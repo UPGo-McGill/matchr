@@ -23,6 +23,9 @@ integrate_changes <- function(result, change_table) {
 
   result$new_match_status <- NULL
 
+  if (requireNamespace("dplyr", quietly = TRUE)) result <-
+    dplyr::as_tibble(result)
+
   return(result)
 }
 
