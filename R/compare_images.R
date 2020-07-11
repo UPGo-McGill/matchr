@@ -25,7 +25,6 @@ compare_images <- function(result, x_sigs = NULL, y_sigs = NULL,
 
   temp_dir <- tempfile()
   dir.create(temp_dir)
-  html_file <- file.path(temp_dir, "index.html")
 
 
   ## Create image subfolders ---------------------------------------------------
@@ -131,6 +130,8 @@ compare_images <- function(result, x_sigs = NULL, y_sigs = NULL,
 
 
   ### Combine output and display in viewer #####################################
+
+  html_file <- file.path(temp_dir, "index.html")
 
   code <- paste(code_head, image_elements, code_foot, sep = "\n")
 
