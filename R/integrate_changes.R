@@ -19,7 +19,7 @@ integrate_changes <- function(result, change_table) {
               nrow(change_table))
 
   result[!is.na(result$new_match_status),]$confirmation <-
-    result$new_match_status
+    result[!is.na(result$new_match_status),]$new_match_status
 
   result$new_match_status <- NULL
 
