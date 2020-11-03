@@ -101,6 +101,8 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
     # Choose appropriate k value
     k <- which.min(max_group) + 2
 
+    # Reduce k if lists are too small, but not below 3
+    k <- max(min(k, floor(length(x) ^ (1/3)), floor(length(y) ^ (1/3))), 3)
 
     ## Recalculate cut points and add 1.2x buffer to y -------------------------
 
