@@ -157,7 +157,12 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
     x_list <- lapply(x_list, function(x_elem) {
 
       chunks <- min(number_of_threads() * 2, max(floor(length(x_elem) / 4), 1))
+
+      if (verbose) cat(paste0("Number of chunks: ", chunks, "\n"))
+
       chunk_size <- ceiling(length(x_elem) / chunks)
+
+      if (verbose) cat(paste0("Chunk size: ", chunk_size, "\n"))
 
       # Check to make sure the last chunk won't be empty
       while (chunk_size * (chunks - 1) >= length(x_elem)) chunks <- chunks - 1
@@ -165,6 +170,8 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
       data_list <- vector("list", chunks)
 
       for (i in seq_len(chunks)) {
+
+        if (verbose) cat(paste0("Splitting data: ", i, "\n"))
 
         start <- (i - 1) * chunk_size + 1
         end <- min(i * chunk_size, length(x_elem))
