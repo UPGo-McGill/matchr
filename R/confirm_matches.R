@@ -41,7 +41,13 @@ confirm_matches <- function(data, check_threshold = 0.99,
   y_samples <- identify_image(to_check$y_name, method = "rgb",
                               batch_size = batch_size)
 
-  to_check$colour <- match_signatures_pairwise(x_samples, y_samples)
+  # Special case for one result
+  if (inherits(x_samples, "matchr_sig")) {
+    to_check$colour <-
+      match_signatures_pairwise(list(x_samples), list(y_samples))
+    } else {
+      to_check$colour <- match_signatures_pairwise(x_samples, y_samples)
+    }
 
 
   ### Compile results ##########################################################
