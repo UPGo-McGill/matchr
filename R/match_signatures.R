@@ -35,6 +35,8 @@
 #' the function.
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
+#' @param verbose A logical scalar. Should the function give extensive progress
+#' updates throughout the function?
 #' @return An object of class `matchr_matrix`. This object is a list containing
 #' a number of correlation matrices equal to the number of aspect-ratio
 #' categories. If `x` and `y` are both present, each matrix will have
@@ -46,7 +48,7 @@
 #' @export
 
 match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
-                             quiet = FALSE) {
+                             quiet = FALSE, verbose = FALSE) {
 
   ### Error handling and object initialization #################################
 
@@ -62,11 +64,15 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
 
     ## Get aspect ratios -------------------------------------------------------
 
+    if (verbose) cat("Getting aspect ratios\n")
+
     x_ratios <- sapply(x, attr, "aspect_ratio")
     y_ratios <- sapply(y, attr, "aspect_ratio")
 
 
     ## Calculate clusters which minimize calculations --------------------------
+
+    if (verbose) cat("Calculating clusters\n")
 
     max_group <- sapply(3:15, function(n) {
 
@@ -98,6 +104,7 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
 
     ## Recalculate cut points and add 1.2x buffer to y -------------------------
 
+    if (verbose) cat("Recalculating cut points\n")
     means <- stats::kmeans(stats::na.omit(c(x_ratios, y_ratios)), k)
     centres <- sort(means$centers)
     cuts <-
@@ -119,6 +126,7 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
 
     ## Get aspect ratios for later ---------------------------------------------
 
+    if (verbose) cat("Getting aspect ratios for later\n")
     x_aspect_ratios <- vector("list", k)
     y_aspect_ratios <- vector("list", k)
 
@@ -143,6 +151,8 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
   ### Subdivide x_list for parallel processing #################################
 
   if (!missing(y)) {
+
+    if (verbose) cat("Subdividing x_list for parallel processing\n")
 
     x_list <- lapply(x_list, function(x_elem) {
 

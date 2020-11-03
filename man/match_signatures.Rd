@@ -4,7 +4,13 @@
 \alias{match_signatures}
 \title{Match images based on colour signatures}
 \usage{
-match_signatures(x, y = NULL, compare_aspect_ratios = TRUE, quiet = FALSE)
+match_signatures(
+  x,
+  y = NULL,
+  compare_aspect_ratios = TRUE,
+  quiet = FALSE,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{x, y}{Lists of 'matchr_sig' objects to be matched. If \code{y} is missing
@@ -26,6 +32,9 @@ the function.}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}
+
+\item{verbose}{A logical scalar. Should the function give extensive progress
+updates throughout the function?}
 }
 \value{
 An object of class \code{matchr_matrix}. This object is a list containing
