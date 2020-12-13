@@ -72,6 +72,9 @@ jobs:
             libv8-dev \
             libjq-dev \
             libprotobuf-dev \
+            libfftw3-dev \
+            libx11-dev \
+            libtiff-dev\
             protobuf-compiler
       - name: Install dependencies
         run: |
