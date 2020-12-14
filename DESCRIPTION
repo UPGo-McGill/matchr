@@ -19,6 +19,7 @@ LazyData: true
 URL: https://github.com/UPGo-McGill/matchr
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
+Config/testthat/edition: 3
 Depends:
     R (>= 4.0)
 Imports: 

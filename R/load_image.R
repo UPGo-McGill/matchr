@@ -13,10 +13,12 @@
 #'
 #' @param file A vector of file paths or URLs to be passed to
 #' \code{imager::load.image}. If `file` is a vector of URLs, the URLs must begin
-#' with "http", "https", "ftp" or "ftps".
+#' with "http", "https", "ftp" or "ftps". If the URL has no extension, it will
+#' be given the extension ".jpg".
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
-#' @return A list of `cimg` objects with the same length as the input vector.
+#' @return A list of `matchr_img` objects of the same length as the input
+#' vector.
 #' @export
 
 load_image <- function(file, quiet = FALSE) {
@@ -57,7 +59,9 @@ load_image <- function(file, quiet = FALSE) {
 
       ext <- stringr::str_extract_all(x, "\\.([A-Za-z0-9]+$)")[[1]]
 
-      if (length(ext) > 0) dst <- tempfile(fileext = ext) else dst <- tempfile()
+      if (length(ext) > 0) dst <- tempfile(fileext = ext) else {
+        dst <- tempfile(fileext = ".jpg")
+      }
 
       downloader::download(x, dst, mode = "wb", quiet = TRUE)
 

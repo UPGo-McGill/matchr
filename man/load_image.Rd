@@ -9,13 +9,15 @@ load_image(file, quiet = FALSE)
 \arguments{
 \item{file}{A vector of file paths or URLs to be passed to
 \code{imager::load.image}. If \code{file} is a vector of URLs, the URLs must begin
-with "http", "https", "ftp" or "ftps".}
+with "http", "https", "ftp" or "ftps". If the URL has no extension, it will
+be given the extension ".jpg".}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}
 }
 \value{
-A list of \code{cimg} objects with the same length as the input vector.
+A list of \code{matchr_img} objects of the same length as the input
+vector.
 }
 \description{
 \code{load_image} is a vectorized version of \code{imager::load.image}. It
