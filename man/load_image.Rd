@@ -8,25 +8,25 @@ load_image(file, quiet = FALSE)
 }
 \arguments{
 \item{file}{A vector of file paths or URLs to be passed to
-\code{imager::load.image}.}
+\code{imager::load.image}. If \code{file} is a vector of URLs, the URLs must begin
+with "http", "https", "ftp" or "ftps".}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}
 }
 \value{
-If the input is a single file path or URL, the output will be a
-single object of class 'cimg'. If the input is a vector with length > 1,
-the output will be a list of 'cimg' objects with the same length.
+A list of \code{cimg} objects with the same length as the input vector.
 }
 \description{
 \code{load_image} is a vectorized version of \code{imager::load.image}. It
 optionally supports parallel processing (via \code{future} and
-\code{future.apply}) and progress reporting (via \code{progressr}).
+\code{future.apply}) and progress reporting.
 }
 \details{
-The function is a wrapper around \code{imager::load.image} with four
-enhancements. It can take a vector of input paths instead a single path, it
-supports parallel processing, it support progress reporting, and it appends
-the file path of the image as an attribute for subsequent processing or
-recordkeeping.
+The function is a wrapper around \code{imager::load.image} with five
+enhancements. It can take a vector of input paths instead a single path; it
+supports parallel processing; it support progress reporting; it appends the
+file path of the image as an attribute for subsequent processing or record
+keeping; and it suppresses file download messages to allow more meaningful
+progress reporting.
 }
