@@ -76,6 +76,7 @@ jobs:
             libfftw3-dev \
             libx11-dev \
             libtiff-dev \
+            libglpk-dev \
             protobuf-compiler
       - name: Install dependencies
         run: |
