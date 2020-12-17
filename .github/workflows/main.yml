@@ -54,6 +54,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install udunits
+          brew cask install xquartz
           
       - name: Install Linux system dependencies
         if: runner.os == 'Linux'
