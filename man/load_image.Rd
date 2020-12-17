@@ -32,3 +32,6 @@ file path of the image as an attribute for subsequent processing or record
 keeping; and it suppresses file download messages to allow more meaningful
 progress reporting.
 }
+\examples{
+load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png")
+}

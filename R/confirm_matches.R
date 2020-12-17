@@ -36,9 +36,9 @@ confirm_matches <- function(data, check_threshold = 0.99,
 
   }
 
-  x_samples <- identify_image(to_check$x_name, method = "rgb",
+  x_samples <- create_signature(to_check$x_name, method = "rgb",
                               batch_size = batch_size)
-  y_samples <- identify_image(to_check$y_name, method = "rgb",
+  y_samples <- create_signature(to_check$y_name, method = "rgb",
                               batch_size = batch_size)
 
   # Special case for one result

@@ -22,10 +22,32 @@ new_matchr_img <- function(x, file) {
 
 print.matchr_img <- function(x, ...) {
 
-  if (is.na(x)) print(NA) else {
-    class(x) <- setdiff(class(x), "matchr_img")
-    print(x)
-    }
+  # Exit early on NA
+  if (anyNA(x)) {
+    cat(NA)
+    return(invisible(x))
+  }
+
+  d <- dim(x)
+  file <- attr(x, "file")
+  max_chars <- getOption("width")
+  file_max <- max_chars - 38 - sum(nchar(d))
+  file_length <- nchar(attr(x, "file"))
+
+  if (file_length > file_max) {
+
+    file_trunc <-
+      paste0("...", substr(file, file_length - file_max + 4, file_length))
+
+    } else file_trunc <- file
+
+
+  msg <- sprintf(
+    'Image from file "%s". %i x %i, %i colour channels.\n',
+    file_trunc, d[1], d[2], d[4])
+
+  cat(msg)
+  invisible(x)
 
 }
 

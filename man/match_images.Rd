@@ -13,7 +13,7 @@ pointing to images which can be imported as 'cimg' objects. If \code{y} is missi
 \code{x.} If \code{y} is present, each object in \code{x} will be matched against each
 object in \code{y}.}
 
-\item{bands}{Integer scalar to be passed to \code{\link{identify_image}}. The
+\item{bands}{Integer scalar to be passed to \code{\link{create_signature}}. The
 number of horizontal bands the image should be split into for processing.
 Higher values will produce a more distinctive colour signature, potentially
 decreasing the rate of matching false positives, but at the cost of increased
@@ -40,7 +40,7 @@ images (objects of class 'cimg) and compares their colour signatures to find
 matches.
 
 The comparison is done by creating colour signatures for each input image
-using \code{\link{identify_image}} and then computing the Pearson correlation
+using \code{\link{create_signature}} and then computing the Pearson correlation
 coefficient between these signatures. In general, pairs of images which were
 identical prior to arbitrary resampling and compression will have correlation
 coefficients of at least 0.99.

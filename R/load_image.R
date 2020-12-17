@@ -19,6 +19,8 @@
 #' it return status updates throughout the function (default)?
 #' @return A list of `matchr_img` objects of the same length as the input
 #' vector.
+#' @examples
+#' load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png")
 #' @export
 
 load_image <- function(file, quiet = FALSE) {
@@ -51,38 +53,7 @@ load_image <- function(file, quiet = FALSE) {
 
     pb()
 
-    ## Download to tempfile if path is URL -------------------------------------
-
-    is_url <- grepl("^(http|ftp)s?://", x)
-
-    if (is_url) {
-
-      ext <- stringr::str_extract_all(x, "\\.([A-Za-z0-9]+$)")[[1]]
-
-      if (length(ext) > 0) dst <- tempfile(fileext = ext) else {
-        dst <- tempfile(fileext = ".jpg")
-      }
-
-      downloader::download(x, dst, mode = "wb", quiet = TRUE)
-
-      img <-
-        tryCatch(imager::load.image(dst), error = function(e) {
-          warning("Input '", x, "' is invalid; output is NA.", call. = FALSE)
-          NA
-          })
-
-      unlink(dst)
-
-      img
-
-    } else {
-
-      tryCatch(suppressMessages(imager::load.image(x)), error = function(e) {
-        warning("Input '", x, "' is invalid; output is NA.", call. = FALSE)
-        NA
-      })
-
-    }
+    load_image_internal(x)
 
     }, future.seed = NULL)
 
@@ -95,5 +66,44 @@ load_image <- function(file, quiet = FALSE) {
   ## Return output -------------------------------------------------------------
 
   return(imgs)
+
+}
+
+load_image_internal <- function(x) {
+
+  # Download to tempfile if path is URL
+
+  is_url <- grepl("^(http|ftp)s?://", x)
+
+  if (is_url) {
+
+    ext <- regmatches(x, regexpr("\\.([A-Za-z0-9]+$)", x))
+
+    if (length(ext) > 0) dst <- tempfile(fileext = ext) else {
+      dst <- tempfile(fileext = ".jpg")
+    }
+
+    downloader::download(x, dst, mode = "wb", quiet = TRUE)
+
+    # Import image from temp file
+    img <-
+      tryCatch(imager::load.image(dst), error = function(e) {
+        warning("Input '", x, "' is invalid; output is NA.", call. = FALSE)
+        NA
+      })
+
+    unlink(dst)
+
+    img
+
+  } else {
+
+    # Or import image from file path using imager's importer
+    tryCatch(suppressMessages(imager::load.image(x)), error = function(e) {
+      warning("Input '", x, "' is invalid; output is NA.", call. = FALSE)
+      NA
+    })
+
+  }
 
 }

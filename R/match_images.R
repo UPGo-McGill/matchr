@@ -8,7 +8,7 @@
 #' matches.
 #'
 #' The comparison is done by creating colour signatures for each input image
-#' using \code{\link{identify_image}} and then computing the Pearson correlation
+#' using \code{\link{create_signature}} and then computing the Pearson correlation
 #' coefficient between these signatures. In general, pairs of images which were
 #' identical prior to arbitrary resampling and compression will have correlation
 #' coefficients of at least 0.99.
@@ -18,7 +18,7 @@
 #' (default), each object in `x` will be matched against each other object in
 #' `x.` If `y` is present, each object in `x` will be matched against each
 #' object in `y`.
-#' @param bands Integer scalar to be passed to \code{\link{identify_image}}. The
+#' @param bands Integer scalar to be passed to \code{\link{create_signature}}. The
 #' number of horizontal bands the image should be split into for processing.
 #' Higher values will produce a more distinctive colour signature, potentially
 #' decreasing the rate of matching false positives, but at the cost of increased
@@ -51,7 +51,7 @@ match_images <- function(x, y = NULL, bands = 25, quiet = FALSE) {
 
       x_ids <- par_lapply(x, function(x) {
         pb()
-        identify_image(x, bands = bands)
+        create_signature(x, bands = bands)
       })
     })
 
@@ -69,7 +69,7 @@ match_images <- function(x, y = NULL, bands = 25, quiet = FALSE) {
 
         y_ids <- par_lapply(y, function(x) {
           pb()
-          identify_image(x, bands = bands)
+          create_signature(x, bands = bands)
         })
       })
 

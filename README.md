@@ -10,11 +10,22 @@ status](https://github.com/UPGo-McGill/matchr/workflows/R-CMD-check/badge.svg)](
 [![codecov](https://codecov.io/gh/UPGo-McGill/matchr/branch/master/graph/badge.svg)](https://codecov.io/gh/UPGo-McGill/matchr)
 <!-- badges: end -->
 
-The goal of matchr is to …
+The goal of matchr is to facilitate fast and reliable comparison of
+large sets of images to identify identical or nearly-identical pairs. It
+works by generating distinctive image signatures from pixel data then
+correlating these signatures between sets of images.
+
+Image are decomposed into horizontal bands, and for each band an average
+greyscale or colour value is calculated. The vector of these averages
+becomes a distinctive signature that can identify a given image even if
+the image is rescaled or compressed, and thus serves as a reliable
+indicator of whether two images are the same.
+
+Using matrix algebra, the
 
 ## Installation
 
-You can install the released version of matchr from
+(NOT YET WORKING) You can install the released version of matchr from
 [CRAN](https://CRAN.R-project.org) with:
 
 ``` r
@@ -30,33 +41,19 @@ devtools::install_github("UPGo-McGill/matchr")
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+The standard matchr flow involves importing one or more sets of images
+with `load_image`, generating image signatures from the image sets using
+`create_signature`, matching image signatures using `match_signatures`,
+then refining and verifying the matches using `confirm_matches`,
+`compare_images`, and `integrate_changes`.
 
-``` r
-library(matchr)
-## basic example code
-```
+Because each of these steps can be very time- or computation-intensive,
+it is usually the most convenient to run these functions separately. But
+in the case of relatively small comparison tasks, `match_images`
+provides an “all-in-one” function which performs each task sequentially
+and delivers the final results.
 
-What is special about using `README.Rmd` instead of just `README.md`?
-You can include R chunks like so:
-
-``` r
-summary(cars)
-#>      speed           dist       
-#>  Min.   : 4.0   Min.   :  2.00  
-#>  1st Qu.:12.0   1st Qu.: 26.00  
-#>  Median :15.0   Median : 36.00  
-#>  Mean   :15.4   Mean   : 42.98  
-#>  3rd Qu.:19.0   3rd Qu.: 56.00  
-#>  Max.   :25.0   Max.   :120.00
-```
-
-You’ll still need to render `README.Rmd` regularly, to keep `README.md`
-up-to-date.
-
-You can also embed plots, for example:
-
-<img src="man/figures/README-pressure-1.png" width="100%" />
-
-In that case, don’t forget to commit and push the resulting figure
-files, so they display on GitHub\!
+When the {shiny} package is installed, `compare_images` loads an
+interactive Shiny app for verifying the results of the comparison
+algorithm; otherwise, images are loaded statically in a viewer window
+for manual comparison.

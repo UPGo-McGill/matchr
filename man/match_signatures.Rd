@@ -56,7 +56,7 @@ images signatures (objects of class 'matchr_sig') and compares their colour
 signatures to find matches.
 
 The comparison is done by creating colour signatures for each input image
-using \code{\link{identify_image}} and then computing the Pearson correlation
+using \code{\link{create_signature}} and then computing the Pearson correlation
 coefficient between these signatures. In general, pairs of images which were
 identical prior to arbitrary resampling and compression will have correlation
 coefficients of at least 0.99.
