@@ -13,5 +13,12 @@ test_that("garbage strings produce NA", {
   expect_true(is.na(test_na))
 })
 
-
+test_that("Multisession futures work", {
+  skip_on_cran()
+  old_plan <- future::plan(future::multisession, workers = 2)
+  expect_true(
+    inherits(load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png")[[1]],
+             "matchr_img"))
+  future::plan(old_plan)
+})
 

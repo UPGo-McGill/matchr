@@ -85,9 +85,9 @@ print.matchr_sig <- function(x, ...) {
 
       values <- c(g_values, c_values)
 
-      if (length(values) > max_chars) {
+      if (length(values) > min(max_chars, 80)) {
 
-        sect_len <- floor(max_chars / 4)
+        sect_len <- floor(min(max_chars, 80) / 4)
 
         values <- values[c(seq_len(sect_len),
                            seq_len(sect_len) + length(values) * 0.25,

@@ -30,3 +30,4 @@ class(test_cimg) <- setdiff(class(test_cimg), "matchr_img")
 attr(test_cimg, "file") <- NULL
 
 test_matchr_sig_list <- create_signature(list(test_img, test_img))
+test_long_sig_list <- create_signature(urls)

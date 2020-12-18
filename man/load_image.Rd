@@ -31,6 +31,13 @@ supports parallel processing; it support progress reporting; it appends the
 file path of the image as an attribute for subsequent processing or record
 keeping; and it suppresses file download messages to allow more meaningful
 progress reporting.
+
+Because the memory requirements of storing image representations in memory
+so large, it is usually not feasible to read in more than several hundred
+images at a time with \code{load_image}. For these cases, use
+\code{\link{create_signature}} directly on the input file paths. By default
+this will read images with \code{load_image} 100 at a time before
+generating the unique colour signatures used for image matching.
 }
 \examples{
 load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png")

@@ -12,9 +12,10 @@
 #' whether two images are the same.
 #'
 #' @param image Object (or list of objects) of class `matchr_img` or `cimg`,
-#' probably imported using \code{load_image} or \code{imager::load.image}, or
-#' file path or URL (or vector/list of file paths or URLs) which can be
-#' imported to `matchr_img` using \code{load_image}.
+#' probably imported using \code{\link{load_image}} or
+#' \code{imager::load.image}, or file path or URL (or vector/list of file paths
+#' or URLs) which can be imported to `matchr_img` using
+#' \code{\link{load_image}}.
 #' @param bands Integer scalar. The number of horizontal and vertical bands the
 #' image should be split into for processing. Higher values will produce a more
 #' distinctive colour signature, potentially decreasing the rate of matching
@@ -174,12 +175,19 @@ create_signature.cimg <- function(image, bands = 20, rm_black_bars = TRUE,
 #' load into memory before extracting image signatures and releasing the
 #' associated memory? Higher values will lead to the function executing more
 #' quickly, but can result in enormous memory requirements.
+#' @param backup A logical scalar. Should the function store an ongoing backup
+#' of progress in a hidden object `.matchr_env$sig_backup` in the package's
+#' environment (default)? If TRUE, the function will attempt to resume progress
+#' if it detects a previous backup, and it will remove the backup if the
+#' function successfully completes. Backups can be removed with
+#' \code{\link{remove_backups}}.
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
 #' @export
 
 create_signature.character <- function(image, bands = 20, rm_black_bars = TRUE,
-                                       batch_size = 100, quiet = FALSE, ...) {
+                                       batch_size = 100, backup = TRUE,
+                                       quiet = FALSE, ...) {
 
   ### Error checking and preparation ###########################################
 
@@ -188,16 +196,54 @@ create_signature.character <- function(image, bands = 20, rm_black_bars = TRUE,
 
   iterations <- ceiling(length(image) / batch_size)
 
-  result <- vector("list", length(iterations))
+  result <- vector("list", iterations)
+  resume_from <- 1
+
+  sig_backup <- sig_backup_size <- NULL
+
+
+  ### Prepare backup ###########################################################
+
+  if (backup) {
+
+    # Silence R CMD check re: function backup
+    # sig_backup <- NULL
+
+    # Check for previous backup
+    if (exists("sig_backup", envir = .matchr_env)) {
+
+      # Only proceed if old input size is identical to new input size
+      if (.matchr_env$sig_backup_size == utils::object.size(image)) {
+
+        result <- .matchr_env$sig_backup
+        resume_from <- length(result[!sapply(result, is.null)]) + 1
+        if (!quiet) cat("Backup detected. Resuming from position ",
+                        sum(sapply(.matchr_env$sig_backup, length)) + 1,
+                        ".\n", sep = "")
+
+      } else {
+        stop("The backup detected in .matchr_env$sig_backup does not match ",
+             "the input. Remove the previous backup with ",
+             "`remove_backups()` to proceed.")
+      }
+
+    } else {
+
+      assign("sig_backup_size", utils::object.size(image), envir = .matchr_env)
+
+    }
+  }
 
 
   ### Run loop #################################################################
 
   handler_matchr("Creating signature")
 
-  pb <- progressor(steps = length(image), enable = !quiet)
+  pb <- progressr::progressor(steps = length(image), enable = !quiet)
 
-  for (i in seq_len(iterations)) {
+  pb(amount = (resume_from - 1) * batch_size)
+
+  for (i in resume_from:iterations) {
 
     vec_start <- (i - 1) * batch_size + 1
     vec_end <- min(i * batch_size, length(image))
@@ -213,6 +259,12 @@ create_signature.character <- function(image, bands = 20, rm_black_bars = TRUE,
     imgs <- mapply(new_matchr_img, imgs, image[vec_start:vec_end],
                    SIMPLIFY = FALSE)
 
+    imgs[sapply(imgs, is.na)] <-
+      lapply(imgs[sapply(imgs, is.na)], function(x) {
+        class(x) <- "logical"
+        x
+      })
+
     result[[i]] <- par_lapply(imgs, function(x) {
 
       pb(amount = 0.5)
@@ -220,6 +272,8 @@ create_signature.character <- function(image, bands = 20, rm_black_bars = TRUE,
       create_signature(x, bands = bands, rm_black_bars = rm_black_bars)
 
     }, future.seed = NULL)
+
+    if (backup) assign("sig_backup", result, envir = .matchr_env)
 
   }
 
@@ -234,6 +288,8 @@ create_signature.character <- function(image, bands = 20, rm_black_bars = TRUE,
     result <- result[[1]]
   }
 
+  # Remove backups if necessary
+  if (backup) rm(sig_backup, sig_backup_size, envir = .matchr_env)
   return(result)
 
 }
@@ -278,7 +334,7 @@ create_signature.list <- function(image, bands = 20, rm_black_bars = TRUE,
 
   handler_matchr("Creating signature")
 
-  pb <- progressor(steps = length(image), enable = !quiet)
+  pb <- progressr::progressor(steps = length(image), enable = !quiet)
 
   for (i in seq_len(iterations)) {
 

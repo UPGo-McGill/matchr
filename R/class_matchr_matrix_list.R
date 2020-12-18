@@ -1,51 +1,22 @@
-#' @method print matchr_matrix
+#' Create a new matchr_matrix_list object
+#'
+#' @param x A list of matchr_matrix objects.
+#' @param x_files A numeric scalar: the number of files in the matrix rows.
+#' @param y_files A numeric scalar: the number of files in the matrix columns
+#' @return An object of class `matchr_matrix_list`.
 #' @export
 
-print.matchr_matrix <- function(x, ...) {
+new_matchr_matrix_list <- function(x, x_files, y_files) {
 
-  msg <- paste0("# An image matrix: ",
-                prettyNum(dim(x)[[1]], ","),
-                ' x ',
-                prettyNum(dim(x)[[2]], ","))
+  stopifnot(is.list(x))
+  stopifnot(is.numeric(x_files))
+  stopifnot(is.numeric(y_files))
 
-  cat(msg)
-  cat("\n")
-
-  x_ratio <- attr(x, "x_aspect_ratio")
-
-  if (!is.null(x_ratio)) {
-
-    x_ratio <- round(x_ratio, 2)
-    x_ratio <- paste0(x_ratio, collapse = " - ")
-    x_ratio <- paste0("x aspect ratios: ", x_ratio)
-
-    if (requireNamespace("crayon", quietly = TRUE)) {
-      x_ratio <- crayon::silver(crayon::italic(x_ratio))
-    }
-
-    cat(x_ratio)
-    cat("\n")
-
-  }
-
-  y_ratio <- attr(x, "y_aspect_ratio")
-
-  if (!is.null(y_ratio)) {
-
-    y_ratio <- round(y_ratio, 2)
-    y_ratio <- paste0(y_ratio, collapse = " - ")
-    y_ratio <- paste0("y aspect ratios: ", y_ratio)
-
-    if (requireNamespace("crayon", quietly = TRUE)) {
-      y_ratio <- crayon::silver(crayon::italic(y_ratio))
-    }
-
-    cat(y_ratio)
-    cat("\n")
-
-  }
-
-  invisible(x)
+  structure(x,
+            class = c("matchr_matrix_list", "list"),
+            x_files = x_files,
+            y_files = y_files
+  )
 
 }
 

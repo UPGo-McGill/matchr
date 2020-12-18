@@ -3,25 +3,29 @@
 #' \code{match_signatures} takes one or two lists of images and produces a
 #' correlation matrix to identify matches.
 #'
-#' A function for identifying matching images. The function takes a list of
-#' images signatures (objects of class 'matchr_sig') and compares their colour
-#' signatures to find matches.
+#' A function for identifying matching images. The function takes one or two
+#' lists of images signatures (objects of class 'matchr_sig') and compares their
+#' colour signatures to find matches.
 #'
 #' The comparison is done by creating colour signatures for each input image
-#' using \code{\link{create_signature}} and then computing the Pearson correlation
-#' coefficient between these signatures. In general, pairs of images which were
-#' identical prior to arbitrary resampling and compression will have correlation
-#' coefficients of at least 0.99.
+#' using \code{\link{create_signature}} and then computing the Pearson
+#' correlation coefficient between these signatures. In general, pairs of images
+#' which were identical prior to arbitrary resampling and compression will have
+#' correlation coefficients of at least 0.99.
 #'
 #' The function can optionally filter images by aspect ratio, so only images
 #' with very similar aspect ratios will be compared. This can remove potential
 #' false positives and possibly speed up function execution, if images are
 #' relatively evenly split between aspect ratios.
 #'
-#' @param x,y Lists of 'matchr_sig' objects to be matched. If `y` is missing
-#' (default), each object in `x` will be matched against each other object in
-#' `x.` If `y` is present, each object in `x` will be matched against each
-#' object in `y`.
+#' @param x,y Lists (of class `matchr_sig_list`) of `matchr_sig` objects to be
+#' matched. If `y` is missing (default), each object in `x` will be matched
+#' against each other object in `x.` If `y` is present, each object in `x` will
+#' be matched against each object in `y`. Two individual images can be matched
+#' by supplying individual `matchr_sig` objects to `x` and `y`.
+#' @param method A character scalar. Should images be compared by their
+#' greyscale signatures ("grey" or "gray", the default), their colour signatures
+#' ("colour" or "color"), or both ("both")?
 #' @param compare_aspect_ratios A logical scalar. Should signatures only be
 #' compared for images with similar aspect ratios (default)? If TRUE, k-means
 #' clustering is used to identify breakpoints between aspect ratios that
@@ -33,29 +37,120 @@
 #' on the lower bound and the break point * 1.2 on the upper bound. This
 #' argument is currently only implemented when both `x` and `y` are provided to
 #' the function.
+#' @param backup A logical scalar. Should the function store an ongoing backup
+#' of progress in a hidden object `.matchr_env$smatch_backup` in the package's
+#' environment (default)? If TRUE, the function will attempt to resume progress
+#' if it detects a previous backup, and it will remove the backup if the
+#' function successfully completes. Backups can be removed with
+#' \code{\link{remove_backups}}.
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
-#' @param verbose A logical scalar. Should the function give extensive progress
-#' updates throughout the function?
-#' @return An object of class `matchr_matrix`. This object is a list containing
-#' a number of correlation matrices equal to the number of aspect-ratio
-#' categories. If `x` and `y` are both present, each matrix will have
-#' `length(x)` rows and `length(y)` columns, and for the matrix `Q` the cell
-#' `Q[i, j]` will be the Pearson correlation coefficient between images `x[[i]]`
-#' and `y[[j]]`. If `y` is not present, each matrix will be square, and
-#' the cell `Q[i, j]` will be the correlation between images `x[[i]]` and
-#' `x[[j]]`.
+#' @return An object of class `matchr_matrix_list`. This object is a list
+#' containing a number of correlation matrices (each of class `matchr_matrix`)
+#' equal to the number of aspect-ratio categories. If `x` and `y` are both
+#' present, each matrix will have `length(x)` rows and `length(y)` columns, and
+#' for the matrix `Q` the cell `Q[i, j]` will be the Pearson correlation
+#' coefficient between images `x[[i]]` and `y[[j]]`. If `y` is not present, each
+#' matrix will be square, and the cell `Q[i, j]` will be the correlation between
+#' images `x[[i]]` and `x[[j]]`.
 #' @export
 
-match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
-                             quiet = FALSE, verbose = FALSE) {
+match_signatures <- function(x, y = NULL, method = "grey",
+                             compare_aspect_ratios = TRUE, backup = TRUE,
+                             quiet = FALSE) {
 
   ### Error handling and object initialization #################################
 
-  stopifnot(is.logical(compare_aspect_ratios), is.logical(quiet))
+  stopifnot(inherits(x, "matchr_sig_list") || inherits(x, "matchr_sig"))
 
-  # Temporarily disable compare_aspect_ratios unless y is provided
-  if (missing(y)) compare_aspect_ratios <- FALSE
+  stopifnot(method %in% c("grey", "gray", "colour", "color", "both"))
+
+  if (!missing(y)) stopifnot(inherits(y, "matchr_sig_list") ||
+                               inherits(y, "matchr_sig"))
+
+  stopifnot(is.logical(compare_aspect_ratios), is.logical(backup),
+            is.logical(quiet))
+
+  if (missing(y)) {
+    x_only <- TRUE
+    y <- x
+  } else x_only <- FALSE
+
+
+  ### Prepare method ###########################################################
+
+  x_length <- length(x[[1]])
+  y_length <- length(y[[1]])
+
+  if (method %in% c("grey", "gray")) {
+
+    method <- "grey"
+
+    x <- new_matchr_sig_list(lapply(x, function(.x) {
+      new_matchr_sig(.x[1:(x_length / 4)],
+                     attr(.x, "file"),
+                     aspect_ratio = attr(.x, "aspect_ratio"))
+      }))
+
+    y <- new_matchr_sig_list(lapply(y, function(.x) {
+      new_matchr_sig(.x[1:(y_length / 4)],
+                     attr(.x, "file"),
+                     aspect_ratio = attr(.x, "aspect_ratio"))
+    }))
+
+  }
+
+  if (method %in% c("colour", "color")) {
+
+    method <- "colour"
+
+    x <- new_matchr_sig_list(lapply(x, function(.x) {
+      new_matchr_sig(.x[(x_length / 4 + 1):x_length],
+                     attr(.x, "file"),
+                     aspect_ratio = attr(.x, "aspect_ratio"))
+    }))
+
+    y <- new_matchr_sig_list(lapply(y, function(.x) {
+      new_matchr_sig(.x[(y_length / 4 + 1):y_length],
+                     attr(.x, "file"),
+                     aspect_ratio = attr(.x, "aspect_ratio"))
+    }))
+
+  }
+
+
+  ### Prepare backup ###########################################################
+
+  # if (backup) {
+  #
+  #   # Silence R CMD check re: function backup
+  #   # sig_backup <- NULL
+  #
+  #   # Check for previous backup
+  #   if (exists("match_backup", envir = .matchr_env)) {
+  #
+  #     # Only proceed if old input size is identical to new input size
+  #     if (.matchr_env$match_backup_size == object.size(x)) {
+  #
+  #       result <- .matchr_env$match_backup
+  #       resume_from <- length(result[!sapply(result, is.null)]) + 1 # TKTK NEED TO UPDATE
+  #       if (!quiet) cat("Backup detected. Resuming from position ",
+  #                       sum(sapply(.matchr_env$match_backup, length)) + 1,
+  #                       ".\n", sep = "")
+  #
+  #     } else {
+  #       stop("The backup detected in .matchr_env$match_backup does not match ",
+  #            "the input. Remove the previous backup with ",
+  #            "`remove_backups()` to proceed.")
+  #     }
+  #
+  #   } else {
+  #
+  #     assign("match_backup", result, envir = .matchr_env)
+  #     assign("match_backup_size", object.size(x), envir = .matchr_env)
+  #
+  #   }
+  # }
 
 
   ### Split clusters for compare_aspect_ratios == TRUE #########################
@@ -64,17 +159,16 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
 
     ## Get aspect ratios -------------------------------------------------------
 
-    if (verbose) cat("Getting aspect ratios\n")
-
     x_ratios <- sapply(x, attr, "aspect_ratio")
     y_ratios <- sapply(y, attr, "aspect_ratio")
 
 
     ## Calculate clusters which minimize calculations --------------------------
 
-    if (verbose) cat("Calculating clusters\n")
+    # Set number of groups to evaluate
+    unique_points <- length(unique(stats::na.omit(c(x_ratios, y_ratios))))
 
-    max_group <- sapply(3:15, function(n) {
+    max_group <- sapply(3:min(unique_points, 15), function(n) {
 
       means <- stats::kmeans(stats::na.omit(c(x_ratios, y_ratios)), n)
       centres <- sort(means$centers)
@@ -106,7 +200,6 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
 
     ## Recalculate cut points and add 1.2x buffer to y -------------------------
 
-    if (verbose) cat("Recalculating cut points\n")
     means <- stats::kmeans(stats::na.omit(c(x_ratios, y_ratios)), k)
     centres <- sort(means$centers)
     cuts <-
@@ -128,7 +221,6 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
 
     ## Get aspect ratios for later ---------------------------------------------
 
-    if (verbose) cat("Getting aspect ratios for later\n")
     x_aspect_ratios <- vector("list", k)
     y_aspect_ratios <- vector("list", k)
 
@@ -139,7 +231,7 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
 
     }
 
-  } else if (!missing(y)) {
+  } else {
 
     x_list <- list(x)
     y_list <- list(y)
@@ -152,126 +244,111 @@ match_signatures <- function(x, y = NULL, compare_aspect_ratios = TRUE,
 
   ### Subdivide x_list for parallel processing #################################
 
-  if (!missing(y)) {
+  x_list <- lapply(x_list, function(x_elem) {
 
-    if (verbose) cat("Subdividing x_list for parallel processing\n")
+    chunks <- min(number_of_threads() * 2, max(floor(length(x_elem) / 4), 1))
 
-    x_list <- lapply(x_list, function(x_elem) {
+    chunk_size <- ceiling(length(x_elem) / chunks)
 
-      chunks <- min(number_of_threads() * 2, max(floor(length(x_elem) / 4), 1))
+    # Check to make sure the last chunk won't be empty
+    while (chunk_size * (chunks - 1) >= length(x_elem)) chunks <- chunks - 1
 
-      if (verbose) cat(paste0("Number of chunks: ", chunks, "\n"))
+    data_list <- vector("list", chunks)
 
-      chunk_size <- ceiling(length(x_elem) / chunks)
+    for (i in seq_len(chunks)) {
 
-      if (verbose) cat(paste0("Chunk size: ", chunk_size, "\n"))
-
-      # Check to make sure the last chunk won't be empty
-      while (chunk_size * (chunks - 1) >= length(x_elem)) chunks <- chunks - 1
-
-      data_list <- vector("list", chunks)
-
-      for (i in seq_len(chunks)) {
-
-        if (verbose) cat(paste0("Splitting data: ", i, "\n"))
-
-        start <- (i - 1) * chunk_size + 1
-        end <- min(i * chunk_size, length(x_elem))
-        data_list[[i]] <- x_elem[start:end]
+      start <- (i - 1) * chunk_size + 1
+      end <- min(i * chunk_size, length(x_elem))
+      data_list[[i]] <- x_elem[start:end]
 
       }
 
-      data_list
+    data_list
 
     })
 
-  }
+  x_list <- lapply(x_list, lapply, new_matchr_sig_list)
+  y_list <- lapply(y_list, new_matchr_sig_list)
 
 
   ### Calculate correlations ###################################################
 
   ## Version for x and y -------------------------------------------------------
 
-  if (!missing(y)) {
+  # TEST IF THIS WORKS QUICKLY ENOUGH FOR X_ONLY ALSO
+  # if (!x_only) {
 
     handler_matchr("Correlating images, batch")
 
-    with_progress({
+    pb <- progressr::progressor(along = x_list)
 
-      pb <- progressor(along = x_list)
+    result <- vector("list", length(x_list))
 
-      result <- vector("list", length(x_list))
+    for (n in seq_along(x_list)) {
 
-      for (n in seq_along(x_list)) {
+      pb()
 
-        pb()
+      # Retrieve names
+      x_names <- lapply(x_list[[n]], sapply, attr, "file")
+      y_names <- sapply(y_list[[n]], attr, "file")
 
-        # Retrieve names
-        x_names <- lapply(x_list[[n]], sapply, attr, "file")
-        y_names <- sapply(y_list[[n]], attr, "file")
+      # Prepare matrices
+      x_matrix <- lapply(x_list[[n]], function(x) {
+        matrix(unlist(x), ncol = length(x))})
 
-        # Prepare matrices
-        x_matrix <- lapply(x_list[[n]], function(x) {
-          matrix(unlist(x), ncol = length(x))})
+      y_matrix <- matrix(unlist(y_list[[n]]), ncol = length(y_list[[n]]))
 
-        y_matrix <- matrix(unlist(y_list[[n]]), ncol = length(y_list[[n]]))
+      # Calculate correlation matrix
+      suppressWarnings({
+        result[[n]] <- par_mapply(function(x, names) {
 
-        # Calculate correlation matrix
-        suppressWarnings({
-          result[[n]] <- par_mapply(function(x, names) {
-
-            output <- stats::cor(x, y_matrix)
-            rownames(output) <- names
-            colnames(output) <- y_names
-
-            return(output)
+          output <- stats::cor(x, y_matrix)
+          rownames(output) <- names
+          colnames(output) <- y_names
+          return(output)
 
         }, x_matrix, x_names, SIMPLIFY = FALSE)})
+
       }
-    })
 
 
   ## Do single matrix for just x -----------------------------------------------
 
-  } else {
-
-    # Get names
-    x_names <- sapply(x, attr, "file")
-
-    # Process matrices
-    x <- matrix(unlist(x), ncol = length(x))
-
-    # Calculate correlation matrix
-    suppressWarnings({result <- stats::cor(x)})
-
-    # Add names
-    rownames(result) <- x_names
-    colnames(result) <- x_names
-
-    # Return result and exit function
-    result <- new_matchr_matrix(result, NULL, NULL)
-    result <- new_matchr_matrix_list(list(result), length(x), length(x))
-    return(result)
-
-    }
+  # } else {
+  #
+  #   # Get names
+  #   x_names <- sapply(x, attr, "file")
+  #
+  #   # Process matrices
+  #   x <- matrix(unlist(x), ncol = length(x))
+  #
+  #   # Calculate correlation matrix
+  #   suppressWarnings({result <- stats::cor(x)})
+  #
+  #   # Add names
+  #   rownames(result) <- x_names
+  #   colnames(result) <- x_names
+  #
+  #   # Return result and exit function
+  #   result <- new_matchr_matrix(result, NULL, NULL)
+  #   result <- new_matchr_matrix_list(list(result), length(x), length(x))
+  #   return(result)
+  #
+  #   }
 
 
   ### Construct matchr_matrix objects of out list elements #####################
 
   ## rbind ---------------------------------------------------------------------
 
-  handler_matchr("Combining results, batch")
+  # handler_matchr("Combining results, batch")
 
-  with_progress({
+  # pb <- progressr::progressor(along = result)
 
-    pb <- progressor(along = result)
-
-    result <- lapply(result, function(x) {
-      pb()
-      do.call(rbind, x)
-      })
-
-  })
+  result <- lapply(result, function(x) {
+    # pb()
+    do.call(rbind, x)
+    })
 
 
   ## Assign class --------------------------------------------------------------

@@ -22,6 +22,10 @@ print.matchr_sig_list <- function(x, ...) {
                      prettyNum(length(x), ","),
                      " signatures")
 
+  # Deal with length-one list
+  if (length(x) == 1) list_msg <- substr(list_msg, 1, nchar(list_msg) - 1)
+
+  # Truncate list if there are more than 12 elements
   if (length(x) > 12) {
 
     extra_row <- paste0("# \u2026 with ", length(x) - 10,
@@ -31,9 +35,11 @@ print.matchr_sig_list <- function(x, ...) {
 
   } else {
 
-    extra_row <- NULL
     x_display <- x
 
+    # Add "\n" if final element is NA
+    if (is.na(x_display[[length(x_display)]])) {
+      extra_row <- "\n"} else extra_row <- NULL
   }
 
   cat(list_msg)

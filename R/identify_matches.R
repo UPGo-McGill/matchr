@@ -30,35 +30,31 @@ identify_matches <- function(image_matrix, threshold = 0.975, quiet = FALSE) {
 
   handler_matchr("Identifying matches, batch")
 
-  with_progress({
+  pb <- progressr::progressor(along = image_matrix)
 
-    pb <- progressor(along = image_matrix)
+  match_list <- par_lapply(image_matrix, function(x) {
 
-    match_list <- par_lapply(image_matrix, function(x) {
+    pb()
 
-      pb()
+    # Find matches
+    match_index <- which(x >= threshold, arr.ind = TRUE)
 
-      # Find matches
-      match_index <- which(x >= threshold, arr.ind = TRUE)
+    # Name results
+    dimnames(match_index)[[2]] <- c("x_index", "y_index")
 
-      # Name results
-      dimnames(match_index)[[2]] <- c("x_index", "y_index")
-
-      # Convert to tibble or data frame
-      if (requireNamespace("dplyr", quietly = TRUE)) {
-        matches <- dplyr::as_tibble(match_index)
+    # Convert to tibble or data frame
+    if (requireNamespace("dplyr", quietly = TRUE)) {
+      matches <- dplyr::as_tibble(match_index)
       } else matches <- as.data.frame(match_index)
 
-      # Add names
-      matches$x_name <- rownames(x)[matches$x_index]
-      matches$y_name <- colnames(x)[matches$y_index]
-      matches$correlation <- x[match_index]
+    # Add names
+    matches$x_name <- rownames(x)[matches$x_index]
+    matches$y_name <- colnames(x)[matches$y_index]
+    matches$correlation <- x[match_index]
 
-      matches
+    matches
 
     })
-
-  })
 
 
   ## Consolidate and arrange output --------------------------------------------

@@ -9,13 +9,6 @@
 
   }
 
-  if (!requireNamespace("progressr", quietly = TRUE)) {
-
-    packageStartupMessage("Install the {progressr} package to ",
-                          "enable progress bars.")
-
-  }
-
   if (!requireNamespace("crayon", quietly = TRUE)) {
 
     packageStartupMessage("Install the {crayon} package to ",
@@ -33,7 +26,6 @@
 
 
 }
-
 
 .onLoad <- function(libname, pkgname) {
 

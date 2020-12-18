@@ -41,3 +41,4 @@ vignettes/*.pdf
 # Other
 .DS_Store
 *.Rproj
+inst/doc

@@ -7,16 +7,22 @@
 match_signatures(
   x,
   y = NULL,
+  method = "grey",
   compare_aspect_ratios = TRUE,
-  quiet = FALSE,
-  verbose = FALSE
+  backup = TRUE,
+  quiet = FALSE
 )
 }
 \arguments{
-\item{x, y}{Lists of 'matchr_sig' objects to be matched. If \code{y} is missing
-(default), each object in \code{x} will be matched against each other object in
-\code{x.} If \code{y} is present, each object in \code{x} will be matched against each
-object in \code{y}.}
+\item{x, y}{Lists (of class \code{matchr_sig_list}) of \code{matchr_sig} objects to be
+matched. If \code{y} is missing (default), each object in \code{x} will be matched
+against each other object in \code{x.} If \code{y} is present, each object in \code{x} will
+be matched against each object in \code{y}. Two individual images can be matched
+by supplying individual \code{matchr_sig} objects to \code{x} and \code{y}.}
+
+\item{method}{A character scalar. Should images be compared by their
+greyscale signatures ("grey" or "gray", the default), their colour signatures
+("colour" or "color"), or both ("both")?}
 
 \item{compare_aspect_ratios}{A logical scalar. Should signatures only be
 compared for images with similar aspect ratios (default)? If TRUE, k-means
@@ -30,36 +36,40 @@ on the lower bound and the break point * 1.2 on the upper bound. This
 argument is currently only implemented when both \code{x} and \code{y} are provided to
 the function.}
 
+\item{backup}{A logical scalar. Should the function store an ongoing backup
+of progress in a hidden object \code{.matchr_env$smatch_backup} in the package's
+environment (default)? If TRUE, the function will attempt to resume progress
+if it detects a previous backup, and it will remove the backup if the
+function successfully completes. Backups can be removed with
+\code{\link{remove_backups}}.}
+
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}
-
-\item{verbose}{A logical scalar. Should the function give extensive progress
-updates throughout the function?}
 }
 \value{
-An object of class \code{matchr_matrix}. This object is a list containing
-a number of correlation matrices equal to the number of aspect-ratio
-categories. If \code{x} and \code{y} are both present, each matrix will have
-\code{length(x)} rows and \code{length(y)} columns, and for the matrix \code{Q} the cell
-\code{Q[i, j]} will be the Pearson correlation coefficient between images \code{x[[i]]}
-and \code{y[[j]]}. If \code{y} is not present, each matrix will be square, and
-the cell \code{Q[i, j]} will be the correlation between images \code{x[[i]]} and
-\code{x[[j]]}.
+An object of class \code{matchr_matrix_list}. This object is a list
+containing a number of correlation matrices (each of class \code{matchr_matrix})
+equal to the number of aspect-ratio categories. If \code{x} and \code{y} are both
+present, each matrix will have \code{length(x)} rows and \code{length(y)} columns, and
+for the matrix \code{Q} the cell \code{Q[i, j]} will be the Pearson correlation
+coefficient between images \code{x[[i]]} and \code{y[[j]]}. If \code{y} is not present, each
+matrix will be square, and the cell \code{Q[i, j]} will be the correlation between
+images \code{x[[i]]} and \code{x[[j]]}.
 }
 \description{
 \code{match_signatures} takes one or two lists of images and produces a
 correlation matrix to identify matches.
 }
 \details{
-A function for identifying matching images. The function takes a list of
-images signatures (objects of class 'matchr_sig') and compares their colour
-signatures to find matches.
+A function for identifying matching images. The function takes one or two
+lists of images signatures (objects of class 'matchr_sig') and compares their
+colour signatures to find matches.
 
 The comparison is done by creating colour signatures for each input image
-using \code{\link{create_signature}} and then computing the Pearson correlation
-coefficient between these signatures. In general, pairs of images which were
-identical prior to arbitrary resampling and compression will have correlation
-coefficients of at least 0.99.
+using \code{\link{create_signature}} and then computing the Pearson
+correlation coefficient between these signatures. In general, pairs of images
+which were identical prior to arbitrary resampling and compression will have
+correlation coefficients of at least 0.99.
 
 The function can optionally filter images by aspect ratio, so only images
 with very similar aspect ratios will be compared. This can remove potential

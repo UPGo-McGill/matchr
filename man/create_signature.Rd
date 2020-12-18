@@ -20,6 +20,7 @@ create_signature(image, bands = 20, rm_black_bars = TRUE, ...)
   bands = 20,
   rm_black_bars = TRUE,
   batch_size = 100,
+  backup = TRUE,
   quiet = FALSE,
   ...
 )
@@ -37,9 +38,10 @@ create_signature(image, bands = 20, rm_black_bars = TRUE, ...)
 }
 \arguments{
 \item{image}{Object (or list of objects) of class \code{matchr_img} or \code{cimg},
-probably imported using \code{load_image} or \code{imager::load.image}, or
-file path or URL (or vector/list of file paths or URLs) which can be
-imported to \code{matchr_img} using \code{load_image}.}
+probably imported using \code{\link{load_image}} or
+\code{imager::load.image}, or file path or URL (or vector/list of file paths
+or URLs) which can be imported to \code{matchr_img} using
+\code{\link{load_image}}.}
 
 \item{bands}{Integer scalar. The number of horizontal and vertical bands the
 image should be split into for processing. Higher values will produce a more
@@ -58,6 +60,13 @@ lead to false positive matches.}
 load into memory before extracting image signatures and releasing the
 associated memory? Higher values will lead to the function executing more
 quickly, but can result in enormous memory requirements.}
+
+\item{backup}{A logical scalar. Should the function store an ongoing backup
+of progress in a hidden object \code{.matchr_env$sig_backup} in the package's
+environment (default)? If TRUE, the function will attempt to resume progress
+if it detects a previous backup, and it will remove the backup if the
+function successfully completes. Backups can be removed with
+\code{\link{remove_backups}}.}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}

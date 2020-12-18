@@ -11,6 +11,13 @@
 #' keeping; and it suppresses file download messages to allow more meaningful
 #' progress reporting.
 #'
+#' Because the memory requirements of storing image representations in memory
+#' so large, it is usually not feasible to read in more than several hundred
+#' images at a time with \code{load_image}. For these cases, use
+#' \code{\link{create_signature}} directly on the input file paths. By default
+#' this will read images with \code{load_image} 100 at a time before
+#' generating the unique colour signatures used for image matching.
+#'
 #' @param file A vector of file paths or URLs to be passed to
 #' \code{imager::load.image}. If `file` is a vector of URLs, the URLs must begin
 #' with "http", "https", "ftp" or "ftps". If the URL has no extension, it will
@@ -25,15 +32,9 @@
 
 load_image <- function(file, quiet = FALSE) {
 
-  ### Error checking and progress setup ########################################
+  ### Error checking ###########################################################
 
   stopifnot(is.character(file), is.logical(quiet))
-
-  # if (requireNamespace("progressr", quietly = TRUE)) {
-  #
-  #   progressr::handlers(global = TRUE)
-  #
-  # }
 
 
   ### Import and process images ################################################
@@ -47,7 +48,7 @@ load_image <- function(file, quiet = FALSE) {
 
   handler_matchr("Loading image")
 
-  pb <- progressor(steps = length(file), enable = !quiet)
+  pb <- progressr::progressor(steps = length(file), enable = !quiet)
 
   imgs <- par_lapply(file, function(x) {
 
@@ -61,6 +62,12 @@ load_image <- function(file, quiet = FALSE) {
   ## Construct class objects ---------------------------------------------------
 
   imgs <- mapply(new_matchr_img, imgs, paths, SIMPLIFY = FALSE)
+
+  imgs[sapply(imgs, is.na)] <-
+    lapply(imgs[sapply(imgs, is.na)], function(x) {
+      class(x) <- "logical"
+      x
+      })
 
 
   ## Return output -------------------------------------------------------------

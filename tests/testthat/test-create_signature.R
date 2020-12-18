@@ -21,7 +21,7 @@ test_that("a list of one matchr_img works", {
 
 test_that("a vector of paths works", {
   expect_equal(
-    ceiling(sum(sapply(create_signature(urls[1:2]), sum))), 133)
+    ceiling(sum(sapply(test_long_sig_list, sum), na.rm = TRUE)), 871)
 })
 
 test_that("a list of paths works", {
@@ -31,7 +31,8 @@ test_that("a list of paths works", {
 })
 
 test_that("NA works", {
-  expect(is.na(create_signature(NA)), "create_signature(NA) did not return NA.")
+  expect(is.na(create_signature(test_na)[[1]]),
+         "create_signature(NA) did not return NA.")
 })
 
 test_that("rm_black_bars works", {

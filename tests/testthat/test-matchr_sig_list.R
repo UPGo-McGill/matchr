@@ -8,3 +8,12 @@ test_that("matchr_sig_list objects can be concatenated", {
   expect_output(print(c(test_matchr_sig_list, test_matchr_sig_list)),
                 "4 signatures")
 })
+
+test_that("long matchr_sig_list objects are truncated", {
+  expect_output(print(c(test_matchr_sig_list, test_matchr_sig_list,
+                        test_matchr_sig_list, test_matchr_sig_list,
+                        test_matchr_sig_list, test_matchr_sig_list,
+                        test_matchr_sig_list, test_matchr_sig_list
+                        )),
+                "with 6 more signatures")
+})
