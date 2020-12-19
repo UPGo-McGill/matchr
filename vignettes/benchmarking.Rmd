@@ -32,15 +32,13 @@ The following calculations show timing for reading vectors of 100, 1000 and 10,0
 ```{r import-benchmark, eval = FALSE}
 
 library(future)
+library(microbenchmark)
 
 paths_low <- list.files("/Volumes/Data 2/Scrape photos/vancouver/kj", full.names = TRUE)
 paths_low <- paths_low[1:10000]
 
 paths_high <- list.files("/Volumes/Data 2/Scrape photos/vancouver/ab", full.names = TRUE)
 paths_high <- paths_high[1:10000]
-
-library(future)
-library(microbenchmark)
 
 # Benchmark sequential plan
 plan(sequential)
