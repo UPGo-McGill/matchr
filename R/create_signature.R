@@ -46,6 +46,7 @@ create_signature <- function(image, bands = 20, rm_black_bars = TRUE, ...) {
 
 }
 
+
 #' @rdname create_signature
 #' @method create_signature matchr_img
 #' @export
@@ -189,109 +190,145 @@ create_signature.character <- function(image, bands = 20, rm_black_bars = TRUE,
                                        batch_size = 100, backup = TRUE,
                                        quiet = FALSE, ...) {
 
-  ### Error checking and preparation ###########################################
-
+  ### Error checking ###########################################################
+  
   stopifnot(is.numeric(bands), is.numeric(batch_size),
             is.logical(rm_black_bars), is.logical(quiet))
-
-  iterations <- ceiling(length(image) / batch_size)
-
+  
+  ### Prepare iteration ########################################################
+  
+  # If batch_size >= length(image), just do one iteration
+  if (batch_size >= length(image)) {
+    
+    adj_batch_size <- length(image)
+    
+  } else {
+    
+    # Find largest multiple of number_of_threads <= batch_size
+    adj_batch_size <- 
+      floor(batch_size / number_of_threads()) * number_of_threads()
+    
+  }
+  
+  # Set iterations
+  iterations <- ceiling(length(image) / adj_batch_size)
+  
+  # Don't have more iterations than input elements
+  iterations <- min(iterations, length(image))
+  
   result <- vector("list", iterations)
   resume_from <- 1
-
-  sig_backup <- sig_backup_size <- NULL
-
-
+  
+  
   ### Prepare backup ###########################################################
-
+  
   if (backup) {
-
-    # Silence R CMD check re: function backup
-    # sig_backup <- NULL
-
+    
     # Check for previous backup
     if (exists("sig_backup", envir = .matchr_env)) {
-
+      
       # Only proceed if old input size is identical to new input size
-      if (.matchr_env$sig_backup_size == utils::object.size(image)) {
-
+      if (.matchr_env$sig_backup_size == utils::object.size(image) &&
+          length(.matchr_env$sig_backup) == iterations) {
+        
         result <- .matchr_env$sig_backup
         resume_from <- length(result[!sapply(result, is.null)]) + 1
         if (!quiet) cat("Backup detected. Resuming from position ",
                         sum(sapply(.matchr_env$sig_backup, length)) + 1,
                         ".\n", sep = "")
-
+        
       } else {
         stop("The backup detected in .matchr_env$sig_backup does not match ",
              "the input. Remove the previous backup with ",
              "`remove_backups()` to proceed.")
       }
-
+      
     } else {
-
+      
       assign("sig_backup_size", utils::object.size(image), envir = .matchr_env)
-
+      
     }
   }
-
-
+  
+  
   ### Run loop #################################################################
-
+  
   handler_matchr("Creating signature")
-
+  
   pb <- progressr::progressor(steps = length(image), enable = !quiet)
-
-  pb(amount = (resume_from - 1) * batch_size)
-
+  
+  pb(amount = (resume_from - 1) * adj_batch_size)
+  
   for (i in resume_from:iterations) {
-
-    vec_start <- (i - 1) * batch_size + 1
-    vec_end <- min(i * batch_size, length(image))
-
-    imgs <- par_lapply(image[vec_start:vec_end], function(x) {
-
-      pb(amount = 0.5)
-
-      load_image_internal(x)
-
-    }, future.seed = NULL)
-
-    imgs <- mapply(new_matchr_img, imgs, image[vec_start:vec_end],
-                   SIMPLIFY = FALSE)
-
-    imgs[sapply(imgs, is.na)] <-
-      lapply(imgs[sapply(imgs, is.na)], function(x) {
-        class(x) <- "logical"
-        x
+    
+    # Build input list
+    vec_start <- (i - 1) * adj_batch_size + 1
+    vec_end <- min(i * adj_batch_size, length(image))
+    vec_iter <- ceiling((vec_end - vec_start + 1) / number_of_threads())
+    last_thread_plus_1 <- 
+      ifelse(vec_end %% number_of_threads() == 0, number_of_threads(),
+             vec_end %% number_of_threads())
+    
+    input_list <- lapply(1:number_of_threads(), function(n) {
+      
+      loop_start <-
+        vec_start + (n - 1) * vec_iter - max(n - 1 - last_thread_plus_1, 0)
+      
+      loop_end <- 
+        vec_start + n * vec_iter - 1 - (max(n - last_thread_plus_1, 0))
+      
+      image[loop_start:loop_end]
+      
+    })
+    
+    # Trim input_list if it goes out of bounds
+    
+    result[[i]] <- par_lapply(input_list, function(x) {
+      
+      imgs <- lapply(x, function(y) {
+        pb(amount = 0.5)
+        matchr:::load_image_internal(y)})
+      
+      imgs <- mapply(new_matchr_img, imgs, x, SIMPLIFY = FALSE)
+      
+      imgs[sapply(imgs, is.na)] <-
+        lapply(imgs[sapply(imgs, is.na)], function(y) {
+          class(y) <- "logical"
+          y
+        })
+      
+      imgs <- lapply(imgs, function(y) {
+        pb(amount = 0.5)
+        create_signature(y, bands = bands, rm_black_bars = rm_black_bars)
       })
-
-    result[[i]] <- par_lapply(imgs, function(x) {
-
-      pb(amount = 0.5)
-
-      create_signature(x, bands = bands, rm_black_bars = rm_black_bars)
-
+      
+      imgs <- new_matchr_sig_list(imgs)
+      
+      return(imgs)
+      
     }, future.seed = NULL)
-
+    
     if (backup) assign("sig_backup", result, envir = .matchr_env)
-
+    
   }
-
-
+  
+  
   ### Construct matchr_sig_list object and return result #######################
-
+  
+  # Need to do this twice because of recursive lists
   result <- unlist(result, recursive = FALSE)
-
+  result <- unlist(result, recursive = FALSE)
+  
   if (length(result) > 1) {
     result <- new_matchr_sig_list(result)
   } else {
     result <- result[[1]]
   }
-
+  
   # Remove backups if necessary
   if (backup) rm(sig_backup, sig_backup_size, envir = .matchr_env)
   return(result)
-
+  
 }
 
 

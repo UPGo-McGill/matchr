@@ -37,12 +37,12 @@ remove_backups <- function() {
   }
 
   if (length(removed) == 0) {
-    cat("No backups found.")
+    message("No backups found.")
   } else {
 
-    cat("The following backups were removed: ",
-        paste(removed, collapse = ", "),
-        ".", sep = "")
+    message("The following backups were removed: ",
+            paste(removed, collapse = ", "),
+            ".")
 
   }
 
