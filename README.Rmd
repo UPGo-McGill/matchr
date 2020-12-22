@@ -24,9 +24,9 @@ The goal of matchr is to facilitate fast and reliable comparison of large sets o
 
 Image are decomposed into horizontal bands, and for each band an average greyscale or colour value is calculated. The vector of these averages becomes a distinctive signature that can identify a given image even if the image is rescaled or compressed, and thus serves as a reliable indicator of whether two images are the same.
 
-Using matrix algebra, matchr can compare multiple sets of images and identify likely matches. The method is robust to changes in tint, compression or aspect ratio, and to other minor differences.
+Using matrix algebra, matchr can compare multiple sets of images and identify likely matches. The method is robust to changes in tint, compression or aspect ratio, and to other minor differences such as small overlays added to one of a pair of matching images.
 
-The package includes a Shiny app (`compare_matches`) for visually inspecting match results and confirm or reject the matches.
+The package includes a Shiny app (`compare_matches`) for visually inspecting match results and confirming or rejecting the matches.
 
 All time-consuming matchr functions can be parallelized through the [future](https://cran.r-project.org/web/packages/future/vignettes/future-1-overview.html) package, can report progress through the [progressr](https://cran.r-project.org/web/packages/progressr/vignettes/progressr-intro.html) package, and can save incremental backups in case of an error.
 

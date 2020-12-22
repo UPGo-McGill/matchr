@@ -24,8 +24,9 @@
 #' be matched against each object in `y`. Two individual images can be matched
 #' by supplying individual `matchr_sig` objects to `x` and `y`.
 #' @param method A character scalar. Should images be compared by their
-#' greyscale signatures ("grey" or "gray", the default), their colour signatures
-#' ("colour" or "color"), or both ("both")?
+#' greyscale signatures ("grey", "greyscale, "gray", or "grayscale", the 
+#' default), their colour signatures ("colour", "color", "rgb", or "RGB), or 
+#' both ("both")?
 #' @param compare_aspect_ratios A logical scalar. Should signatures only be
 #' compared for images with similar aspect ratios (default)? If TRUE, k-means
 #' clustering is used to identify breakpoints between aspect ratios that
@@ -82,7 +83,7 @@ match_signatures <- function(x, y = NULL, method = "grey",
   x_length <- length(x[[1]])
   y_length <- length(y[[1]])
 
-  if (method %in% c("grey", "gray")) {
+  if (method %in% c("grey", "gray", "greyscale", "grayscale")) {
 
     method <- "grey"
 
@@ -100,7 +101,7 @@ match_signatures <- function(x, y = NULL, method = "grey",
 
   }
 
-  if (method %in% c("colour", "color")) {
+  if (method %in% c("colour", "color", "rgb", "RGB")) {
 
     method <- "colour"
 

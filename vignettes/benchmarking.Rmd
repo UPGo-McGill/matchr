@@ -19,110 +19,193 @@ knitr::opts_chunk$set(
 library(matchr)
 ```
 
-The functions in matchr can be very computation- and time-intensive. While they can be used "out of the box" with no considerations for optimizing performance on small or medium-sized datasets, processing large sets of images will potentially be frustratingly slow without some care to leveraging multicore processors and to memory requirements.
+The functions in matchr can be very computation- and time-intensive. While with small or medium-sized datasets they can be used "out of the box" with no considerations for optimizing performance, processing large sets of images will potentially be frustratingly slow without some care to leveraging multicore processors and to memory requirements.
 
-## Parallel processing 
+The following discussion will rely on examples taken from two large sets of images. The paths_low vector contains low-resolution images (roughly 200 x 150 pixels, and 8 kB), while the paths_high vector contains higher-resolution images (between 640 x 480 and 1200 x 800, and 170 kB). To reproduce the benchmarks and analysis in this vignette, point the following lines at a pair of folders with low- and high- resolution images, respectively.
 
-All of the time-consuming functions in matchr support parallel and remote processing via the [future](https://cran.r-project.org/web/packages/future/vignettes/future-1-overview.html) package. If a multisession, multicore, or cluster plan is set through future, matchr functions will generally perform substantially faster. Some benchmarks follow.
+```
+paths_low <- list.files("example_low", full.names = TRUE)
+paths_high <- list.files("example_high", full.names = TRUE)
+```
+
+## Parallel processing
+
+All of the time-consuming functions in matchr support parallel and remote processing via the [future](https://cran.r-project.org/web/packages/future/vignettes/future-1-overview.html) package. If a multisession, multicore, or cluster plan is set through future, matchr functions will generally perform substantially faster. For local workloads (i.e. workloads not being executed on a remote computing cluster), the most straightforward way to leverage parallel processing will be to run the following two lines before executing matchr functions:
+
+```
+library(future)
+plan(multisession)
+```
+
+This will initiate a set of background processes which will share the computational workload of matchr functions. By default, one process will be initiated for each (real or virtual) CPU core on the local computer.
+
+While in theory running a function using four cores instead of a single core might be expected to quadruple its execution speed, in practice the gains from parallel processing are usually much less than this, because of communication overhead between the main process and the background processes. In particular, if large data objects need to be passed between processes, the time this takes can swamp the gains from splitting calculations across processes. The functions in matchr send the minimum possible amount of data between processes—for example, paths to images on disk rather than the image data itself—but even so it is often true that for quick tasks a non-parallelized approach will be faster. The following benchmarks demonstrate the relevant considerations.
 
 ### load_image
 
-The following calculations show timing for reading vectors of 100, 1000 and 10,000 file paths with load_image. The paths_low vector contains low-resolution images (roughly 200 x 150 pixels, and 8 kB), while the paths_high vector contains higher-resolution images (between 640 x 480 and 1200 x 800, and 170 kB). Because the memory requirements of importing the higher-resolution images are so high, only 1000 images are read in that case. Multisession benchmarks are run separately then merged with the rest to avoid including the one-time overhead involved in initializing multisession futures in the results.
+We begin with timings for reading vectors of 100, 1000 and 10,000 file paths with load_image. The paths_low vector contains low-resolution images (roughly 200 x 150 pixels, and 8 kB), while the paths_high vector contains higher-resolution images (between 640 x 480 and 1200 x 800, and 170 kB). Because the memory requirements of importing the higher-resolution images are so high, only 1000 images are read in that case. The benchmarks are run separately for reach number of background processes then merged to avoid including the one-time overhead involved in initializing background processes in the results.
 
-```{r import-benchmark, eval = FALSE}
-
+```{r li_timing, eval = FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
 library(future)
-library(microbenchmark)
 
-paths_low <- list.files("/Volumes/Data 2/Scrape photos/vancouver/kj", full.names = TRUE)
-paths_low <- paths_low[1:10000]
+# Benchmark load_image ----------------------------------------------------
 
-paths_high <- list.files("/Volumes/Data 2/Scrape photos/vancouver/ab", full.names = TRUE)
-paths_high <- paths_high[1:10000]
+for (n in c(1, 4, 8, 16, 32)) {
+  
+  if (n == 1) plan(sequential) else plan(multisession, workers = n)
+  
+  assign(paste0("li_", n), {
+    bench::mark(low_100 = load_image(paths_low[1:100]),
+                low_1k = load_image(paths_low[1:1000]),
+                low_10k = load_image(paths_low[1:10000]),
+                high_100 = load_image(paths_high[1:100]),
+                high_1k = load_image(paths_high[1:1000]),
+                iterations = 20, check = FALSE, memory = (n == 1)) %>% 
+      mutate(workers = n) %>% 
+      select(-result, -memory, -c(`gc/sec`:n_gc), -total_time)})
+    
+}
 
-# Benchmark sequential plan
-plan(sequential)
+# Combine and clean results -----------------------------------------------
 
-li_seq <-
-  microbenchmark(seq_1_low_100 = load_image(paths_low[1:100], quiet = TRUE),
-                 seq_1_low_1k = load_image(paths_low[1:1000], quiet = TRUE),
-                 seq_1_low_10k = load_image(paths_low, quiet = TRUE),
-                 seq_1_high_100 = load_image(paths_high[1:100], quiet = TRUE),
-                 seq_1_high_1k = load_image(paths_high[1:1000], quiet = TRUE),
-                 times = 5)
+li_bench <- 
+  rbind(li_1, li_4, li_8, li_16, li_32) %>% 
+  unnest(c(time, gc)) %>% 
+  mutate(workers = factor(workers, levels = c("1", "4", "8", "16", "32")),
+         image_vector = factor(expression, 
+                               levels = c("low_100", "low_1k", "low_10k", 
+                                          "high_100", "high_1k")))
 
-qs::qsave(li_seq, "li_seq.qs")
+# Graph timings -----------------------------------------------------------
 
-# Benchmark multisession plan
-plan(multisession, workers = 4)
-
-li_ms_4 <-
-  microbenchmark(ms_4_low_100 = load_image(paths_low[1:100], quiet = TRUE),
-                 ms_4_low_1k = load_image(paths_low[1:1000], quiet = TRUE),
-                 ms_4_low_10k = load_image(paths_low, quiet = TRUE),
-                 ms_4_high_100 = load_image(paths_high[1:100], quiet = TRUE),
-                 ms_4_high_1k = load_image(paths_high[1:1000], quiet = TRUE),
-                 times = 5)
-
-qs::qsave(li_ms_4, "li_ms_4.qs")
-
-plan(multisession, workers = 10)
-
-li_ms_10 <-
-  microbenchmark(ms_10_low_100 = load_image(paths_low[1:100], quiet = TRUE),
-                 ms_10_low_1k = load_image(paths_low[1:1000], quiet = TRUE),
-                 ms_10_low_10k = load_image(paths_low, quiet = TRUE),
-                 ms_10_high_100 = load_image(paths_high[1:100], quiet = TRUE),
-                 ms_10_high_1k = load_image(paths_high[1:1000], quiet = TRUE),
-                 times = 5)
-
-qs::qsave(li_ms_10, "li_ms_10.qs")
-
-plan(multisession, workers = 32)
-
-li_ms_32 <-
-  microbenchmark(ms_32_low_100 = load_image(paths_low[1:100], quiet = TRUE),
-                 ms_32_low_1k = load_image(paths_low[1:1000], quiet = TRUE),
-                 ms_32_low_10k = load_image(paths_low, quiet = TRUE),
-                 ms_32_high_100 = load_image(paths_high[1:100], quiet = TRUE),
-                 ms_32_high_1k = load_image(paths_high[1:1000], quiet = TRUE),
-                 times = 5)
-
-qs::qsave(li_ms_32, "li_ms_32.qs")
-
-# Benchmark multicore plan
-plan(multicore, workers = 4)
-
-li_mc_4 <-
-  microbenchmark(mc_4_low_100 = load_image(paths_low[1:100], quiet = TRUE),
-                 mc_4_low_1k = load_image(paths_low[1:1000], quiet = TRUE),
-                 mc_4_low_10k = load_image(paths_low, quiet = TRUE),
-                 mc_4_high_100 = load_image(paths_high[1:100], quiet = TRUE),
-                 mc_4_high_1k = load_image(paths_high[1:1000], quiet = TRUE),
-                 times = 5)
-
-plan(multicore, workers = 10)
-
-li_mc_10 <-
-  microbenchmark(mc_10_low_100 = load_image(paths_low[1:100], quiet = TRUE),
-                 mc_10_low_1k = load_image(paths_low[1:1000], quiet = TRUE),
-                 mc_10_low_10k = load_image(paths_low, quiet = TRUE),
-                 mc_10_high_100 = load_image(paths_high[1:100], quiet = TRUE),
-                 mc_10_high_1k = load_image(paths_high[1:1000], quiet = TRUE),
-                 times = 5)
-
-plan(multicore, workers = 32)
-
-li_mc_32 <-
-  microbenchmark(mc_32_low_100 = load_image(paths_low[1:100], quiet = TRUE),
-                 mc_32_low_1k = load_image(paths_low[1:1000], quiet = TRUE),
-                 mc_32_low_10k = load_image(paths_low, quiet = TRUE),
-                 mc_32_high_100 = load_image(paths_high[1:100], quiet = TRUE),
-                 mc_32_high_1k = load_image(paths_high[1:1000], quiet = TRUE),
-                 times = 5)
-
+li_bench %>% 
+  ggplot() +
+  geom_boxplot(aes(time, image_vector, colour = workers)) +
+  scale_colour_viridis_d() +
+  bench:::scale_x_bench_time() +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 
 ```
 
+``` {r li_timing_graph, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 5}
 
-## Memory requirements
+library(bench)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+load(here::here("inst", "li_bench.Rdata"))
+
+li_bench <- 
+  rbind(li_1, li_4, li_8, li_16, li_32) %>% 
+  unnest(c(time, gc)) %>% 
+  mutate(workers = factor(workers, levels = c("1", "4", "8", "16", "32")),
+         image_vector = factor(expression, 
+                               levels = c("low_100", "low_1k", "low_10k", 
+                                          "high_100", "high_1k")))
+
+li_bench %>% 
+  ggplot() +
+  geom_boxplot(aes(time, image_vector, colour = workers)) +
+  scale_colour_viridis_d() +
+  bench:::scale_x_bench_time() +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+The figure shows the relationship between the number of parallel threads ("workers"), the size and length of the input vector, and the computational time of the load_image function. For the less demanding workloads, there is no benefit to running load_image in parallel. For the three low-resolution tests, the sequential (single-process) version of load_image is faster than any of the multisession versions. However, as the complexity of the task increases, the benefits of parallel processing become stronger. For the higher-resolution image imports, the median completion time with 32 processes is between 40% and 90% less than the median completion time for a single process. As the workloads become more time intensive, that gap will increase.
+
+### create_signature
+
+Because the memory requirements of reading many images into memory at once are so high (see [Memory requirements](#memory) below), it is rarely feasible to use load_image directly on a large set of images. Instead, create_signature combines the (memory-intensive) step of importing images with the (less memory-intensive) step of calculating signatures based on the colours and shades present in each image, and proceeds in batches. With its default settings, if create_signature is given a large vector of file paths or URLs, it processes 100 images at a time. The first 100 images are read into memory, image signatures are calculated, the images are discarded from memory, and then the next 100 images are processed the same way. This makes it possible to process arbitrarily large sets of images with create_signature, and increases the usefulness of parallel processing.
+
+```{r cs_timing, eval = FALSE}
+# Benchmark create_signature ----------------------------------------------
+
+for (n in c(1, 4, 8, 16, 32)) {
+  
+  if (n == 1) plan(sequential) else plan(multisession, workers = n)
+  
+  assign(paste0("cs_", n), {
+    bench::mark(low_1k = create_signature(paths_low[1:1000]),
+                low_10k = create_signature(paths_low[1:10000]),
+                high_1k = create_signature(paths_high[1:1000]),
+                high_10k = create_signature(paths_high[1:10000]),
+                iterations = 20, check = FALSE, memory = (n == 1)) %>% 
+    mutate(workers = n) %>% 
+    select(-result, -memory, -c(`gc/sec`:n_gc), -total_time)})
+    
+}
+
+# Combine and clean results -----------------------------------------------
+
+cs_bench <- 
+  rbind(cs_1, cs_4, cs_8, cs_16, cs_32) %>% 
+  unnest(c(time, gc)) %>% 
+  mutate(workers = factor(workers, levels = c("1", "4", "8", "16", "32")),
+         image_vector = factor(expression, 
+                               levels = c("low_1k", "low_10k", "high_1k", 
+                                          "high_10k")))
+
+# Graph timings -----------------------------------------------------------
+
+cs_bench %>% 
+  ggplot() +
+  geom_boxplot(aes(time, image_vector, colour = workers)) +
+  scale_colour_viridis_d() +
+  bench:::scale_x_bench_time() +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+``` {r cs_timing_graph, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 5}
+
+#load(here::here("inst", "cs_bench.Rdata"))
+
+#cs_bench <- 
+#  rbind(cs_1, cs_4, cs_8, cs_16, cs_32) %>% 
+#  unnest(c(time, gc)) %>% 
+#  mutate(workers = factor(workers, levels = c("1", "4", "8", "16", "32")),
+#         image_vector = factor(expression, 
+#                               levels = c("low_100", "low_1k", "low_10k", 
+#                                          "high_100", "high_1k")))
+
+#cs_bench %>% 
+#  ggplot() +
+#  geom_boxplot(aes(time, image_vector, colour = workers)) +
+#  scale_colour_viridis_d() +
+#  bench:::scale_x_bench_time() +
+#  theme_minimal() +
+#  theme(legend.position = "bottom")
+```
+
+The results demonstrate, first of all, that the completion time of create_signature scales linearly with the number of images being read. The non-parallel (workers == 1) version of the function reads 1,000 low-resolution images in 21 seconds, and 10,000 images in 187 seconds. It reads 1,000 higher-resolution images in 4.8 minutes and 10,000 in 48.2 minutes.
+
+Secondly, parallel versions of create_signature produce large (although not quite linear) speed increases, particularly when reading hiher-resolution images.
+
+## Memory requirements {#memory}
+
+``` {r li_memory, eval = FALSE}
+
+li_bench %>%
+  filter(plan == "seq") %>% 
+  group_by(image_vector) %>% 
+  summarize(mem_alloc = first(mem_alloc)) %>% 
+  separate(image_vector, into = c("img_res", "length"), sep = "_") %>% 
+  mutate(length = case_when(length == "100" ~ 100,
+                            length == "1k" ~ 1000,
+                            length == "10k" ~ 10000)) %>% 
+  ggplot(aes(x = length, y = mem_alloc, colour = img_res)) +
+  geom_line(lwd = 2) +
+  scale_x_log10(labels = scales::comma) +
+  scale_y_log10(labels = scales::comma_format(accuracy = 1, scale = 1/(1000 ^ 3),
+                                              suffix = " GB")) +
+  scale_colour_viridis_d() +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+```

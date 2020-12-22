@@ -39,6 +39,8 @@ par_lapply <- function(...) {
 }
 
 
+# Wrapper for mapply
+
 par_mapply <- function(...) {
 
   if (requireNamespace("future", quietly = TRUE)) {

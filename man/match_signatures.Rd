@@ -21,8 +21,9 @@ be matched against each object in \code{y}. Two individual images can be matched
 by supplying individual \code{matchr_sig} objects to \code{x} and \code{y}.}
 
 \item{method}{A character scalar. Should images be compared by their
-greyscale signatures ("grey" or "gray", the default), their colour signatures
-("colour" or "color"), or both ("both")?}
+greyscale signatures ("grey", "greyscale, "gray", or "grayscale", the
+default), their colour signatures ("colour", "color", "rgb", or "RGB), or
+both ("both")?}
 
 \item{compare_aspect_ratios}{A logical scalar. Should signatures only be
 compared for images with similar aspect ratios (default)? If TRUE, k-means

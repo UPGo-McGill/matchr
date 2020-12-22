@@ -59,17 +59,15 @@ create_signature.matchr_img <- function(image, bands = 20, rm_black_bars = TRUE,
   stopifnot(is.numeric(bands), is.logical(rm_black_bars))
 
 
-  ### Return NA if the image doesn't have enough rows or columns ###############
+  ### Return NA if the image doesn't have enough pixels ########################
 
   if (dim(image)[[1]] < bands || dim(image)[[2]] < bands) {
 
-    return(
-      new_matchr_sig(
-        rep(NA_real_, times = bands * 8),
-        if (is.null(attr(image, "file"))) NA_character_ else attr(image,
-                                                                  "file"),
-        NA_real_)
-    )
+    if (is.null(attr(image, "file"))) {
+      file <- NA_character_
+      } else file <- attr(image, "file")
+    
+    return(new_matchr_sig(rep(NA_real_, times = bands * 8), file, NA_real_))
 
   }
 
@@ -287,7 +285,7 @@ create_signature.character <- function(image, bands = 20, rm_black_bars = TRUE,
       
       imgs <- lapply(x, function(y) {
         pb(amount = 0.5)
-        matchr:::load_image_internal(y)})
+        load_image_internal(y)})
       
       imgs <- mapply(new_matchr_img, imgs, x, SIMPLIFY = FALSE)
       
