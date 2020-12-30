@@ -2,7 +2,6 @@
 
 S3method(c,matchr_sig_list)
 S3method(create_signature,character)
-S3method(create_signature,cimg)
 S3method(create_signature,default)
 S3method(create_signature,list)
 S3method(create_signature,matchr_img)
@@ -27,4 +26,3 @@ export(new_matchr_matrix_list)
 export(new_matchr_sig)
 export(new_matchr_sig_list)
 export(remove_backups)
-export(remove_black_bars)

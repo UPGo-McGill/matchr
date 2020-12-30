@@ -3,7 +3,7 @@ title: "Parallel processing and performance benchmarking"
 author: "David Wachsmuth"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{benchmarking}
+  %\VignetteIndexEntry{Parallel processing and performance benchmarking}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -21,7 +21,12 @@ library(matchr)
 
 The functions in matchr can be very computation- and time-intensive. While with small or medium-sized datasets they can be used "out of the box" with no considerations for optimizing performance, processing large sets of images will potentially be frustratingly slow without some care to leveraging multicore processors and to memory requirements.
 
-The following discussion will rely on examples taken from two large sets of images. The paths_low vector contains low-resolution images (roughly 200 x 150 pixels, and 8 kB), while the paths_high vector contains higher-resolution images (between 640 x 480 and 1200 x 800, and 170 kB). To reproduce the benchmarks and analysis in this vignette, point the following lines at a pair of folders with low- and high- resolution images, respectively.
+The key takeaways are:
+
+- Enable parallel processing with the {future} package, most simply by setting `future::plan(multisession)`.
+- On computers with access to large amounts of RAM, increase the `batch_size` argument in `create_signature` to improve speed. On RAM-constrained computers, decrease the `batch_size` argument to perserve system stability.
+
+The following discussion will rely on examples taken from two large sets of images. The `paths_low` vector contains low-resolution images (roughly 200 x 150 pixels, and 8 kB), while the `paths_high` vector contains higher-resolution images (between 640 x 480 and 1200 x 800, and 170 kB). To reproduce the benchmarks and analysis in this vignette, point the following lines at a pair of folders with low- and high- resolution images, respectively.
 
 ```
 paths_low <- list.files("example_low", full.names = TRUE)
@@ -39,11 +44,19 @@ plan(multisession)
 
 This will initiate a set of background processes which will share the computational workload of matchr functions. By default, one process will be initiated for each (real or virtual) CPU core on the local computer.
 
-While in theory running a function using four cores instead of a single core might be expected to quadruple its execution speed, in practice the gains from parallel processing are usually much less than this, because of communication overhead between the main process and the background processes. In particular, if large data objects need to be passed between processes, the time this takes can swamp the gains from splitting calculations across processes. The functions in matchr send the minimum possible amount of data between processes—for example, paths to images on disk rather than the image data itself—but even so it is often true that for quick tasks a non-parallelized approach will be faster. The following benchmarks demonstrate the relevant considerations.
+While in theory running a function using four cores instead of a single core might be expected to quadruple its execution speed, in practice the gains from parallel processing are usually much less than this, because of communication overhead between the main process and the background processes. In particular, if large data objects need to be passed between processes, the time this takes can swamp the gains from splitting calculations across processes. The functions in matchr send the minimum possible amount of data between processes—for example, paths to images on disk rather than the image data itself—but even so it is often true that for quick tasks a non-parallelized approach will be faster.
+
+By default, regardless of the plan which has been set with `future::plan`, matchr will only enable parallel processing in scenarios where testing has indicated that this will reduce computation time. For example, in `load_image` and `create_signature`, parallel processing is turned off by default when reading images smaller than 100kB off a local drive. To override this default, set the `matchr.force_parallel` option to TRUE (with `options(matchr.force_parallel = TRUE)`) for a temporary override, or add the line `MATCHR_FORCE_PARALLEL = TRUE` to the .Renviron file for a permanent override.
+
+In order to explore the impacts of parallel processing on computation time, the following benchmarks enable the `force_parallel` option.
+
+```
+options(matchr.force_parallel = TRUE)
+```
 
 ### load_image
 
-We begin with timings for reading vectors of 100, 1000 and 10,000 file paths with load_image. The paths_low vector contains low-resolution images (roughly 200 x 150 pixels, and 8 kB), while the paths_high vector contains higher-resolution images (between 640 x 480 and 1200 x 800, and 170 kB). Because the memory requirements of importing the higher-resolution images are so high, only 1000 images are read in that case. The benchmarks are run separately for reach number of background processes then merged to avoid including the one-time overhead involved in initializing background processes in the results.
+We begin with timings for reading vectors of 100, 1000 and 10,000 file paths with `load_image`. Because the memory requirements of importing the higher-resolution images are so high, only 1000 images are read in that case. The benchmarks are run separately for each number of background processes then merged to avoid including the one-time overhead involved in initializing background processes in the results.
 
 ```{r li_timing, eval = FALSE}
 library(dplyr)
@@ -74,8 +87,7 @@ for (n in c(1, 4, 8, 16, 32)) {
 li_bench <- 
   rbind(li_1, li_4, li_8, li_16, li_32) %>% 
   unnest(c(time, gc)) %>% 
-  mutate(workers = factor(workers, levels = c("1", "4", "8", "16", "32")),
-         image_vector = factor(expression, 
+  mutate(image_vector = factor(expression, 
                                levels = c("low_100", "low_1k", "low_10k", 
                                           "high_100", "high_1k")))
 
@@ -83,8 +95,8 @@ li_bench <-
 
 li_bench %>% 
   ggplot() +
-  geom_boxplot(aes(time, image_vector, colour = workers)) +
-  scale_colour_viridis_d() +
+  geom_boxplot(aes(time, image_vector, colour = factor(workers))) +
+  scale_colour_viridis_d(name = "Workers") +
   bench:::scale_x_bench_time() +
   theme_minimal() +
   theme(legend.position = "bottom")
@@ -101,32 +113,31 @@ library(ggplot2)
 load(here::here("inst", "li_bench.Rdata"))
 
 li_bench <- 
-  rbind(li_1, li_4, li_8, li_16, li_32) %>% 
+  rbind(li_1, li_2, li_4, li_8, li_16, li_32) %>% 
   unnest(c(time, gc)) %>% 
-  mutate(workers = factor(workers, levels = c("1", "4", "8", "16", "32")),
-         image_vector = factor(expression, 
+  mutate(image_vector = factor(expression, 
                                levels = c("low_100", "low_1k", "low_10k", 
                                           "high_100", "high_1k")))
 
 li_bench %>% 
   ggplot() +
-  geom_boxplot(aes(time, image_vector, colour = workers)) +
-  scale_colour_viridis_d() +
+  geom_boxplot(aes(time, image_vector, colour = factor(workers))) +
+  scale_colour_viridis_d(name = "Workers") +
   bench:::scale_x_bench_time() +
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
 
-The figure shows the relationship between the number of parallel threads ("workers"), the size and length of the input vector, and the computational time of the load_image function. For the less demanding workloads, there is no benefit to running load_image in parallel. For the three low-resolution tests, the sequential (single-process) version of load_image is faster than any of the multisession versions. However, as the complexity of the task increases, the benefits of parallel processing become stronger. For the higher-resolution image imports, the median completion time with 32 processes is between 40% and 90% less than the median completion time for a single process. As the workloads become more time intensive, that gap will increase.
+The figure shows the relationship between the number of parallel threads ("workers"), the size and length of the input vector, and the computational time of the load_image function. While in some specific cases the parallel workloads finished slightly faster than the sequential versions, in general there is no benefit to running `load_image` in parallel. For this reason, load_image by default will operate sequentially unless parallel processing is forced with the option `matchr.force_parallel`.
 
 ### create_signature
 
-Because the memory requirements of reading many images into memory at once are so high (see [Memory requirements](#memory) below), it is rarely feasible to use load_image directly on a large set of images. Instead, create_signature combines the (memory-intensive) step of importing images with the (less memory-intensive) step of calculating signatures based on the colours and shades present in each image, and proceeds in batches. With its default settings, if create_signature is given a large vector of file paths or URLs, it processes 100 images at a time. The first 100 images are read into memory, image signatures are calculated, the images are discarded from memory, and then the next 100 images are processed the same way. This makes it possible to process arbitrarily large sets of images with create_signature, and increases the usefulness of parallel processing.
+Because the memory requirements of reading many images into memory at once are so high (see [Memory requirements](#memory) below), it is rarely feasible to use `load_image` directly on a large set of images. Instead, `create_signature` combines the (memory-intensive) step of importing images with the (less memory-intensive) step of calculating signatures based on the colours and shades present in each image, and proceeds in batches. With its default settings, if `create_signature` is given a large vector of file paths or URLs, it processes 100 images at a time. The first 100 images are read into memory, image signatures are calculated, the images are discarded from memory, and then the next 100 images are processed the same way. This makes it possible to process arbitrarily large sets of images with `create_signature`, and increases the usefulness of parallel processing.
 
 ```{r cs_timing, eval = FALSE}
 # Benchmark create_signature ----------------------------------------------
 
-for (n in c(1, 4, 8, 16, 32)) {
+for (n in c(1, 2, 4, 8, 16, 32)) {
   
   if (n == 1) plan(sequential) else plan(multisession, workers = n)
   
@@ -144,10 +155,9 @@ for (n in c(1, 4, 8, 16, 32)) {
 # Combine and clean results -----------------------------------------------
 
 cs_bench <- 
-  rbind(cs_1, cs_4, cs_8, cs_16, cs_32) %>% 
+  rbind(cs_1, cs_2, cs_4, cs_8, cs_16, cs_32) %>% 
   unnest(c(time, gc)) %>% 
-  mutate(workers = factor(workers, levels = c("1", "4", "8", "16", "32")),
-         image_vector = factor(expression, 
+  mutate(image_vector = factor(expression, 
                                levels = c("low_1k", "low_10k", "high_1k", 
                                           "high_10k")))
 
@@ -155,8 +165,8 @@ cs_bench <-
 
 cs_bench %>% 
   ggplot() +
-  geom_boxplot(aes(time, image_vector, colour = workers)) +
-  scale_colour_viridis_d() +
+  geom_boxplot(aes(time, image_vector, colour = factor(workers))) +
+  scale_colour_viridis_d(name = "Workers") +
   bench:::scale_x_bench_time() +
   theme_minimal() +
   theme(legend.position = "bottom")
@@ -164,28 +174,87 @@ cs_bench %>%
 
 ``` {r cs_timing_graph, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 5}
 
-#load(here::here("inst", "cs_bench.Rdata"))
+load(here::here("inst", "cs_bench.Rdata"))
 
-#cs_bench <- 
-#  rbind(cs_1, cs_4, cs_8, cs_16, cs_32) %>% 
-#  unnest(c(time, gc)) %>% 
-#  mutate(workers = factor(workers, levels = c("1", "4", "8", "16", "32")),
-#         image_vector = factor(expression, 
-#                               levels = c("low_100", "low_1k", "low_10k", 
-#                                          "high_100", "high_1k")))
+cs_bench <- 
+  rbind(cs_1, cs_2, cs_4, cs_8, cs_16, cs_32) %>% 
+  unnest(c(time, gc)) %>% 
+  mutate(image_vector = factor(expression, 
+                               levels = c("low_1k", "low_10k", "high_1k", 
+                                          "high_10k")))
 
-#cs_bench %>% 
-#  ggplot() +
-#  geom_boxplot(aes(time, image_vector, colour = workers)) +
-#  scale_colour_viridis_d() +
-#  bench:::scale_x_bench_time() +
-#  theme_minimal() +
-#  theme(legend.position = "bottom")
+cs_bench %>% 
+  ggplot() +
+  geom_boxplot(aes(time, image_vector, colour = factor(workers))) +
+  scale_colour_viridis_d(name = "Workers") +
+  bench:::scale_x_bench_time() +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 ```
 
-The results demonstrate, first of all, that the completion time of create_signature scales linearly with the number of images being read. The non-parallel (workers == 1) version of the function reads 1,000 low-resolution images in 21 seconds, and 10,000 images in 187 seconds. It reads 1,000 higher-resolution images in 4.8 minutes and 10,000 in 48.2 minutes.
+The results demonstrate, first of all, that the completion time of `create_signature` scales roughly linearly with the number of images being read. The non-parallel (workers == 1) version of the function reads 1,000 low-resolution images in 7.5 seconds, and 10,000 images in 47.7 seconds. It reads 1,000 higher-resolution images in 1.8 minutes and 10,000 in 17.7 minutes.
 
-Secondly, parallel versions of create_signature produce large (although not quite linear) speed increases, particularly when reading hiher-resolution images.
+Secondly, parallel versions of `create_signature` produce dramatic speed increases when reading higher-resolution images. For low core counts, the increases are nearly linear: two workers complete the 1,000 and 10,000 higher-resolution images 2.2 and 2.1 times faster than a single worker, four workers are 3.9 and 3.7 times faster, and eight workers are 6.3 and 5.6 times faster. For large workloads (e.g. 100,000 images or more), this can translate into `create_signature` finishing in minutes instead of hours.
+
+However, the performance increases decline or even reverse with much higher core counts. This is because of how `create_signature` works to keep memory usage relatively low by processing images in relatively small batches, and can be controlled through the `batch_size` argument. This argument establishes the maximum number of images which are processed by `create_signature` at a time. (Precisely, the function will process images in batches of the largest multiple of the number of workers which is less than or equal to `batch_size`, in order to distribute the workload most efficiently among processor cores. So, e.g., with a `batch_size` argument of 100 and 32 workers, images will be processed in batches of 96, comprising 32 groups of 3 images per worker.)
+
+The default value for `batch_size` is 100, since even with higher-resolution images this keeps memory requirements manageable (see [Memory requirements](#memory) below). But, on computers with high core counts and large amounts of memory, batches of 100 images are sub-optimally low, since each worker only receives a few images to process before having to communicate again with the main process. This means that the inter-worker communication overhead begins to outweigh the gains from distributing the workload among more cores. The following plot shows `create_signature` completion times using 32 parallel processes with a variety of input vector lengths and a variety of `batch_size` values. (All the values have been given in multiples of 32 to simplify the math.)
+
+```{r cs_batch_timing, eval = FALSE}
+# Benchmark create_signature batch_size -----------------------------------
+
+plan(multisession, workers = 32)
+  
+cs_batch_bench <- 
+  bench::press(batch_size = 2 ^ (5:10), vector_length = 1024 * c(1, 2, 5, 10),
+               bench::mark(create_signature(paths_high[1:vector_length], 
+                                            batch_size = batch_size, quiet = TRUE),
+                           iterations = 10)) %>% 
+  select(-result, -memory) %>% 
+  unnest(c(time, gc))
+  
+# Graph timings -----------------------------------------------------------
+
+cs_batch_bench %>% 
+  ggplot() +
+  geom_boxplot(aes(time, factor(vector_length), colour = factor(batch_size))) +
+  scale_y_discrete(name = "vector_length") +
+  scale_colour_viridis_d(name = "batch_size") +
+  bench:::scale_x_bench_time() +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+``` {r cs_batch_timing_graph, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 5}
+
+load(here::here("inst", "cs_batch_bench.Rdata"))
+
+cs_batch_bench <- 
+  cs_batch_bench %>% 
+  tidyr::separate(expression, sep = "_", into = c("batch_size", "vector_length")) %>% 
+  mutate(batch_size = as.numeric(substr(batch_size, 2, nchar(batch_size)))) %>% 
+  mutate(vector_length = case_when(
+    vector_length == "1k" ~ 1024,
+    vector_length == "2k" ~ 2048,
+    vector_length == "5k" ~ 5120,
+    vector_length == "10k" ~ 10240)) %>% 
+  unnest(c(time, gc))
+
+cs_batch_bench %>% 
+  ggplot() +
+  geom_boxplot(aes(time, factor(vector_length), colour = factor(batch_size))) +
+  scale_y_discrete(name = "vector_length") +
+  scale_colour_viridis_d(name = "batch_size") +
+  bench:::scale_x_bench_time() +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+It demonstrates enormous speed increases from increasing the `batch_size` argument. For 10,000 higher-resolution images, setting the `batch_size` argument to 1024 results in a 6.5x speed improvement over setting it to 32. The conclusion is that, when `create_signature` is run in a highly parallelized mode, it should be run with the highest `batch_size` value that is consistent with the system's memory capacity. In scenarios where a large number of processor cores are available but not a large amount of RAM, it is likely that a less highly parallelized version of `create_signature` will actually run faster, because of the communication overhead imposed by processing many small batches of images instead of a smaller number of large batches.
+
+### match_signatures
+
+TKTK
 
 ## Memory requirements {#memory}
 

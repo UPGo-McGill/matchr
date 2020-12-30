@@ -30,6 +30,7 @@ print.matchr_sig <- function(x, ...) {
   # Exit early on NA
   if (anyNA(x)) {
     cat(NA)
+    cat("\n")
     return(invisible(x))
     }
 

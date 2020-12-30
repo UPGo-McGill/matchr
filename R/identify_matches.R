@@ -5,7 +5,7 @@
 #' TKTK
 #'
 #' @param image_matrix A matrix of image correlations produced by
-#' \code{imager::match_images}.
+#' \code{matchr::match_images}.
 #' @param threshold A numeric scalar. The minimum correlation constant to
 #' consider to images to be matched.
 #' @param quiet A logical scalar. Should the function execute quietly, or should

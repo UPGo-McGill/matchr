@@ -29,7 +29,7 @@ both ("both")?}
 compared for images with similar aspect ratios (default)? If TRUE, k-means
 clustering is used to identify breakpoints between aspect ratios that
 maximize between-group distance and minimize the total number of calculations
-that the function needs to execute. (Values of k between 3 and 15 are
+that the function needs to execute. (Values of k between 3 and 12 are
 evaluated.) Image signatures from \code{x} are split into lists between these
 break points. In order to catch matches that would fall across a break point,
 image signatures from \code{y} are split into lists between the break point / 1.2

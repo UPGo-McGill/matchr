@@ -31,7 +31,7 @@
 #' compared for images with similar aspect ratios (default)? If TRUE, k-means
 #' clustering is used to identify breakpoints between aspect ratios that
 #' maximize between-group distance and minimize the total number of calculations
-#' that the function needs to execute. (Values of k between 3 and 15 are
+#' that the function needs to execute. (Values of k between 3 and 12 are
 #' evaluated.) Image signatures from `x` are split into lists between these
 #' break points. In order to catch matches that would fall across a break point,
 #' image signatures from `y` are split into lists between the break point / 1.2
@@ -169,7 +169,7 @@ match_signatures <- function(x, y = NULL, method = "grey",
     # Set number of groups to evaluate
     unique_points <- length(unique(stats::na.omit(c(x_ratios, y_ratios))))
 
-    max_group <- sapply(3:min(unique_points, 15), function(n) {
+    max_group <- sapply(3:min(unique_points, 12), function(n) {
 
       means <- stats::kmeans(stats::na.omit(c(x_ratios, y_ratios)), n)
       centres <- sort(means$centers)

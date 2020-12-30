@@ -7,7 +7,7 @@
 new_matchr_img(x, file)
 }
 \arguments{
-\item{x}{An object of class \code{cimg}.}
+\item{x}{An array.}
 
 \item{file}{A character string, corresponding to the path or URL of the file
 from which the image has been generated.}

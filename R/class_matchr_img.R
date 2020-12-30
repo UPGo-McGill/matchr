@@ -1,6 +1,6 @@
 #' Create a new matchr_img object
 #'
-#' @param x An object of class `cimg`.
+#' @param x An array.
 #' @param file A character string, corresponding to the path or URL of the file
 #' from which the image has been generated.
 #' @return An object of class `matchr_img`.
@@ -8,7 +8,7 @@
 
 new_matchr_img <- function(x, file) {
 
-  stopifnot(imager::is.cimg(x) || is.na(x))
+  stopifnot(is.array(x) || is.na(x))
   stopifnot(is.character(file))
 
   structure(x,
@@ -41,10 +41,12 @@ print.matchr_img <- function(x, ...) {
 
     } else file_trunc <- file
 
+  cols <- if (length(d) == 3) d[3] else 1
+  plural <- if (cols == 1) "" else "s"
 
   msg <- sprintf(
-    'Image from file "%s". %i x %i, %i colour channels.\n',
-    file_trunc, d[1], d[2], d[4])
+    'Image from file "%s". %i x %i, %i colour channel%s.\n',
+    file_trunc, d[2], d[1], cols, plural)
 
   cat(msg)
   invisible(x)

@@ -8,7 +8,7 @@ identify_matches(image_matrix, threshold = 0.975, quiet = FALSE)
 }
 \arguments{
 \item{image_matrix}{A matrix of image correlations produced by
-\code{imager::match_images}.}
+\code{matchr::match_images}.}
 
 \item{threshold}{A numeric scalar. The minimum correlation constant to
 consider to images to be matched.}

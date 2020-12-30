@@ -5,11 +5,6 @@ test_that("a single matchr_img works", {
     ceiling(sum(create_signature(test_img))), 67)
   })
 
-test_that("a single cimg works", {
-  expect_equal(
-    ceiling(sum(create_signature(test_cimg))), 67)
-})
-
 test_that("a list of matchr_img works", {
   expect_equal(
     ceiling(sum(sapply(test_matchr_sig_list, sum))), 133)
@@ -21,7 +16,7 @@ test_that("a list of one matchr_img works", {
 
 test_that("a vector of paths works", {
   expect_equal(
-    ceiling(sum(sapply(test_long_sig_list, sum), na.rm = TRUE)), 871)
+    ceiling(sum(sapply(test_long_sig_list, sum), na.rm = TRUE)), 1035)
 })
 
 test_that("a list of paths works", {
@@ -38,10 +33,9 @@ test_that("NA works", {
 test_that("rm_black_bars works", {
   expect_output(print(create_signature(urls[[12]], rm_black_bars = FALSE)),
                 "1.00")
-  expect_output(print(create_signature(urls[[12]])), "1.82")
+  expect_output(print(create_signature(urls[[12]])), "2.08")
 })
 
 test_that("tiny images return NA", {
   expect_output(print(create_signature(urls[[13]])), "NA")
 })
-

@@ -7,10 +7,9 @@
 load_image(file, quiet = FALSE)
 }
 \arguments{
-\item{file}{A vector of file paths or URLs to be passed to
-\code{imager::load.image}. If \code{file} is a vector of URLs, the URLs must begin
-with "http", "https", "ftp" or "ftps". If the URL has no extension, it will
-be given the extension ".jpg".}
+\item{file}{A vector of file paths or URLs. If \code{file} is a vector of URLs,
+the URLs must begin with "http", "https", "ftp" or "ftps". If the URL has no
+extension, it will be given the extension ".jpg".}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}
@@ -20,18 +19,12 @@ A list of \code{matchr_img} objects of the same length as the input
 vector.
 }
 \description{
-\code{load_image} is a vectorized version of \code{imager::load.image}. It
-optionally supports parallel processing (via \code{future} and
-\code{future.apply}) and progress reporting.
+\code{load_image} is a vectorized method for reading bitmaps (jpegs, pngs and
+bmps) into memory as arrays of pixel values. It optionally supports parallel
+processing (via \code{future} and \code{future.apply}) and progress
+reporting.
 }
 \details{
-The function is a wrapper around \code{imager::load.image} with five
-enhancements. It can take a vector of input paths instead a single path; it
-supports parallel processing; it support progress reporting; it appends the
-file path of the image as an attribute for subsequent processing or record
-keeping; and it suppresses file download messages to allow more meaningful
-progress reporting.
-
 Because the memory requirements of storing image representations in memory
 so large, it is usually not feasible to read in more than several hundred
 images at a time with \code{load_image}. For these cases, use
