@@ -206,10 +206,15 @@ set_par <- function(fun, ...) {
     
     par_check <- TRUE
     
-    message("Function executing in parallel because option ", 
-            "`matchr.force_parallel` is TRUE, but this may lead to degraded ", 
-            "performance. See `help(matchr_options)` for details.")
-    
+    if (exists("quiet", envir = parent.frame(n = 1), mode = "logical")) {
+      
+      quiet <- get("quiet", envir = parent.frame(n = 1))
+      
+      if (!quiet) message(
+        "Function executing in parallel because option ", 
+        "`matchr.force_parallel` is TRUE, but this may lead to degraded ", 
+        "performance. See `help(matchr_options)` for details.")
+      }
   }
   
   # Send message if user plan is overridden
@@ -218,9 +223,14 @@ set_par <- function(fun, ...) {
       requireNamespace("future.apply", quietly = TRUE) &&
       !"sequential" %in% class(future::plan())) {
     
-    message("Function executing in non-parallel (sequential) mode to ", 
-            "optimize performance. See `help(matchr_options)` for details.")
-    
+    if (exists("quiet", envir = parent.frame(n = 1), mode = "logical")) {
+      
+      quiet <- get("quiet", envir = parent.frame(n = 1))
+      
+      if (!quiet) message(
+        "Function executing in non-parallel (sequential) mode to ", 
+        "optimize performance. See `help(matchr_options)` for details.")
+      }
   }
   
   return(par_check)

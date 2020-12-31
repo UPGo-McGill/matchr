@@ -44,6 +44,7 @@ load_image <- function(file, quiet = FALSE) {
   
   ## Import images with proper progress handling -------------------------------
   
+  handler_matchr("Loading image")
   prog_bar <- as.logical((length(file) >= 10) * !quiet)
   iterator <- ceiling(log10(length(file)))
   iterator <- 10 ^ (ceiling(iterator / 2) - 1) * (1 + 4 * (iterator + 1) %% 2)
