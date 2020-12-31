@@ -58,6 +58,12 @@ create_signature.matchr_img <- function(image, bands = 20,
   stopifnot(is.numeric(bands), is.logical(rm_black_bars))
   
   
+  ### Return NA if input is NA #################################################
+  
+  if (is.na(image)) return(create_signature.default(
+    image, bands = bands, rm_black_bars = rm_black_bars))
+  
+  
   ### Return NA if the image doesn't have enough pixels ########################
   
   if (dim(image)[[1]] < bands || dim(image)[[2]] < bands) {
@@ -148,10 +154,6 @@ create_signature.matchr_img <- function(image, bands = 20,
 
 #' @rdname create_signature
 #' @method create_signature character
-#' @param batch_size An integer scalar. How many images should the function
-#' load into memory before extracting image signatures and releasing the
-#' associated memory? Higher values will lead to the function executing more
-#' quickly, but can result in enormous memory requirements.
 #' @param backup A logical scalar. Should the function store an ongoing backup
 #' of progress in a hidden object `.matchr_env$sig_backup` in the package's
 #' environment (default)? If TRUE, the function will attempt to resume progress
@@ -160,52 +162,45 @@ create_signature.matchr_img <- function(image, bands = 20,
 #' \code{\link{remove_backups}}.
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
+#' @param diagnostic A logical scalar. Should the function report additional
+#' information about parallel processing, iteration, etc?
 #' @export
 
 create_signature.character <- function(image, bands = 20, rm_black_bars = TRUE,
-                                       batch_size = 100, backup = TRUE,
-                                       quiet = FALSE, ...) {
+                                       backup = TRUE, quiet = FALSE, 
+                                       diagnostic = FALSE, ...) {
   
-  ### Error checking ###########################################################
+  ### Error checking and variable initialization ###############################
   
+  # Check arguments
   stopifnot(is.numeric(bands), is.logical(rm_black_bars), 
-            is.numeric(batch_size), is.logical(backup), is.logical(quiet))
+            is.logical(backup), is.logical(quiet))
   
   
-  ### Set parallelization options ##############################################
-  
+  # Set parallelization options
   par_check <- set_par("load_image", file = image)
   
-  
-  ### Prepare iteration ########################################################
-  
-  
-  # If batch_size >= length(image), just do one iteration
-  if (batch_size >= length(image)) {
-    
-    adj_batch_size <- length(image)
-    
-  } else {
-    
-    # Find largest multiple of number_of_threads <= batch_size
-    adj_batch_size <- 
-      floor(batch_size / number_of_threads()) * number_of_threads()
-    
-  }
+  # Only do backup with > 1000 paths
+  if (length(image) <= 1000) backup <- FALSE
   
   # Set iterations
-  iterations <- ceiling(length(image) / adj_batch_size)
-
-  # Don't have more iterations than input elements
-  iterations <- min(iterations, length(image))
-  
-  result <- vector("list", iterations)
+  iterations <- 1
+  input_list <- list(seq_along(image))
+  result <- vector("list", 1)
   resume_from <- 1
   
   
   ### Prepare backup ###########################################################
   
   if (backup) {
+    
+    # Set iterations
+    iterations <- ceiling(length(image) / 1000)
+    input_list <- chunk(seq_along(image), iterations, 
+                        workers = number_of_threads())
+    iterations <- length(input_list)
+    result <- vector("list", iterations)
+    resume_from <- 1
     
     # Check for previous backup
     if (exists("sig_backup", envir = .matchr_env)) {
@@ -234,45 +229,38 @@ create_signature.character <- function(image, bands = 20, rm_black_bars = TRUE,
   }
   
   
-  ### Create input list ########################################################
-  
-  input_list <- chunk(image, iterations)
-  
-  
   ### Run loop #################################################################
   
+  # Initialize progress reporting
   handler_matchr("Creating signature")
-  
   prog_bar <- as.logical((length(image) >= 10) * !quiet)
+  iterator <- ceiling(log10(length(image)))
+  iterator <- 10 ^ (ceiling(iterator / 2) - 1) * (1 + 4 * (iterator + 1) %% 2)
+  
+  if (diagnostic) {
+    message(crayon::silver(
+      crayon::bold("create_signature diagnostic"), "\nParallel:", 
+      par_check, "\nWorkers:", number_of_threads(), "\nIterator:", iterator, 
+      "\nIterations:", iterations, "\nLengths:", 
+      paste(lengths(input_list), collapse = ", ")))
+  }
   
   pb <- progressr::progressor(steps = length(image), enable = prog_bar)
+  pb(amount = sum(lengths(input_list[seq_len(resume_from - 1)])))
   
-  pb(amount = (resume_from - 1) * adj_batch_size)
-  
+  # Loop
   for (i in resume_from:iterations) {
     
     result[[i]] <- par_lapply(input_list[[i]], function(x) {
       
-      imgs <- lapply(x, function(y) {
-        pb(amount = 0.5)
-        load_image_internal(y)})
+      if (x %% iterator == 0) pb(amount = iterator)
       
-      imgs <- mapply(new_matchr_img, imgs, x, SIMPLIFY = FALSE)
+      img <- load_image_internal(image[x])
+      img <- new_matchr_img(img, image[x])
+      img <- create_signature(img, bands = bands, rm_black_bars = rm_black_bars, 
+                              quiet = TRUE)
       
-      imgs[sapply(imgs, is.na)] <-
-        lapply(imgs[sapply(imgs, is.na)], function(y) {
-          class(y) <- "logical"
-          y
-        })
-      
-      imgs <- lapply(imgs, function(y) {
-        pb(amount = 0.5)
-        create_signature(y, bands = bands, rm_black_bars = rm_black_bars)
-      })
-      
-      imgs <- new_matchr_sig_list(imgs)
-      
-      return(imgs)
+      return(img)
       
     })
     
@@ -283,8 +271,6 @@ create_signature.character <- function(image, bands = 20, rm_black_bars = TRUE,
   
   ### Construct matchr_sig_list object and return result #######################
   
-  # Need to do this twice because of recursive lists
-  result <- unlist(result, recursive = FALSE)
   result <- unlist(result, recursive = FALSE)
   
   if (length(result) > 1) {
@@ -305,14 +291,12 @@ create_signature.character <- function(image, bands = 20, rm_black_bars = TRUE,
 #' @export
 
 create_signature.list <- function(image, bands = 20, rm_black_bars = TRUE,
-                                  batch_size = 100, quiet = FALSE, ...) {
+                                  quiet = FALSE, ...) {
   
   ### Error checking and preparation ###########################################
   
-  stopifnot(is.numeric(bands), is.logical(rm_black_bars), 
-            is.numeric(batch_size), is.logical(quiet))
-  
-  stopifnot("All list elements must be the same class" =
+  stopifnot(is.numeric(bands), is.logical(rm_black_bars), is.logical(quiet), 
+            "All list elements must be the same class" = 
               length(unique(sapply(image, typeof))) == 1)
   
   
@@ -331,61 +315,29 @@ create_signature.list <- function(image, bands = 20, rm_black_bars = TRUE,
   }
   
   
-  ### Prepare iteration ########################################################
-  
-  # If batch_size >= length(image), just do one iteration
-  if (batch_size >= length(image)) {
-    
-    adj_batch_size <- length(image)
-    
-  } else {
-    
-    # Find largest multiple of number_of_threads <= batch_size
-    adj_batch_size <- 
-      floor(batch_size / number_of_threads()) * number_of_threads()
-    
-  }
-  
-  # Set iterations
-  iterations <- ceiling(length(image) / adj_batch_size)
-  
-  # Don't have more iterations than input elements
-  iterations <- min(iterations, length(image))
-  
-  result <- vector("list", iterations)
-  resume_from <- 1
-  
-  
   ### Run loop #################################################################
   
   # Parallel performance appears to be always slower than sequential
   par_check <- set_par("create_signature_list")
   
+  # Initialize progress reporting
   handler_matchr("Creating signature")
-  
   prog_bar <- as.logical((length(image) >= 10) * !quiet)
+  iterator <- ceiling(log10(length(image)))
+  iterator <- 10 ^ (ceiling(iterator / 2) - 1) * (1 + 4 * (iterator + 1) %% 2)
   
   pb <- progressr::progressor(steps = length(image), enable = prog_bar)
   
-  for (i in seq_len(iterations)) {
-    
-    vec_start <- (i - 1) * batch_size + 1
-    vec_end <- min(i * batch_size, length(image))
-    
-    result[[i]] <- par_lapply(image[vec_start:vec_end], function(x) {
+  result <- par_lapply(seq_along(image), function(x) {
       
-      pb()
-      
-      create_signature(x, bands = bands, rm_black_bars = rm_black_bars)
+      if (x %% iterator == 0) pb(amount = iterator)
+      create_signature(image[[x]], bands = bands, rm_black_bars = rm_black_bars)
       
     })
     
-  }
-  
   
   ### Construct matchr_sig_list object and return result #######################
   
-  result <- unlist(result, recursive = FALSE)
   result <- new_matchr_sig_list(result)
   return(result)
   

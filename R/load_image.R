@@ -44,17 +44,15 @@ load_image <- function(file, quiet = FALSE) {
   
   ## Import images with proper progress handling -------------------------------
   
-  handler_matchr("Loading image")
-  
   prog_bar <- as.logical((length(file) >= 10) * !quiet)
-  
+  iterator <- ceiling(log10(length(file)))
+  iterator <- 10 ^ (ceiling(iterator / 2) - 1) * (1 + 4 * (iterator + 1) %% 2)
   pb <- progressr::progressor(steps = length(file), enable = prog_bar)
   
-  imgs <- par_lapply(file, function(x) {
+  imgs <- par_lapply(seq_along(file), function(x) {
     
-    pb()
-    
-    load_image_internal(x)
+    if (x %% iterator == 0) pb(amount = iterator)
+    load_image_internal(file[x])
     
   })
   

@@ -113,18 +113,51 @@ handler_matchr <- function(message) {
 
 #' Helper function to divide vector into equal-sized chunks
 #' @param x The vector to be split
-#' @param n The number of chunks to split into
+#' @param n_chunks The number of chunks to split into
+#' @param max_chunk_size The maximum size of each chunk (default NULL)
+#' @param workers A number to make max_chunk_size a multiple of (default NULL)
 #' @return A list with n elements.
 
-chunk <- function(x, n) {
+chunk <- function(x, n_chunks, max_chunk_size = NULL, workers = NULL) {
   
-  mapply(function(a, b) x[a:b],
-         round(seq.int(from = 1, to = length(x), by = length(x) / n)),
-         round(pmin(seq.int(from = 1, to = length(x), by = length(x) / n) + 
-                      (length(x) / n - 1), length(x))),
-         SIMPLIFY = FALSE)
-  
+  if (missing(max_chunk_size) && !missing(workers)) {
+    
+    max_chunk_size <- ceiling(length(x) / n_chunks)
+    
+    max_chunk_size <- 
+      unname(floor(max_chunk_size / number_of_threads()) * number_of_threads())
+    
   }
+  
+  # Simple version which splits into n_chunks pieces
+  if (missing(max_chunk_size)) {
+    
+    starts <- round(seq.int(from = 1, to = length(x), 
+                            by = length(x) / n_chunks))
+    
+    ends <- round(pmin(seq.int(from = 1, to = length(x), 
+                               by = length(x) / n_chunks) + 
+                         (length(x) / n_chunks - 1), length(x))) 
+    
+  } else {
+    
+    # If workers is present, make max_chunk_size a multiple of it
+    if (!missing(workers)) {
+      
+      max_chunk_size <- floor(max_chunk_size / workers) * workers
+      
+    }
+    
+    starts <- seq.int(from = 1, to = length(x), by = max_chunk_size)
+    
+    ends <- pmin(seq.int(from = 1, to = length(x), by = max_chunk_size) + 
+                   max_chunk_size - 1, length(x))
+    
+  }
+  
+  mapply(function(a, b) x[a:b], starts, ends, SIMPLIFY = FALSE)
+  
+}
 
 
 #' Helper function to detect URL

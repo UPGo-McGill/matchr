@@ -16,20 +16,13 @@ create_signature(image, bands = 20, rm_black_bars = TRUE, ...)
   image,
   bands = 20,
   rm_black_bars = TRUE,
-  batch_size = 100,
   backup = TRUE,
   quiet = FALSE,
+  diagnostic = FALSE,
   ...
 )
 
-\method{create_signature}{list}(
-  image,
-  bands = 20,
-  rm_black_bars = TRUE,
-  batch_size = 100,
-  quiet = FALSE,
-  ...
-)
+\method{create_signature}{list}(image, bands = 20, rm_black_bars = TRUE, quiet = FALSE, ...)
 
 \method{create_signature}{default}(image, bands = 20, rm_black_bars = TRUE, ...)
 }
@@ -52,11 +45,6 @@ lead to false positive matches.}
 
 \item{...}{Additional arguments passed to methods.}
 
-\item{batch_size}{An integer scalar. How many images should the function
-load into memory before extracting image signatures and releasing the
-associated memory? Higher values will lead to the function executing more
-quickly, but can result in enormous memory requirements.}
-
 \item{backup}{A logical scalar. Should the function store an ongoing backup
 of progress in a hidden object \code{.matchr_env$sig_backup} in the package's
 environment (default)? If TRUE, the function will attempt to resume progress
@@ -66,6 +54,9 @@ function successfully completes. Backups can be removed with
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}
+
+\item{diagnostic}{A logical scalar. Should the function report additional
+information about parallel processing, iteration, etc?}
 }
 \value{
 If the input is a single \code{matchr_img} image, an object of

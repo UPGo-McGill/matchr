@@ -4,12 +4,16 @@
 \alias{chunk}
 \title{Helper function to divide vector into equal-sized chunks}
 \usage{
-chunk(x, n)
+chunk(x, n_chunks, max_chunk_size = NULL, workers = NULL)
 }
 \arguments{
 \item{x}{The vector to be split}
 
-\item{n}{The number of chunks to split into}
+\item{n_chunks}{The number of chunks to split into}
+
+\item{max_chunk_size}{The maximum size of each chunk (default NULL)}
+
+\item{workers}{A number to make max_chunk_size a multiple of (default NULL)}
 }
 \value{
 A list with n elements.
