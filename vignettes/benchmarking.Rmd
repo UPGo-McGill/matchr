@@ -24,7 +24,7 @@ The functions in matchr can be very computation- and time-intensive. While with 
 The key takeaways are:
 
 - Enable parallel processing with the {future} package, most simply by setting `future::plan(multisession)`.
-- On computers with access to large amounts of RAM, increase the `batch_size` argument in `create_signature` to improve speed. On RAM-constrained computers, decrease the `batch_size` argument to perserve system stability.
+- By default, matchr functions only enable parallel processing where empirical testing suggests that this will improve performance, but parallel processing can be forced by setting the global option `options(matchr.force_parallel = TRUE)`.
 
 The following discussion will rely on examples taken from two large sets of images. The `paths_low` vector contains low-resolution images (roughly 200 x 150 pixels, and 8 kB), while the `paths_high` vector contains higher-resolution images (between 640 x 480 and 1200 x 800, and 170 kB). To reproduce the benchmarks and analysis in this vignette, point the following lines at a pair of folders with low- and high- resolution images, respectively.
 
@@ -56,55 +56,38 @@ options(matchr.force_parallel = TRUE)
 
 ### load_image
 
-We begin with timings for reading vectors of 100, 1000 and 10,000 file paths with `load_image`. Because the memory requirements of importing the higher-resolution images are so high, only 1000 images are read in that case. The benchmarks are run separately for each number of background processes then merged to avoid including the one-time overhead involved in initializing background processes in the results.
+We begin with timings for reading vectors of 100, 1000 and 10,000 file paths with `load_image`. Because the memory requirements of importing the higher-resolution images are so high, only 1000 images are read in that case.
 
 ```{r li_timing, eval = FALSE}
+library(future)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-library(future)
-
-# Benchmark load_image ----------------------------------------------------
-
-for (n in c(1, 4, 8, 16, 32)) {
-  
-  if (n == 1) plan(sequential) else plan(multisession, workers = n)
-  
-  assign(paste0("li_", n), {
-    bench::mark(low_100 = load_image(paths_low[1:100]),
-                low_1k = load_image(paths_low[1:1000]),
-                low_10k = load_image(paths_low[1:10000]),
-                high_100 = load_image(paths_high[1:100]),
-                high_1k = load_image(paths_high[1:1000]),
-                iterations = 20, check = FALSE, memory = (n == 1)) %>% 
-      mutate(workers = n) %>% 
-      select(-result, -memory, -c(`gc/sec`:n_gc), -total_time)})
-    
-}
-
-# Combine and clean results -----------------------------------------------
 
 li_bench <- 
-  rbind(li_1, li_4, li_8, li_16, li_32) %>% 
-  unnest(c(time, gc)) %>% 
-  mutate(image_vector = factor(expression, 
-                               levels = c("low_100", "low_1k", "low_10k", 
-                                          "high_100", "high_1k")))
-
-# Graph timings -----------------------------------------------------------
+  bench::press(
+    length = c(100, 1000, 10000),
+    workers = c(1, 2, 4, 8, 16, 32),
+    {
+      if (workers == 1) plan(sequential) else plan(multisession, workers = workers)
+      bench::mark(
+        low = load_image(paths_low[1:length], quiet = TRUE),
+        high = load_image(paths_high[1:length], quiet = TRUE),
+        iterations = 20, check = FALSE)
+      })
 
 li_bench %>% 
+  unnest(c(time, gc)) %>% 
   ggplot() +
-  geom_boxplot(aes(time, image_vector, colour = factor(workers))) +
-  scale_colour_viridis_d(name = "Workers") +
+  geom_boxplot(aes(time, as.factor(length), colour = as.factor(workers))) +
+  scale_colour_viridis_d(name = "workers") +
   bench:::scale_x_bench_time() +
+  facet_wrap(vars(expression), nrow = 2, scales = "free_y") +
   theme_minimal() +
   theme(legend.position = "bottom")
-
 ```
 
 ``` {r li_timing_graph, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 5}
-
 library(bench)
 library(dplyr)
 library(tidyr)
@@ -112,18 +95,13 @@ library(ggplot2)
 
 load(here::here("inst", "li_bench.Rdata"))
 
-li_bench <- 
-  rbind(li_1, li_2, li_4, li_8, li_16, li_32) %>% 
-  unnest(c(time, gc)) %>% 
-  mutate(image_vector = factor(expression, 
-                               levels = c("low_100", "low_1k", "low_10k", 
-                                          "high_100", "high_1k")))
-
 li_bench %>% 
+  unnest(c(time, gc)) %>% 
   ggplot() +
-  geom_boxplot(aes(time, image_vector, colour = factor(workers))) +
-  scale_colour_viridis_d(name = "Workers") +
+  geom_boxplot(aes(time, as.factor(length), colour = as.factor(workers))) +
+  scale_colour_viridis_d(name = "workers") +
   bench:::scale_x_bench_time() +
+  facet_wrap(vars(expression), nrow = 2, scales = "free_y") +
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
@@ -132,42 +110,28 @@ The figure shows the relationship between the number of parallel threads ("worke
 
 ### create_signature
 
-Because the memory requirements of reading many images into memory at once are so high (see [Memory requirements](#memory) below), it is rarely feasible to use `load_image` directly on a large set of images. Instead, `create_signature` combines the (memory-intensive) step of importing images with the (less memory-intensive) step of calculating signatures based on the colours and shades present in each image, and proceeds in batches. With its default settings, if `create_signature` is given a large vector of file paths or URLs, it processes 100 images at a time. The first 100 images are read into memory, image signatures are calculated, the images are discarded from memory, and then the next 100 images are processed the same way. This makes it possible to process arbitrarily large sets of images with `create_signature`, and increases the usefulness of parallel processing.
+Because the memory requirements of reading many images into memory at once are so high (see [Memory requirements](#memory) below), it is rarely feasible to use `load_image` directly on a large set of images. Instead, `create_signature` combines the (memory-intensive) step of importing images with the (less memory-intensive) step of calculating signatures based on the colours and shades present in each image, and proceeds one image at a time. Each parallel process reads one image into memory, calculates the image signature, and discards the image from memory, before moving on to the next image. This makes it possible to process arbitrarily large sets of images with `create_signature`, and increases the usefulness of parallel processing.
 
 ```{r cs_timing, eval = FALSE}
-# Benchmark create_signature ----------------------------------------------
-
-for (n in c(1, 2, 4, 8, 16, 32)) {
-  
-  if (n == 1) plan(sequential) else plan(multisession, workers = n)
-  
-  assign(paste0("cs_", n), {
-    bench::mark(low_1k = create_signature(paths_low[1:1000]),
-                low_10k = create_signature(paths_low[1:10000]),
-                high_1k = create_signature(paths_high[1:1000]),
-                high_10k = create_signature(paths_high[1:10000]),
-                iterations = 20, check = FALSE, memory = (n == 1)) %>% 
-    mutate(workers = n) %>% 
-    select(-result, -memory, -c(`gc/sec`:n_gc), -total_time)})
-    
-}
-
-# Combine and clean results -----------------------------------------------
-
 cs_bench <- 
-  rbind(cs_1, cs_2, cs_4, cs_8, cs_16, cs_32) %>% 
-  unnest(c(time, gc)) %>% 
-  mutate(image_vector = factor(expression, 
-                               levels = c("low_1k", "low_10k", "high_1k", 
-                                          "high_10k")))
-
-# Graph timings -----------------------------------------------------------
+  bench::press(
+    length = c(1000, 10000),
+    workers = c(1, 2, 4, 8, 16, 32),
+    {
+      if (workers == 1) plan(sequential) else plan(multisession, workers = workers)
+      bench::mark(
+        low = create_signature(paths_low[1:length], backup = FALSE, quiet = TRUE),
+        high = create_signature(paths_high[1:length], backup = FALSE, quiet = TRUE),
+        iterations = 20, check = FALSE)
+      })
 
 cs_bench %>% 
+  unnest(c(time, gc)) %>% 
   ggplot() +
-  geom_boxplot(aes(time, image_vector, colour = factor(workers))) +
-  scale_colour_viridis_d(name = "Workers") +
+  geom_boxplot(aes(time, as.factor(length), colour = as.factor(workers))) +
+  scale_colour_viridis_d(name = "workers") +
   bench:::scale_x_bench_time() +
+  facet_wrap(vars(expression), nrow = 2) +
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
@@ -176,81 +140,21 @@ cs_bench %>%
 
 load(here::here("inst", "cs_bench.Rdata"))
 
-cs_bench <- 
-  rbind(cs_1, cs_2, cs_4, cs_8, cs_16, cs_32) %>% 
-  unnest(c(time, gc)) %>% 
-  mutate(image_vector = factor(expression, 
-                               levels = c("low_1k", "low_10k", "high_1k", 
-                                          "high_10k")))
-
 cs_bench %>% 
+  unnest(c(time, gc)) %>% 
   ggplot() +
-  geom_boxplot(aes(time, image_vector, colour = factor(workers))) +
-  scale_colour_viridis_d(name = "Workers") +
+  geom_boxplot(aes(time, as.factor(length), colour = as.factor(workers))) +
+  scale_colour_viridis_d(name = "workers") +
   bench:::scale_x_bench_time() +
+  facet_wrap(vars(expression), nrow = 2) +
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
 
-The results demonstrate, first of all, that the completion time of `create_signature` scales roughly linearly with the number of images being read. The non-parallel (workers == 1) version of the function reads 1,000 low-resolution images in 7.5 seconds, and 10,000 images in 47.7 seconds. It reads 1,000 higher-resolution images in 1.8 minutes and 10,000 in 17.7 minutes.
+The results demonstrate, first of all, that the completion time of `create_signature` scales roughly linearly with the number of images being read. The non-parallel (`workers == 1`) version of the function reads 1,000 low-resolution images in 6.4 seconds, and 10,000 images in 41.2 seconds. It reads 1,000 higher-resolution images in 1.6 minutes and 10,000 in 16.5 minutes.
 
-Secondly, parallel versions of `create_signature` produce dramatic speed increases when reading higher-resolution images. For low core counts, the increases are nearly linear: two workers complete the 1,000 and 10,000 higher-resolution images 2.2 and 2.1 times faster than a single worker, four workers are 3.9 and 3.7 times faster, and eight workers are 6.3 and 5.6 times faster. For large workloads (e.g. 100,000 images or more), this can translate into `create_signature` finishing in minutes instead of hours.
+Secondly, parallel versions of `create_signature` produce dramatic speed increases, particularly when reading higher-resolution images. For low core counts, the increases are nearly linear: two workers process the 1,000 and 10,000 higher-resolution images 2.0 and 2.1 times faster than a single worker, four workers are 3.7 and 4.0 times faster, and eight workers are 7.1 and 7.7 times faster. For large workloads (e.g. 100,000 images or more), this can translate into `create_signature` finishing in minutes instead of hours. The same dynamics are present with low-resolution images, although with slightly smaller speed gains (e.g. eight workers process the 1,000 and 10,000 lower-resolution images 4.6 and 3.7 times faster than a single worker, respectively). While the marginal performance improvements to adding more workers decline at higher core counts, there is no point within the testing parameters at which adding more workers reduces performance. For this reason, by default `create_signature` always uses the maximum number of available cores when it is processing raw file paths. (By contrast, when `create_signature` operates on images which have already been loaded into memory with `load_image`, the communication overhead introduced by passing the data to each worker consistently swamps the performance gains from parallel processing, so parallel processing is never enabled in these cases.)
 
-However, the performance increases decline or even reverse with much higher core counts. This is because of how `create_signature` works to keep memory usage relatively low by processing images in relatively small batches, and can be controlled through the `batch_size` argument. This argument establishes the maximum number of images which are processed by `create_signature` at a time. (Precisely, the function will process images in batches of the largest multiple of the number of workers which is less than or equal to `batch_size`, in order to distribute the workload most efficiently among processor cores. So, e.g., with a `batch_size` argument of 100 and 32 workers, images will be processed in batches of 96, comprising 32 groups of 3 images per worker.)
-
-The default value for `batch_size` is 100, since even with higher-resolution images this keeps memory requirements manageable (see [Memory requirements](#memory) below). But, on computers with high core counts and large amounts of memory, batches of 100 images are sub-optimally low, since each worker only receives a few images to process before having to communicate again with the main process. This means that the inter-worker communication overhead begins to outweigh the gains from distributing the workload among more cores. The following plot shows `create_signature` completion times using 32 parallel processes with a variety of input vector lengths and a variety of `batch_size` values. (All the values have been given in multiples of 32 to simplify the math.)
-
-```{r cs_batch_timing, eval = FALSE}
-# Benchmark create_signature batch_size -----------------------------------
-
-plan(multisession, workers = 32)
-  
-cs_batch_bench <- 
-  bench::press(batch_size = 2 ^ (5:10), vector_length = 1024 * c(1, 2, 5, 10),
-               bench::mark(create_signature(paths_high[1:vector_length], 
-                                            batch_size = batch_size, quiet = TRUE),
-                           iterations = 10)) %>% 
-  select(-result, -memory) %>% 
-  unnest(c(time, gc))
-  
-# Graph timings -----------------------------------------------------------
-
-cs_batch_bench %>% 
-  ggplot() +
-  geom_boxplot(aes(time, factor(vector_length), colour = factor(batch_size))) +
-  scale_y_discrete(name = "vector_length") +
-  scale_colour_viridis_d(name = "batch_size") +
-  bench:::scale_x_bench_time() +
-  theme_minimal() +
-  theme(legend.position = "bottom")
-```
-
-``` {r cs_batch_timing_graph, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 5}
-
-load(here::here("inst", "cs_batch_bench.Rdata"))
-
-cs_batch_bench <- 
-  cs_batch_bench %>% 
-  tidyr::separate(expression, sep = "_", into = c("batch_size", "vector_length")) %>% 
-  mutate(batch_size = as.numeric(substr(batch_size, 2, nchar(batch_size)))) %>% 
-  mutate(vector_length = case_when(
-    vector_length == "1k" ~ 1024,
-    vector_length == "2k" ~ 2048,
-    vector_length == "5k" ~ 5120,
-    vector_length == "10k" ~ 10240)) %>% 
-  unnest(c(time, gc))
-
-cs_batch_bench %>% 
-  ggplot() +
-  geom_boxplot(aes(time, factor(vector_length), colour = factor(batch_size))) +
-  scale_y_discrete(name = "vector_length") +
-  scale_colour_viridis_d(name = "batch_size") +
-  bench:::scale_x_bench_time() +
-  theme_minimal() +
-  theme(legend.position = "bottom")
-```
-
-It demonstrates enormous speed increases from increasing the `batch_size` argument. For 10,000 higher-resolution images, setting the `batch_size` argument to 1024 results in a 6.5x speed improvement over setting it to 32. The conclusion is that, when `create_signature` is run in a highly parallelized mode, it should be run with the highest `batch_size` value that is consistent with the system's memory capacity. In scenarios where a large number of processor cores are available but not a large amount of RAM, it is likely that a less highly parallelized version of `create_signature` will actually run faster, because of the communication overhead imposed by processing many small batches of images instead of a smaller number of large batches.
 
 ### match_signatures
 
@@ -278,3 +182,14 @@ li_bench %>%
   theme(legend.position = "bottom")
 
 ```
+
+
+## Progress reporting
+
+All time-consuming matchr functions support progress reporting via the [progressr](https://cran.r-project.org/web/packages/progressr/vignettes/progressr-intro.html) package. To enable progress reporting, simply run the following line of code before running matchr functions:
+
+```
+progressr::handlers(global = TRUE)
+```
+
+Progress reporting carries a small performance overhead, and while matchr scales the amount of progress reports adaptively to the size of the workload, matchr functions will run slightly faster if progress reporting is disabled. To disable progress reporting on a per-function basis, set the argument `quiet = TRUE`.

@@ -9,9 +9,9 @@ Authors@R:
            comment = c(ORCID = "http://orcid.org/0000-0001-5689-9527"))
 Maintainer: David Wachsmuth <david.wachsmuth@mcgill.ca>
 Description: Fast and reliable matching of images. It creates unique colour
-    signatures for images by finding average colour values for horizontal bands.
-    This allows two or more images to be compared to each other using
-    correlations of colour values, and the comparisons are insensitive to
+    signatures for images by finding average colour values for horizontal and
+    vertical bands. This allows two or more images to be compared to each other 
+    using correlations of colour values, and the comparisons are insensitive to
     file format, resolution, or compression.
 License: MIT + file LICENSE
 Encoding: UTF-8

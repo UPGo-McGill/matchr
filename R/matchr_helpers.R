@@ -174,20 +174,11 @@ is_url <- function(x) grepl("^(http|ftp)s?://", x)
 
 set_par <- function(fun, ...) {
   
-  args <- list(...)
-  
   # Version for load_image
-  if (fun == "load_image") {
-    
-    if (sum(is_url(args$file)) > 0) {
-      par_check <- TRUE
-    } else {
-      size <- mean(file.size(sample(args$file, min(100, length(args$file)))))
-      if (is.na(size)) size <- 1
-      par_check <- size >= 100000
-    }
-
-  }
+  if (fun == "load_image") par_check <- FALSE
+  
+  # Version for create_signature.character
+  if (fun == "create_signature_character") par_check <- TRUE
   
   # Version for create_signature.list
   if (fun == "create_signature_list") par_check <- FALSE

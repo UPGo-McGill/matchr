@@ -32,7 +32,7 @@ load_image <- function(file, quiet = FALSE) {
   
   ### Set parallelization options ##############################################
 
-  par_check <- set_par("load_image", file = file)
+  par_check <- set_par("load_image")
   
   
   ### Import and process images ################################################

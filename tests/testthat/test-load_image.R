@@ -16,9 +16,11 @@ test_that("garbage strings produce NA", {
 test_that("multisession futures work", {
   skip_on_cran()
   old_plan <- future::plan(future::multisession, workers = 2)
-  expect_true(
-    inherits(load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png")[[1]],
-             "matchr_img"))
+  old_opt <- options(matchr.force_parallel = TRUE)
+  expect_true(inherits(suppressMessages(
+    load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png")[[1]]),
+    "matchr_img"))
   future::plan(old_plan)
+  options(old_opt)
 })
 

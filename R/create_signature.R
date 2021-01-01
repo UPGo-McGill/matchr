@@ -178,7 +178,7 @@ create_signature.character <- function(image, bands = 20, rm_black_bars = TRUE,
   
   
   # Set parallelization options
-  par_check <- set_par("load_image", file = image)
+  par_check <- set_par("create_signature_character")
   
   # Only do backup with > 1000 paths
   if (length(image) <= 1000) backup <- FALSE
