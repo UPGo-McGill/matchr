@@ -7,9 +7,9 @@
 \title{matchr: Fast and Reliable Matching of Images}
 \description{
 Fast and reliable matching of images. It creates unique colour
-    signatures for images by finding average colour values for horizontal bands.
-    This allows two or more images to be compared to each other using
-    correlations of colour values, and the comparisons are insensitive to
+    signatures for images by finding average colour values for horizontal and
+    vertical bands. This allows two or more images to be compared to each other 
+    using correlations of colour values, and the comparisons are insensitive to
     file format, resolution, or compression.
 }
 \seealso{

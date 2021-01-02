@@ -67,7 +67,7 @@ load_image <- function(file, quiet = FALSE) {
   
   imgs[sapply(imgs, is.na)] <-
     lapply(imgs[sapply(imgs, is.na)], function(x) {
-      class(x) <- "logical"
+      class(x) <- "matchr_img"
       x
     })
   

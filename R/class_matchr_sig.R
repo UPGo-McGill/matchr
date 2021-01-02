@@ -137,4 +137,3 @@ is.na.matchr_sig <- function(x, ...) {
   if (mean(is.na(unclass(x))) == 1) TRUE else FALSE
 
 }
-

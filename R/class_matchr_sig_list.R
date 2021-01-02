@@ -29,7 +29,7 @@ print.matchr_sig_list <- function(x, ...) {
   if (length(x) > 12) {
 
     extra_row <- paste0("# \u2026 with ", length(x) - 10,
-                        " more signatures")
+                        " more signatures\n")
 
     x_display <- x[1:10]
 

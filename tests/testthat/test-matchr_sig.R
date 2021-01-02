@@ -9,10 +9,9 @@ test_that("match_sig objects are printed properly", {
   expect_output(print(create_signature(TRUE)), "NA")
   # Disable colour
   expect_output({
-    col_var <- getOption("crayon.enabled")
-    options(crayon.enabled = FALSE)
+    col_var <- options(crayon.enabled = FALSE)
     print(test_matchr_sig_list[[1]])
-    options(crayon.enabled = col_var)
+    options(col_var)
   }, "0.53, 0.49")
   # Enable colour
   expect_true({
