@@ -45,7 +45,10 @@ load_image <- function(file, quiet = FALSE) {
   ## Import images with proper progress handling -------------------------------
   
   handler_matchr("Loading image")
-  prog_bar <- as.logical((length(file) >= 10) * !quiet)
+  prog_bar <- as.logical(
+    as.numeric((length(file) >= 10)) * 
+      as.numeric(!quiet) * 
+      as.numeric(progressr::handlers(global = NA)))
   iterator <- ceiling(log10(length(file)))
   iterator <- 10 ^ (ceiling(iterator / 2) - 1) * (1 + 4 * (iterator + 1) %% 2)
   pb <- progressr::progressor(steps = length(file), enable = prog_bar)

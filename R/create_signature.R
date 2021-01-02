@@ -233,19 +233,22 @@ create_signature.character <- function(image, bands = 20, rm_black_bars = TRUE,
   
   # Initialize progress reporting
   handler_matchr("Creating signature")
-  prog_bar <- as.logical((length(image) >= 10) * !quiet)
+  prog_bar <- as.logical(
+    as.numeric((length(image) >= 10)) * 
+      as.numeric(!quiet) * 
+      as.numeric(progressr::handlers(global = NA)))
   iterator <- ceiling(log10(length(image)))
   iterator <- 10 ^ (ceiling(iterator / 2) - 1) * (1 + 4 * (iterator + 1) %% 2)
+  pb <- progressr::progressor(steps = length(image), enable = prog_bar)
   
   if (diagnostic) {
     message(crayon::silver(
-      crayon::bold("create_signature diagnostic"), "\nParallel:", 
-      par_check, "\nWorkers:", number_of_threads(), "\nIterator:", iterator, 
-      "\nIterations:", iterations, "\nLengths:", 
+      crayon::bold("create_signature diagnostic"), "\nProgress bar:", prog_bar,
+      "\nParallel:", par_check, "\nWorkers:", number_of_threads(), 
+      "\nIterator:", iterator, "\nIterations:", iterations, "\nLengths:", 
       paste(lengths(input_list), collapse = ", ")))
   }
   
-  pb <- progressr::progressor(steps = length(image), enable = prog_bar)
   pb(amount = sum(lengths(input_list[seq_len(resume_from - 1)])))
   
   # Loop
@@ -322,7 +325,10 @@ create_signature.list <- function(image, bands = 20, rm_black_bars = TRUE,
   
   # Initialize progress reporting
   handler_matchr("Creating signature")
-  prog_bar <- as.logical((length(image) >= 10) * !quiet)
+  prog_bar <- as.logical(
+    as.numeric((length(image) >= 10)) * 
+      as.numeric(!quiet) * 
+      as.numeric(progressr::handlers(global = NA)))
   iterator <- ceiling(log10(length(image)))
   iterator <- 10 ^ (ceiling(iterator / 2) - 1) * (1 + 4 * (iterator + 1) %% 2)
   
