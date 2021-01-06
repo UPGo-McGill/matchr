@@ -17,40 +17,27 @@
 #' extension, it will be given the extension ".jpg".
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
-#' @return A list of `matchr_img` objects of the same length as the input
-#' vector.
+#' @return A `matchr_image` vector of the same length as the input vector.
 #' @examples
 #' load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png")
 #' @export
 
 load_image <- function(file, quiet = FALSE) {
   
-  ### Error checking ###########################################################
+  ## Error checking and options setting ----------------------------------------
   
   stopifnot(is.character(file), is.logical(quiet))
-  
-  
-  ### Set parallelization options ##############################################
-
   par_check <- set_par("load_image")
   
   
-  ### Import and process images ################################################
-  
-  ## Store paths for later -----------------------------------------------------
-  
-  paths <- file
-  
-  
-  ## Import images with proper progress handling -------------------------------
+  ## Import images -------------------------------------------------------------
   
   handler_matchr("Loading image")
   prog_bar <- as.logical(
     as.numeric((length(file) >= 10)) * 
       as.numeric(!quiet) * 
       as.numeric(progressr::handlers(global = NA)))
-  iterator <- ceiling(log10(length(file)))
-  iterator <- 10 ^ (ceiling(iterator / 2) - 1) * (1 + 4 * (iterator + 1) %% 2)
+  iterator <- get_iterator(file)
   pb <- progressr::progressor(steps = length(file), enable = prog_bar)
   
   imgs <- par_lapply(seq_along(file), function(x) {
@@ -61,22 +48,13 @@ load_image <- function(file, quiet = FALSE) {
   })
   
   
-  ## Construct class objects ---------------------------------------------------
+  ## Construct class objects and return output ---------------------------------
   
-  imgs <- mapply(new_matchr_img, imgs, paths, SIMPLIFY = FALSE)
-  
-  imgs[sapply(imgs, is.na)] <-
-    lapply(imgs[sapply(imgs, is.na)], function(x) {
-      class(x) <- "matchr_img"
-      x
-    })
-  
-  
-  ## Return output -------------------------------------------------------------
-  
+  imgs <- new_image(imgs, file)
   return(imgs)
   
 }
+
 
 load_image_internal <- function(x) {
   
@@ -113,8 +91,6 @@ load_image_internal <- function(x) {
                  })
     
   }
-  
-  if (!is.null(attr(img, "header"))) img <- img / 255
   
   return(img)
   

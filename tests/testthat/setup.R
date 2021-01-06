@@ -26,5 +26,8 @@ test_img <- load_image("https://upgo.lab.mcgill.ca/resources/img_1")[[1]]
 test_na <- suppressWarnings(load_image(
   "https://upgo.lab.mcgill.ca/resources/img_2_corrupt.jpg"))
 
-test_matchr_sig_list <- create_signature(list(test_img, test_img))
-test_long_sig_list <- suppressWarnings(create_signature(urls))
+test_sig <- create_signature(c(test_img, test_img))
+test_long_sig <- suppressWarnings(create_signature(urls))
+
+black_image <- 
+  new_image(list(array(rep(0, 4800), dim = c(40, 40, 3))), "black_image")

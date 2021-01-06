@@ -2,9 +2,9 @@
 
 test_that("remote images are loaded", {
   expect_true(
-    inherits(load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png")[[1]],
-             "matchr_img"))
-  expect_true(inherits(test_img, "matchr_img"))
+    inherits(load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png"),
+             "matchr_image"))
+  expect_true(inherits(test_img, "matchr_image"))
   })
 
 test_that("garbage strings produce NA", {
@@ -18,8 +18,8 @@ test_that("multisession futures work", {
   old_plan <- future::plan(future::multisession, workers = 2)
   old_opt <- options(matchr.force_parallel = TRUE)
   expect_true(inherits(suppressMessages(
-    load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png")[[1]]),
-    "matchr_img"))
+    load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png")),
+    "matchr_image"))
   future::plan(old_plan)
   options(old_opt)
 })

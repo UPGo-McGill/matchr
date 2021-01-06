@@ -15,8 +15,7 @@ extension, it will be given the extension ".jpg".}
 it return status updates throughout the function (default)?}
 }
 \value{
-A list of \code{matchr_img} objects of the same length as the input
-vector.
+A \code{matchr_image} vector of the same length as the input vector.
 }
 \description{
 \code{load_image} is a vectorized method for reading bitmaps (jpegs, pngs and

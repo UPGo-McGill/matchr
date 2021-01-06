@@ -1,7 +1,5 @@
 ### PACKAGE HELPERS ############################################################
 
-# Wrapper for future::nbrOfWorkers
-
 number_of_threads <- function() {
 
   if (requireNamespace("future", quietly = TRUE) &&
@@ -13,8 +11,7 @@ number_of_threads <- function() {
 
 }
 
-
-# Wrapper for lapply
+# ------------------------------------------------------------------------------
 
 par_lapply <- function(...) {
 
@@ -43,8 +40,7 @@ par_lapply <- function(...) {
 
 }
 
-
-# Wrapper for mapply
+# ------------------------------------------------------------------------------
 
 par_mapply <- function(...) {
 
@@ -73,6 +69,7 @@ par_mapply <- function(...) {
   
 }
 
+# ------------------------------------------------------------------------------
 
 #' Helper function to set a progress reporting strategy
 
@@ -110,6 +107,7 @@ handler_matchr <- function(message) {
   }
 }
 
+# ------------------------------------------------------------------------------
 
 #' Helper function to divide vector into equal-sized chunks
 #' @param x The vector to be split
@@ -159,6 +157,7 @@ chunk <- function(x, n_chunks, max_chunk_size = NULL, workers = NULL) {
   
 }
 
+# ------------------------------------------------------------------------------
 
 #' Helper function to detect URL
 #' @param x A string to check
@@ -166,6 +165,7 @@ chunk <- function(x, n_chunks, max_chunk_size = NULL, workers = NULL) {
 
 is_url <- function(x) grepl("^(http|ftp)s?://", x)
 
+# ------------------------------------------------------------------------------
 
 #' Helper function to decide on future plan
 #' @param fun A character string indicating the parent function
@@ -174,14 +174,16 @@ is_url <- function(x) grepl("^(http|ftp)s?://", x)
 
 set_par <- function(fun, ...) {
   
+  par_check <- TRUE
+  
   # Version for load_image
   if (fun == "load_image") par_check <- FALSE
   
   # Version for create_signature.character
   if (fun == "create_signature_character") par_check <- TRUE
   
-  # Version for create_signature.list
-  if (fun == "create_signature_list") par_check <- FALSE
+  # Version for create_signature.matchr_image
+  if (fun == "create_signature_matchr_image") par_check <- FALSE
   
   # First check global option
   par_opt <- 
@@ -225,5 +227,15 @@ set_par <- function(fun, ...) {
   }
   
   return(par_check)
+  
+}
+
+# ------------------------------------------------------------------------------
+
+get_iterator <- function(x) {
+  
+  iterator <- ceiling(log10(length(x)))
+  iterator <- 10 ^ (ceiling(iterator / 2) - 1) * (1 + 4 * (iterator + 1) %% 2)
+  return(iterator)
   
 }

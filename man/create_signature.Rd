@@ -2,15 +2,13 @@
 % Please edit documentation in R/create_signature.R
 \name{create_signature}
 \alias{create_signature}
-\alias{create_signature.matchr_img}
+\alias{create_signature.matchr_image}
 \alias{create_signature.character}
-\alias{create_signature.list}
-\alias{create_signature.default}
 \title{Generate a unique colour signature for an image}
 \usage{
 create_signature(image, bands = 20, rm_black_bars = TRUE, ...)
 
-\method{create_signature}{matchr_img}(image, bands = 20, rm_black_bars = TRUE, ...)
+\method{create_signature}{matchr_image}(image, bands = 20, rm_black_bars = TRUE, quiet = FALSE, ...)
 
 \method{create_signature}{character}(
   image,
@@ -18,19 +16,13 @@ create_signature(image, bands = 20, rm_black_bars = TRUE, ...)
   rm_black_bars = TRUE,
   backup = TRUE,
   quiet = FALSE,
-  diagnostic = FALSE,
   ...
 )
-
-\method{create_signature}{list}(image, bands = 20, rm_black_bars = TRUE, quiet = FALSE, ...)
-
-\method{create_signature}{default}(image, bands = 20, rm_black_bars = TRUE, ...)
 }
 \arguments{
-\item{image}{Object (or list of objects) of class \code{matchr_img} (imported
-using \code{\link{load_image}}), or file path or URL (or vector/list of file
-paths or URLs) which can be imported to \code{matchr_img} using
-\code{\link{load_image}}.}
+\item{image}{Vector of class \code{matchr_image} (imported using
+\code{\link{load_image}}), or character vector of file paths or URLs which
+can be imported to \code{matchr_image} using \code{\link{load_image}}.}
 
 \item{bands}{Integer scalar. The number of horizontal and vertical bands the
 image should be split into for processing. Higher values will produce a more
@@ -45,25 +37,19 @@ lead to false positive matches.}
 
 \item{...}{Additional arguments passed to methods.}
 
+\item{quiet}{A logical scalar. Should the function execute quietly, or should
+it return status updates throughout the function (default)?}
+
 \item{backup}{A logical scalar. Should the function store an ongoing backup
 of progress in a hidden object \code{.matchr_env$sig_backup} in the package's
 environment (default)? If TRUE, the function will attempt to resume progress
 if it detects a previous backup, and it will remove the backup if the
 function successfully completes. Backups can be removed with
 \code{\link{remove_backups}}.}
-
-\item{quiet}{A logical scalar. Should the function execute quietly, or should
-it return status updates throughout the function (default)?}
-
-\item{diagnostic}{A logical scalar. Should the function report additional
-information about parallel processing, iteration, etc?}
 }
 \value{
-If the input is a single \code{matchr_img} image, an object of
-class \code{matchr_sig}, which contains a numeric vector of length \code{bands * 8}, a
-file name (optionally), and an aspect ratio. If the input is a character
-vector of file paths or a list of \code{matchr_img} images, a list of class
-\code{matchr_sig_list}.
+A vector of class \code{matchr_signature} of the same length as the input
+vector.
 }
 \description{
 \code{create_signature} takes an image file and generates a numeric vector of

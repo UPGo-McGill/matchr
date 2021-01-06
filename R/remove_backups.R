@@ -21,20 +21,20 @@ remove_backups <- function() {
     removed <- c(removed, "sig_backup")
     }
 
-  if (exists("sig_backup_size", envir = .matchr_env)) {
-    rm("sig_backup_size", envir = .matchr_env)
-    removed <- c(removed, "sig_backup_size")
+  if (exists("sig_hash", envir = .matchr_env)) {
+    rm("sig_hash", envir = .matchr_env)
+    removed <- c(removed, "sig_hash")
   }
 
-  if (exists("match_backup", envir = .matchr_env)) {
-    rm("match_backup", envir = .matchr_env)
-    removed <- c(removed, "match_backup")
-  }
-
-  if (exists("match_backup_size", envir = .matchr_env)) {
-    rm("match_backup_size", envir = .matchr_env)
-    removed <- c(removed, "match_backup_size")
-  }
+  # if (exists("match_backup", envir = .matchr_env)) {
+  #   rm("match_backup", envir = .matchr_env)
+  #   removed <- c(removed, "match_backup")
+  # }
+  # 
+  # if (exists("match_hash", envir = .matchr_env)) {
+  #   rm("match_hash", envir = .matchr_env)
+  #   removed <- c(removed, "match_hash")
+  # }
 
   if (length(removed) == 0) {
     message("No backups found.")

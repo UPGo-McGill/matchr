@@ -23,9 +23,12 @@ Config/testthat/edition: 3
 Depends:
     R (>= 4.0)
 Imports: 
+    digest (>= 0.6.27),
     downloader (>= 0.4),
+    pillar (>= 1.4.7),
+    progressr (>= 0.7.0),
     readbitmap (>= 0.1.5),
-    progressr (>= 0.7.0)
+    vctrs (>= 0.3.5)
 Suggests:
     bench (>= 1.1.1),
     covr (>= 3.5.0),

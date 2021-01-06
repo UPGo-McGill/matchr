@@ -16,8 +16,7 @@
 
   }
 
-  if (requireNamespace("progressr", quietly = TRUE) &&
-      !progressr::handlers(global = NA)) {
+  if (!progressr::handlers(global = NA)) {
 
     packageStartupMessage("To enable progress bars, type ",
                           "'progressr::handlers(global = TRUE)'.")
