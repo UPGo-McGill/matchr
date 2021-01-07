@@ -229,6 +229,7 @@ sig_length <- function(x) {
   
   vec_assert(x, new_signature())
   l <- unique(sapply(field(x, "signature"), length))
+  if (length(l) == 2 && 1 %in% l) l <- setdiff(l, 1)
   stopifnot(length(l) == 1)
   l
 }

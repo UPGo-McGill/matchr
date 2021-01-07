@@ -50,3 +50,11 @@ test_that("other methods works", {
   expect_true(is_signature(test_sig))
   expect_output(str(test_sig), "sig")
 })
+
+test_that("a single NA is printed correctly", {
+  expect_output(print(test_long_sig[4], width = 20), "NA\\\033")
+  expect_output(print(test_long_sig[4], width = 40), "NA\\\033")
+  expect_output(print(test_long_sig[4], width = 45), "NA\\\033")
+  expect_output(print(test_long_sig[4], width = 50), "...ab")
+  expect_output(print(test_long_sig[4], width = 60), "\\(http")
+})

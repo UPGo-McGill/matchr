@@ -98,9 +98,7 @@ col_format <- function(x, width = 22) {
 
 #' @export
 
-vec_ptype_abbr.matchr_signature <- function(x, ...) {
-  "sig"
-}
+vec_ptype_abbr.matchr_signature <- function(x, ...) "sig"
 
 # ------------------------------------------------------------------------------
 
@@ -121,6 +119,7 @@ obj_print_data.matchr_signature <- function(x, width = getOption("width"), ...) 
   # Setup
   if (vec_size(x) > 20) x <- x[1:10]
   x_valid <- which(!is.na(x))
+  x_invalid <- which(is.na(x))
   bracket_chars <- width - nchar(vec_size(x)) - 24
   
   # Leading number
@@ -131,22 +130,26 @@ obj_print_data.matchr_signature <- function(x, width = getOption("width"), ...) 
   if (requireNamespace("crayon", quietly = TRUE) && crayon::has_color()) {
    sigs <- format(x, col_format)
   } else sigs <- format(x)
-  sigs[-x_valid] <- paste0(pillar::style_na(NA), strrep(" ", 20))
+  sigs[x_invalid] <- paste0(pillar::style_na(NA), strrep(" ", 20))
   
   # Smallest bracket: only sigs
-  if (bracket_chars < 11) {bracket <- ""
+  if (bracket_chars < 11) {
+    bracket <- ""
+    if (all(is.na(x))) sigs <- rep(pillar::style_na(NA), vec_size(x))
   
   # Next size: only a.r.
   } else if (bracket_chars < 19) {
     bracket <- rep("", vec_size(x))
     bracket[x_valid] <- sprintf(' (a.r. %.2f)', field(x[x_valid], 
                                                       "aspect_ratio"))
+    if (all(is.na(x))) sigs <- rep(pillar::style_na(NA), vec_size(x))
   
   # Next size: only aspect ratio
   } else if (bracket_chars < 25) {
     bracket <- rep("", vec_size(x))
     bracket[x_valid] <- sprintf(' (aspect ratio %.2f)', field(x[x_valid], 
                                                               "aspect_ratio"))
+    if (all(is.na(x))) sigs <- rep(pillar::style_na(NA), vec_size(x))
     
   # Next size: a.r. plus path
   } else if (bracket_chars < 50) {
@@ -161,7 +164,19 @@ obj_print_data.matchr_signature <- function(x, width = getOption("width"), ...) 
     bracket <- sprintf(' (a.r. %.2f, %s)', 
                        field(x, "aspect_ratio"),
                        file)
-    bracket[-x_valid] <- sprintf(' (%s)', file[-x_valid])
+    bracket[x_invalid] <- sprintf(' (%s)', file[x_invalid])
+    if (all(is.na(x))) {
+      sigs <- rep(pillar::style_na(NA), vec_size(x))
+      file_max <- rep(bracket_chars + 18, vec_size(x))
+      file_length <- nchar(field(x, "file"))
+      file <- ifelse(
+        file_length > file_max,
+        paste0("...", substr(field(x, "file"), file_length - file_max + 4, 
+                             file_length)),
+        field(x, "file"))
+      bracket <- sprintf(' (%s)', file)
+      
+    }
     
   # Final size: aspect ratio plus path
   } else {
@@ -174,16 +189,25 @@ obj_print_data.matchr_signature <- function(x, width = getOption("width"), ...) 
     bracket <- sprintf(' (aspect ratio %.2f, %s)', 
                        field(x, "aspect_ratio"),
                        file)
-    bracket[-x_valid] <- sprintf(' (%s)', file[-x_valid])
-    bracket[-x_valid] <- 
-      ifelse(nchar(bracket[-x_valid]) < bracket_chars + 1, paste0(
-        strrep(" ", pmin(19, bracket_chars + 1 - nchar(bracket[-x_valid]))), 
-        bracket[-x_valid]), bracket[-x_valid])
+    bracket[x_invalid] <- sprintf(' (%s)', file[x_invalid])
+    bracket[x_invalid] <- 
+      ifelse(nchar(bracket[x_invalid]) < bracket_chars + 1, paste0(
+        strrep(" ", pmin(19, bracket_chars + 1 - nchar(bracket[x_invalid]))), 
+        bracket[x_invalid]), bracket[x_invalid])
+    if (all(is.na(x))) {
+      sigs <- rep(pillar::style_na(NA), vec_size(x))
+      file_max <- rep(bracket_chars + 18, vec_size(x))
+      file_length <- nchar(field(x, "file"))
+      file <- ifelse(
+        file_length > file_max,
+        paste0("...", substr(field(x, "file"), file_length - file_max + 4, 
+                             file_length)),
+        field(x, "file"))
+      bracket <- sprintf(' (%s)', file)
+    }
   }
 
-  if (requireNamespace("crayon", quietly = TRUE) && crayon::has_color()) {
-    bracket <- crayon::silver(bracket)
-  }
+  bracket <- pillar::style_subtle(bracket)
   
   # Return output
   cat(paste0(lead_n, " ", sigs, bracket), sep = "\n")

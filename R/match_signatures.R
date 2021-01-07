@@ -108,6 +108,9 @@ match_signatures <- function(x, y = NULL, method = "grey",
   # }
 
 
+  # Deal with NAs
+  # x[is.na(x)]
+  
   # Split clusters for compare_aspect_ratios == TRUE
   if (compare_aspect_ratios == TRUE) {
     clusters <- get_clusters(x, y)
@@ -145,8 +148,8 @@ match_signatures <- function(x, y = NULL, method = "grey",
   }
   
   # Return result
-  get_ratios <- 
-    function(x) c(min(field(x, "aspect_ratio")), max(field(x, "aspect_ratio")))
+  get_ratios <- function(x) c(min(field(x, "aspect_ratio"), na.rm = TRUE), 
+                              max(field(x, "aspect_ratio"), na.rm = TRUE))
   new_matrix(
     x = result,
     x_ratios = lapply(x_list, get_ratios),
@@ -168,15 +171,15 @@ get_clusters <- function(x, y, stretch = 1.2) {
   
   # Set number of groups to evaluate
   unique_points <- unique(stats::na.omit(c(x_ratios, y_ratios)))
+  sum_fun <- function(x, y) length(x_ratios[x_ratios >= x & x_ratios <= y]) * 
+    length(y_ratios[y_ratios >= (x / stretch) & y_ratios <= (y * stretch)])
   set.seed(1)
-  groups <- lapply(3:min(length(unique_points), 12), function(n) {
+  groups <- lapply(3:min(length(unique_points) - 1, 12), function(n) {
     means <- stats::kmeans(unique_points, n)
     mins <- sort(sapply(seq_len(n), function(n) 
       min(unique_points[means$cluster == n])))
     maxs <- sort(sapply(seq_len(n), function(n) 
       max(unique_points[means$cluster == n])))
-    sum_fun <- function(x, y) length(x_ratios[x_ratios >= x & x_ratios <= y]) * 
-      length(y_ratios[y_ratios >= (x / stretch) & y_ratios <= (y * stretch)])
     calcs <- mapply(sum_fun, mins, maxs)
     list(sum(calcs), mins, maxs)
   })
@@ -189,8 +192,8 @@ get_clusters <- function(x, y, stretch = 1.2) {
   
   # Collapse lists if any are empty
   zero_fun <- 
-    function(x, y) c(sum(x_ratios >= x & x_ratios <= y), 
-                     sum(y_ratios >= (x / stretch) & y_ratios <= (y * stretch)))
+    function(x, y) c(sum(x_ratios >= x & x_ratios <= y, na.rm = TRUE), 
+                     sum(y_ratios >= (x / stretch) & y_ratios <= (y * stretch), na.rm = TRUE))
   vec_lens <- t(mapply(zero_fun, cut_min, cut_max, SIMPLIFY = "matrix"))
   
   while (prod(vec_lens) == 0) {
