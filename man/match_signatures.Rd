@@ -33,8 +33,8 @@ evaluated.) Image signatures from \code{x} are split into lists between these
 break points. In order to catch matches that would fall across a break point,
 image signatures from \code{y} are split into lists between the break point / 1.2
 on the lower bound and the break point * 1.2 on the upper bound. This
-argument is currently only implemented when both \code{x} and \code{y} are provided to
-the function.}
+argument is forced to FALSE if either \code{x} or \code{y} has fewer than 10 non-NA
+elements.}
 
 \item{backup}{A logical scalar. Should the function store an ongoing backup
 of progress in a hidden object \code{.matchr_env$smatch_backup} in the package's

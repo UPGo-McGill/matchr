@@ -11,12 +11,15 @@
 #' in the y vector.
 #' @param x_total An integer scalar: the total number of x signatures analyzed.
 #' @param y_total An integer scalar: the total number of y signatures analyzed.
+#' @param x_na A character vector: the paths of x signatures which are NA.
+#' @param y_na A character vector: the paths of y signatures which are NA.
 #' @return An object of class `matchr_matrix`.
 
 new_matrix <- function(x = list(), x_ratios = list(), y_ratios = list(),
                        x_files = list(), y_files = list(), 
-                       x_total = integer(length = 1L),
-                       y_total = integer(length = 1L)) {
+                       x_total = integer(length = 1L), 
+                       y_total = integer(length = 1L),
+                       x_na = character(), y_na = character()) {
   vec_assert(x, list())
   vec_assert(x_ratios, list())
   vec_assert(y_ratios, list())
@@ -24,9 +27,12 @@ new_matrix <- function(x = list(), x_ratios = list(), y_ratios = list(),
   vec_assert(y_files, list())
   vec_assert(x_total, integer())
   vec_assert(y_total, integer())
+  vec_assert(x_na, character())
+  vec_assert(y_na, character())
   new_rcrd(fields = list(matrix = x, x_ratios = x_ratios, y_ratios = y_ratios,
                          x_files = x_files, y_files = y_files), 
-           x_total = x_total, y_total = y_total, class = "matchr_matrix")
+           x_total = x_total, y_total = y_total, x_na = x_na, y_na = y_na,
+           class = "matchr_matrix")
 }
 
 # ------------------------------------------------------------------------------
@@ -103,6 +109,19 @@ obj_print_data.matchr_matrix <- function(x, width = getOption("width"), ...) {
   cat(paste0(lead_n, ratios, dims), sep = "\n")
 }
 
+# ------------------------------------------------------------------------------
+
+#' @export
+
+obj_print_footer.matchr_matrix <- function(x, ...) {
+  
+  if (sum(length(attr(x, "x_na")), length(attr(x, "y_na"))) > 0) {
+    footer <- pillar::style_subtle(paste0("# \u2026 with ", 
+                                          length(attr(x, "x_na")), " x ",
+                                          length(attr(x, "y_na")), " NAs"))
+    cat(footer)
+  } 
+}
 
 
 #' # ------------------------------------------------------------------------------

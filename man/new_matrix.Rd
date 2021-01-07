@@ -11,7 +11,9 @@ new_matrix(
   x_files = list(),
   y_files = list(),
   x_total = integer(length = 1L),
-  y_total = integer(length = 1L)
+  y_total = integer(length = 1L),
+  x_na = character(),
+  y_na = character()
 )
 }
 \arguments{
@@ -32,6 +34,10 @@ in the y vector.}
 \item{x_total}{An integer scalar: the total number of x signatures analyzed.}
 
 \item{y_total}{An integer scalar: the total number of y signatures analyzed.}
+
+\item{x_na}{A character vector: the paths of x signatures which are NA.}
+
+\item{y_na}{A character vector: the paths of y signatures which are NA.}
 }
 \value{
 An object of class \code{matchr_matrix}.

@@ -35,8 +35,8 @@
 #' break points. In order to catch matches that would fall across a break point,
 #' image signatures from `y` are split into lists between the break point / 1.2
 #' on the lower bound and the break point * 1.2 on the upper bound. This
-#' argument is currently only implemented when both `x` and `y` are provided to
-#' the function.
+#' argument is forced to FALSE if either `x` or `y` has fewer than 10 non-NA
+#' elements.
 #' @param backup A logical scalar. Should the function store an ongoing backup
 #' of progress in a hidden object `.matchr_env$smatch_backup` in the package's
 #' environment (default)? If TRUE, the function will attempt to resume progress
@@ -107,11 +107,14 @@ match_signatures <- function(x, y = NULL, method = "grey",
   #   }
   # }
 
-
   # Deal with NAs
-  # x[is.na(x)]
+  x_na <- x[is.na(x)]
+  y_na <- y[is.na(y)]
+  x <- x[!is.na(x)]
+  y <- y[!is.na(y)]
   
   # Split clusters for compare_aspect_ratios == TRUE
+  if (vec_size(x) < 10 || vec_size(y) < 10) compare_aspect_ratios <- FALSE
   if (compare_aspect_ratios == TRUE) {
     clusters <- get_clusters(x, y)
     x_list <- clusters[[1]]
@@ -156,8 +159,10 @@ match_signatures <- function(x, y = NULL, method = "grey",
     y_ratios = lapply(y_list, get_ratios),
     x_files = lapply(x_list, field, "file"),
     y_files = lapply(y_list, field, "file"),
-    x_total = vec_size(x),
-    y_total = vec_size(y)
+    x_total = vec_size(x) + vec_size(x_na),
+    y_total = vec_size(y) + vec_size(y_na),
+    x_na = field(x_na, "file"),
+    y_na = field(y_na, "file")
   )
 
 }
