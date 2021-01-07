@@ -14,11 +14,10 @@ match_signatures(
 )
 }
 \arguments{
-\item{x, y}{Lists (of class \code{matchr_sig_list}) of \code{matchr_sig} objects to be
-matched. If \code{y} is missing (default), each object in \code{x} will be matched
-against each other object in \code{x.} If \code{y} is present, each object in \code{x} will
-be matched against each object in \code{y}. Two individual images can be matched
-by supplying individual \code{matchr_sig} objects to \code{x} and \code{y}.}
+\item{x, y}{Vectors of class \code{matchr_signature} to be matched. If \code{y} is
+missing (default), each object in \code{x} will be matched against each other
+object in \code{x.} If \code{y} is present, each object in \code{x} will be matched against
+each object in \code{y}.}
 
 \item{method}{A character scalar. Should images be compared by their
 greyscale signatures ("grey", "greyscale, "gray", or "grayscale", the
@@ -48,7 +47,7 @@ function successfully completes. Backups can be removed with
 it return status updates throughout the function (default)?}
 }
 \value{
-An object of class \code{matchr_matrix_list}. This object is a list
+TKTK A vector of class \code{matchr_matrix}. This object is a list
 containing a number of correlation matrices (each of class \code{matchr_matrix})
 equal to the number of aspect-ratio categories. If \code{x} and \code{y} are both
 present, each matrix will have \code{length(x)} rows and \code{length(y)} columns, and
@@ -63,7 +62,7 @@ correlation matrix to identify matches.
 }
 \details{
 A function for identifying matching images. The function takes one or two
-lists of images signatures (objects of class 'matchr_sig') and compares their
+vectors of images signatures (class \code{matchr_signature}) and compares their
 colour signatures to find matches.
 
 The comparison is done by creating colour signatures for each input image

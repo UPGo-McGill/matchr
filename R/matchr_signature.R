@@ -36,7 +36,7 @@ is_signature <- function(x) {
 
 #' @export
 
-format.matchr_signature <- function(x, formatter = num_format) {
+format.matchr_signature <- function(x, formatter = num_format, ...) {
 
   x_valid <- which(!is.na(x))
   values <- formatter(field(x[x_valid], "signature"))
@@ -69,7 +69,7 @@ col_format <- function(x, width = 22) {
   g_values <- lapply(g_values, sapply, mean)
   g_values <- lapply(g_values, function(x) c(x, x, x))
   g_values <- lapply(g_values, matrix, ncol = 3)
-  g_values <- lapply(g_values, rgb)
+  g_values <- lapply(g_values, grDevices::rgb)
   g_values <- lapply(g_values, sapply, function(x) 
     crayon::style("\u25a0", crayon::make_style(x, colors = 256)), 
     USE.NAMES = FALSE)
@@ -83,7 +83,7 @@ col_format <- function(x, width = 22) {
     c(x[1:col_len], rep(0, 3 * col_len), x[(col_len + 1):(2 * col_len)], 
       rep(0, 3 * col_len), x[(2 * col_len + 1):(3 * col_len)]))
   c_values <- lapply(c_values, matrix, ncol = 3)
-  c_values <- lapply(c_values, rgb)
+  c_values <- lapply(c_values, grDevices::rgb)
   c_values <- lapply(c_values, sapply, function(x) 
     crayon::style("\u25a0", crayon::make_style(x, colors = 256)), 
     USE.NAMES = FALSE)
@@ -125,9 +125,7 @@ obj_print_data.matchr_signature <- function(x, width = getOption("width"), ...) 
   
   # Leading number
   lead_n <- formatC(seq_along(x), width = nchar(vec_size(x)), format = "fg")
-  if (requireNamespace("crayon", quietly = TRUE) && crayon::has_color()) {
-    lead_n <- crayon::silver(lead_n)
-  }
+  lead_n <- pillar::style_subtle(lead_n)
   
   # Image signature
   if (requireNamespace("crayon", quietly = TRUE) && crayon::has_color()) {
@@ -198,14 +196,8 @@ obj_print_data.matchr_signature <- function(x, width = getOption("width"), ...) 
 obj_print_header.matchr_signature <- function(x, ...) {
   
   if (vec_size(x) > 1) plural <- " signatures\n" else plural <- " signature\n"
-  
-  header <- paste0('# An image signature list: ', prettyNum(length(x), ","),
-                   plural)
-  
-  if (requireNamespace("crayon", quietly = TRUE) && crayon::has_color()) {
-    header <- crayon::silver(header)
-  }
-      
+  header <- pillar::style_subtle(paste0('# An image signature vector: ', 
+                                        prettyNum(length(x), ","), plural))
   cat(header)
   
 }
@@ -216,6 +208,7 @@ obj_print_header.matchr_signature <- function(x, ...) {
 #' @export
 
 obj_print_footer.matchr_signature <- function(x, ...) {
+  
   if (vec_size(x) > 20) {
     footer <- pillar::style_subtle(paste0("# \u2026 with ", vec_size(x) - 10, 
                                           " more signatures\n"))
@@ -272,4 +265,3 @@ sum.matchr_signature <- function(..., na.rm = FALSE) {
   sums
  
 }
-  

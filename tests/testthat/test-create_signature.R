@@ -12,7 +12,7 @@ test_that("a list of matchr_img works", {
 
 test_that("a vector of paths works", {
   expect_equal(
-    ceiling(sum(test_long_sig, na.rm = TRUE)), 1035)
+    ceiling(sum(test_long_sig, na.rm = TRUE)), 1034)
 })
 
 test_that("NA works", {

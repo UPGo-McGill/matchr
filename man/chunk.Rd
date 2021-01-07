@@ -16,7 +16,7 @@ chunk(x, n_chunks, max_chunk_size = NULL, workers = NULL)
 \item{workers}{A number to make max_chunk_size a multiple of (default NULL)}
 }
 \value{
-A list with n elements.
+A list with n_chunks elements.
 }
 \description{
 Helper function to divide vector into equal-sized chunks

@@ -4,9 +4,7 @@ number_of_threads <- function() {
 
   if (requireNamespace("future", quietly = TRUE) &&
       requireNamespace("future.apply", quietly = TRUE)) {
-
     future::nbrOfWorkers()
-
     } else 1
 
 }
@@ -16,7 +14,6 @@ number_of_threads <- function() {
 par_lapply <- function(...) {
 
   if (requireNamespace("future", quietly = TRUE)) {
-
     if (requireNamespace("future.apply", quietly = TRUE)) {
       
       par_check <- TRUE
@@ -28,16 +25,11 @@ par_lapply <- function(...) {
         lapply(...)
       
       } else {
-
       message("Please install the `future.apply` package to enable ",
               "parallel processing.")
-
       lapply(...)
-
     }
-
   } else lapply(...)
-
 }
 
 # ------------------------------------------------------------------------------
@@ -45,7 +37,6 @@ par_lapply <- function(...) {
 par_mapply <- function(...) {
 
   if (requireNamespace("future", quietly = TRUE)) {
-    
     if (requireNamespace("future.apply", quietly = TRUE)) {
       
       par_check <- TRUE
@@ -57,16 +48,11 @@ par_mapply <- function(...) {
         mapply(...)
       
       } else {
-        
         message("Please install the `future.apply` package to enable ",
                 "parallel processing.")
-        
         mapply(...)
-      
     }
-    
   } else mapply(...)
-  
 }
 
 # ------------------------------------------------------------------------------
@@ -77,17 +63,12 @@ par_mapply <- function(...) {
 #' @return A progressr handler.
 
 handler_matchr <- function(message) {
-
-  if (requireNamespace("progressr", quietly = TRUE)) {
-
-    if (!requireNamespace("progress", quietly = TRUE)) {
-
-      progressr::handlers("txtprogressbar")
-
+  
+  if (!requireNamespace("progress", quietly = TRUE)) {
+    progressr::handlers("txtprogressbar")
     } else {
-
       format_string <- paste0(
-        message,
+        message, 
         " :current of :total (:tick_rate/s) [:bar] :percent, ETA: :eta")
 
       if (requireNamespace("crayon", quietly = TRUE)) {
@@ -104,7 +85,6 @@ handler_matchr <- function(message) {
           ))
       }
     }
-  }
 }
 
 # ------------------------------------------------------------------------------
@@ -114,43 +94,32 @@ handler_matchr <- function(message) {
 #' @param n_chunks The number of chunks to split into
 #' @param max_chunk_size The maximum size of each chunk (default NULL)
 #' @param workers A number to make max_chunk_size a multiple of (default NULL)
-#' @return A list with n elements.
+#' @return A list with n_chunks elements.
 
 chunk <- function(x, n_chunks, max_chunk_size = NULL, workers = NULL) {
   
+  n_chunks <- min(n_chunks, vec_size(x))
+  
   if (missing(max_chunk_size) && !missing(workers)) {
-    
     max_chunk_size <- ceiling(length(x) / n_chunks)
-    
     max_chunk_size <- 
       unname(floor(max_chunk_size / number_of_threads()) * number_of_threads())
-    
   }
   
   # Simple version which splits into n_chunks pieces
   if (missing(max_chunk_size)) {
-    
-    starts <- round(seq.int(from = 1, to = length(x), 
+    starts <- ceiling(seq.int(from = 1, to = length(x), 
                             by = length(x) / n_chunks))
-    
-    ends <- round(pmin(seq.int(from = 1, to = length(x), 
+    ends <- ceiling(pmin(seq.int(from = 1, to = length(x), 
                                by = length(x) / n_chunks) + 
                          (length(x) / n_chunks - 1), length(x))) 
-    
   } else {
-    
     # If workers is present, make max_chunk_size a multiple of it
-    if (!missing(workers)) {
-      
-      max_chunk_size <- floor(max_chunk_size / workers) * workers
-      
-    }
-    
+    if (!missing(workers)) max_chunk_size <- 
+        floor(max_chunk_size / workers) * workers
     starts <- seq.int(from = 1, to = length(x), by = max_chunk_size)
-    
     ends <- pmin(seq.int(from = 1, to = length(x), by = max_chunk_size) + 
                    max_chunk_size - 1, length(x))
-    
   }
   
   mapply(function(a, b) x[a:b], starts, ends, SIMPLIFY = FALSE)
@@ -174,6 +143,7 @@ is_url <- function(x) grepl("^(http|ftp)s?://", x)
 
 set_par <- function(fun, ...) {
   
+  args <- list(...)
   par_check <- TRUE
   
   # Version for load_image
@@ -184,6 +154,9 @@ set_par <- function(fun, ...) {
   
   # Version for create_signature.matchr_image
   if (fun == "create_signature_matchr_image") par_check <- FALSE
+  
+  # Version for match_signatures
+  if (fun == "match_signatures" && args$x < 2000) par_check <- FALSE
   
   # First check global option
   par_opt <- 
@@ -238,4 +211,24 @@ get_iterator <- function(x) {
   iterator <- 10 ^ (ceiling(iterator / 2) - 1) * (1 + 4 * (iterator + 1) %% 2)
   return(iterator)
   
+}
+
+# ------------------------------------------------------------------------------
+
+trim_signature <- function(x, range) {
+  
+  vec_assert(x, new_signature())
+  field(x, "signature") <- lapply(field(x, "signature"), `[`, range)
+  x
+  
+}
+
+# ------------------------------------------------------------------------------
+
+sig_length <- function(x) {
+  
+  vec_assert(x, new_signature())
+  l <- unique(sapply(field(x, "signature"), length))
+  stopifnot(length(l) == 1)
+  l
 }
