@@ -23,10 +23,11 @@ indicator of whether two images are the same.
 
 Using matrix algebra, matchr can compare multiple sets of images and
 identify likely matches. The method is robust to changes in tint,
-compression or aspect ratio, and to other minor differences.
+compression or aspect ratio, and to other minor differences such as
+small overlays added to one of a pair of matching images.
 
 The package includes a Shiny app (`compare_matches`) for visually
-inspecting match results and confirm or reject the matches.
+inspecting match results and confirming or rejecting the matches.
 
 All time-consuming matchr functions can be parallelized through the
 [future](https://cran.r-project.org/web/packages/future/vignettes/future-1-overview.html)
@@ -52,14 +53,14 @@ remotes::install_github("UPGo-McGill/matchr")
 
 ## Usage
 
-The standard matchr flow involves importing one or more sets of images
-with `load_image`, generating image signatures from the image sets using
-`create_signature`, matching image signatures using `match_signatures`,
-then refining and verifying the matches using `confirm_matches`,
-`compare_images`, and `integrate_changes`.
+The standard matchr work flow involves importing one or more sets of
+images with `load_image`, generating image signatures from the image
+sets using `create_signature`, matching image signatures using
+`match_signatures`, then refining and verifying the matches using
+`confirm_matches`, `compare_images`, and `integrate_changes`.
 
 Because each of these steps can be very time- or computation-intensive,
-it is usually the most convenient to run these functions separately. But
+it is usually the most convenient to run the functions separately. But
 in the case of relatively small comparison tasks, `match_images`
 provides an “all-in-one” function which performs each task sequentially
 and delivers the final results.

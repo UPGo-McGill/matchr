@@ -157,7 +157,7 @@ match_signatures <- function(x, y = NULL, method = "grey",
   get_ratios <- function(x) c(min(field(x, "aspect_ratio"), na.rm = TRUE), 
                               max(field(x, "aspect_ratio"), na.rm = TRUE))
   new_matrix(
-    x = result,
+    matrix = result,
     x_ratios = lapply(x_list, get_ratios),
     y_ratios = lapply(y_list, get_ratios),
     x_files = lapply(x_list, field, "file"),

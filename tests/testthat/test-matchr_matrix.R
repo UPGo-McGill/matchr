@@ -1,22 +1,17 @@
 #### TESTS FOR matchr_matrix ###################################################
 
+test_that("matchr_matrix objects are printed properly", {
+  expect_output(print(test_match), "15 x 15 in 3 matrices")
+  expect_output(print(test_match[1]), "6 x 6 in 1 matrix")
+})
+
+
+
 # test_that("matchr_signature handles NA", {
 #   expect_true(suppressWarnings(is.na(create_signature("flkj"))))
 # })
 # 
-# test_that("matchr_signature objects are printed properly", {
-#   expect_output(print(test_sig[1]), "aspect ratio")
-#   expect_output(print(suppressWarnings(create_signature("fdlkj"))), "NA")
-#   # Disable colour
-#   col_var <- options(crayon.enabled = FALSE)
-#   expect_output(print(test_sig[1]), "0.41, 0.44")
-#   options(col_var)
-#   # Enable colour
-#   col_var <- options(crayon.enabled = TRUE)
-#   expect_true(crayon::has_style(capture.output(print(test_sig[1]))[[2]]))
-#   options(crayon.enabled = col_var)
-# })
-# 
+
 # test_that("length > 1 matchr_signature objects are printed properly", {
 #   expect_output(print(test_sig), "2 signatures")
 # })
@@ -45,12 +40,12 @@
 #     dplyr::tibble(x = rep(test_sig, 15))))[[4]]))
 #   options(crayon.enabled = col_var)
 # })
-# 
-# test_that("other methods works", {
-#   expect_true(is_signature(test_sig))
-#   expect_output(str(test_sig), "sig")
-# })
-# 
+
+test_that("other methods works", {
+  expect_true(is_matrix(test_match))
+  expect_output(str(test_match), "matrix")
+})
+
 # test_that("a single NA is printed correctly", {
 #   expect_output(print(test_long_sig[4], width = 20), "NA\\\033")
 #   expect_output(print(test_long_sig[4], width = 40), "NA\\\033")

@@ -1,6 +1,6 @@
 #' Create a new matchr_matrix object
 #'
-#' @param x A list of correlation matrices.
+#' @param matrix A list of correlation matrices.
 #' @param x_ratios A list of numeric vectors: the highest and lowest aspect 
 #' ratio in the x vector.
 #' @param y_ratios A list of numeric vectors: the highest and lowest aspect 
@@ -15,12 +15,12 @@
 #' @param y_na A character vector: the paths of y signatures which are NA.
 #' @return An object of class `matchr_matrix`.
 
-new_matrix <- function(x = list(), x_ratios = list(), y_ratios = list(),
+new_matrix <- function(matrix = list(), x_ratios = list(), y_ratios = list(),
                        x_files = list(), y_files = list(), 
                        x_total = integer(length = 1L), 
                        y_total = integer(length = 1L),
                        x_na = character(), y_na = character()) {
-  vec_assert(x, list())
+  vec_assert(matrix, list())
   vec_assert(x_ratios, list())
   vec_assert(y_ratios, list())
   vec_assert(x_files, list())
@@ -29,8 +29,9 @@ new_matrix <- function(x = list(), x_ratios = list(), y_ratios = list(),
   vec_assert(y_total, integer())
   vec_assert(x_na, character())
   vec_assert(y_na, character())
-  new_rcrd(fields = list(matrix = x, x_ratios = x_ratios, y_ratios = y_ratios,
-                         x_files = x_files, y_files = y_files), 
+  new_rcrd(fields = list(matrix = matrix, x_ratios = x_ratios, 
+                         y_ratios = y_ratios, x_files = x_files, 
+                         y_files = y_files), 
            x_total = x_total, y_total = y_total, x_na = x_na, y_na = y_na,
            class = "matchr_matrix")
 }
@@ -122,6 +123,27 @@ obj_print_footer.matchr_matrix <- function(x, ...) {
     cat(footer)
   } 
 }
+
+# ------------------------------------------------------------------------------
+
+#' @export
+#' 
+vec_restore.matchr_matrix <- function(x, to, ..., n = NULL) {
+  
+  new_matrix(
+    matrix = field(x, "matrix"),
+    x_ratios = field(x, "x_ratios"),
+    y_ratios = field(x, "y_ratios"),
+    x_files = field(x, "x_files"),
+    y_files = field(x, "y_files"),
+    x_total = sum(lengths(field(x, "x_files"))) + vec_size(attr(to, "x_na")),
+    y_total = sum(lengths(field(x, "y_files"))) + vec_size(attr(to, "y_na")),
+    x_na = attr(to, "x_na"),
+    y_na = attr(to, "y_na")
+  )
+  
+}
+
 
 
 #' # ------------------------------------------------------------------------------
