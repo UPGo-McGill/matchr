@@ -22,13 +22,17 @@ urls <-
 
 # Create objects that will be used multiple times -------------------------
 
-test_img <- load_image("https://upgo.lab.mcgill.ca/resources/img_1_small.jpg")
-
+# load_image
+test_img <- load_image("https://upgo.lab.mcgill.ca/resources/img_1_small")
+black_image <- 
+  new_image(list(array(rep(0, 4800), dim = c(40, 40, 3))), "black_image")
 test_na <- suppressWarnings(load_image(
   "https://upgo.lab.mcgill.ca/resources/img_2_corrupt.jpg"))
 
+# create_signature
 test_sig <- create_signature(c(test_img, test_img))
 test_long_sig <- suppressWarnings(create_signature(urls))
 
-black_image <- 
-  new_image(list(array(rep(0, 4800), dim = c(40, 40, 3))), "black_image")
+# match_signatures
+test_match <- match_signatures(test_long_sig)
+
