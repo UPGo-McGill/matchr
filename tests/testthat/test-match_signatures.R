@@ -47,7 +47,7 @@ test_that("backups work", {
   assign("match_backup", list(matrix(1:16, nrow = 4), NULL, NULL), 
          envir = .matchr_env)
   expect_error(match_signatures(c(input, input)))
-  expect_equal(lengths(field(match_signatures(input), "matrix")), c(16, 64, 1))
-  
+  expect_equal(lengths(field(match_signatures(input, quiet = TRUE), "matrix")), 
+               c(16, 64, 1))
 })
 

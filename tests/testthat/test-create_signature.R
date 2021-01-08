@@ -5,13 +5,13 @@ test_that("a single matchr_image works", {
     ceiling(sum(create_signature(test_img))), 67)
   })
 
-test_that("a list of matchr_img works", {
+test_that("a vector of matchr_img works", {
   expect_equal(
     ceiling(sum(test_sig)), 133)
 })
 
 test_that("a vector of paths works", {
-  expect(ceiling(sum(test_long_sig, na.rm = TRUE)) %in% 1129:1132,
+  expect(ceiling(sum(test_long_sig, na.rm = TRUE)) %in% 1120:1140,
          "test_long_sig")
 })
 
