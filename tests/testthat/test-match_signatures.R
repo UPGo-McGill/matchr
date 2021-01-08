@@ -15,6 +15,12 @@ test_that("a short single matchr_signature with compare_aspect_ratios works", {
                                         length(attr(r2, "x_na"))))
 })
 
+test_that("colour works", {
+  r3 <- match_signatures(test_long_sig[8:9])
+  expect_equal(sum(field(r3, "matrix")[[1]] > 0.99), 4)
+  r4 <- match_signatures(test_long_sig[8:9], method = "rgb")
+  expect_equal(sum(field(r4, "matrix")[[1]] > 0.99), 2)
+})
 
 # test_that("a long single matchr_signature works", {
 #   expect_equal(

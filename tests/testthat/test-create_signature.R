@@ -11,7 +11,7 @@ test_that("a list of matchr_img works", {
 })
 
 test_that("a vector of paths works", {
-  expect(ceiling(sum(test_long_sig, na.rm = TRUE)) %in% c(1033, 1034),
+  expect(ceiling(sum(test_long_sig, na.rm = TRUE)) %in% c(1130, 1131),
          "test_long_sig")
 })
 
@@ -21,16 +21,16 @@ test_that("NA works", {
 })
 
 test_that("rm_black_bars works", {
-  expect_output(print(create_signature(urls[12], rm_black_bars = FALSE)),
+  expect_output(print(create_signature(urls[13], rm_black_bars = FALSE)),
                 "1.00")
-  expect_output(print(create_signature(urls[12])), "(2.08)|(2.04)")
+  expect_output(print(create_signature(urls[13])), "(2.08)|(2.04)")
   expect(is.na(create_signature(black_image)),
          "create_signature(black_image) did not return NA.")
 })
 
 test_that("tiny images return NA", {
-  expect(is.na(create_signature(urls[13])), 
-         "create_signature(urls[13]) did not return NA.")
+  expect(is.na(create_signature(urls[14])), 
+         "create_signature(urls[14]) did not return NA.")
 })
 
 test_that("backups work", {

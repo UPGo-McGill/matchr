@@ -36,7 +36,7 @@ test_that("different displays work", {
   expect_output(print(test_sig), ".41", width = 20)
   expect_output(print(test_sig), "a.r.", width = 40)
   expect_output(print(test_sig), "aspect ratio", width = 45)
-  expect_output(print(test_sig), "resources", width = 60)
+  expect_output(print(test_sig), "ces", width = 60)
   expect_output(print(test_sig), "aspect ratio", width = 80)
   expect_output(print(test_sig), "https", width = 100)
   expect_output(print(dplyr::tibble(x = test_sig)), "<sig>")
