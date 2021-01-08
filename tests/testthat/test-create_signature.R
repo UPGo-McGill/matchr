@@ -11,7 +11,7 @@ test_that("a list of matchr_img works", {
 })
 
 test_that("a vector of paths works", {
-  expect(ceiling(sum(test_long_sig, na.rm = TRUE)) %in% c(1130, 1131),
+  expect(ceiling(sum(test_long_sig, na.rm = TRUE)) %in% 1129:1132,
          "test_long_sig")
 })
 

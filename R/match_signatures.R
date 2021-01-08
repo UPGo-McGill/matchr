@@ -60,13 +60,12 @@ match_signatures <- function(x, y = NULL, method = "grey",
                              quiet = FALSE) {
 
   # Error handling and object initialization
-  stopifnot(is_signature(x), 
-            method %in% c("grey", "gray", "colour", "color", "both"),
-            is.logical(compare_aspect_ratios), is.logical(backup),
-            is.logical(quiet))
-  if (!missing(y)) stopifnot(is_signature(y))
-  if (missing(y)) {x_only <- TRUE; y <- x} else x_only <- FALSE
-
+  stopifnot(
+    is_signature(x), is.logical(c(compare_aspect_ratios, backup, quiet)),
+    method %in% c("grey", "gray", "colour", "color", "rgb", "RGB", "both"))
+  if (missing(y)) y <- x else stopifnot(is_signature(y))
+  if (vec_size(x) <= 1000) backup <- FALSE
+  resume_from <- 1
 
   # Prepare method
   if (method %in% c("grey", "gray", "greyscale", "grayscale")) {
@@ -80,32 +79,6 @@ match_signatures <- function(x, y = NULL, method = "grey",
     x <- trim_signature(x, (sig_length(x) / 4 + 1):sig_length(x))
     y <- trim_signature(y, (sig_length(y) / 4 + 1):sig_length(y)) 
   }
-
-  # Prepare backup
-  # if (backup) {
-  #
-  #   # Silence R CMD check re: function backup
-  #   # sig_backup <- NULL
-  #
-  #   # Check for previous backup
-  #   if (exists("match_backup", envir = .matchr_env)) {
-  #     # Only proceed if old input size is identical to new input size
-  #     if (.matchr_env$match_backup_size == object.size(x)) {
-  #       result <- .matchr_env$match_backup
-  #       resume_from <- length(result[!sapply(result, is.null)]) + 1 # TKTK NEED TO UPDATE
-  #       if (!quiet) cat("Backup detected. Resuming from position ",
-  #                       sum(sapply(.matchr_env$match_backup, length)) + 1,
-  #                       ".\n", sep = "")
-  #     } else {
-  #       stop("The backup detected in .matchr_env$match_backup does not match ",
-  #            "the input. Remove the previous backup with ",
-  #            "`remove_backups()` to proceed.")
-  #     }
-  #   } else {
-  #     assign("match_backup", result, envir = .matchr_env)
-  #     assign("match_backup_size", object.size(x), envir = .matchr_env)
-  #   }
-  # }
 
   # Deal with NAs
   x_na <- x[is.na(x)]
@@ -123,14 +96,38 @@ match_signatures <- function(x, y = NULL, method = "grey",
     x_list <- list(x)
     y_list <- list(y)
   }
-
+  result <- vector("list", length(x_list))
+  
+  # Prepare backup
+  if (backup) {
+    
+    # Check for previous backup
+    if (exists("match_backup", envir = .matchr_env)) {
+      
+      # Only proceed if old hash is identical to new hash
+      if (.matchr_env$match_hash == digest::digest(list(x, y)) &&
+          length(.matchr_env$match_backup) == length(result)) {
+        result <- .matchr_env$match_backup
+        resume_from <- length(result[!sapply(result, is.null)]) + 1
+        if (!quiet) message("Backup detected. Resuming from position ",
+                            sum(sapply(.matchr_env$match_backup, length)) + 1,
+                            ".\n", sep = "")
+      } else {
+        stop("The backup detected in .matchr_env$match_backup does not match ",
+             "the input. Remove the previous backup with ",
+             "`remove_backups()` to proceed.", call. = FALSE)
+      }
+    } else {
+      assign("match_hash", digest::digest(list(x, y)), envir = .matchr_env)
+    }
+  }
+  
   # Sort out parallelization options
   par_check_vec <- suppressMessages(sapply(lengths(x_list), function(x) 
     set_par("match_signatures", x = x)))
   
   # Calculate correlation matrices
-  result <- vector("list", length(x_list))
-  for (i in seq_along(x_list)) {
+  for (i in resume_from:length(x_list)) {
     if (par_check_vec[i]) {
       par_check <- TRUE
       x_matrix <- chunk(x_list[[i]], number_of_threads())
@@ -147,10 +144,12 @@ match_signatures <- function(x, y = NULL, method = "grey",
       y_matrix <- matrix(unlist(field(y_list[[i]], "signature")), 
                          ncol = vec_size(y_list[[i]]))
       result[[i]] <- stats::cor(x_matrix, y_matrix)
-      }
+    }
+    if (backup) assign("match_backup", result, envir = .matchr_env)
   }
   
   # Return result
+  if (backup) rm(match_backup, match_hash, envir = .matchr_env)
   get_ratios <- function(x) c(min(field(x, "aspect_ratio"), na.rm = TRUE), 
                               max(field(x, "aspect_ratio"), na.rm = TRUE))
   new_matrix(
@@ -197,8 +196,8 @@ get_clusters <- function(x, y, stretch = 1.2) {
   
   # Collapse lists if any are empty
   zero_fun <- 
-    function(x, y) c(sum(x_ratios >= x & x_ratios <= y, na.rm = TRUE), 
-                     sum(y_ratios >= (x / stretch) & y_ratios <= (y * stretch), na.rm = TRUE))
+    function(x, y) c(sum(x_ratios >= x & x_ratios <= y), 
+                     sum(y_ratios >= (x / stretch) & y_ratios <= (y * stretch)))
   vec_lens <- t(mapply(zero_fun, cut_min, cut_max, SIMPLIFY = "matrix"))
   
   while (prod(vec_lens) == 0) {

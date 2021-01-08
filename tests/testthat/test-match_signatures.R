@@ -37,11 +37,17 @@ test_that("a pair of matchr_signature vectors works", {
 # 
 
 test_that("backups work", {
-  assign("sig_hash", digest::digest(rep("test", 1200)), envir = .matchr_env)
-  assign("sig_backup", list(rep(list(list(NA, NA)), 600), NULL), 
+  na_sig <- create_signature(test_na)
+  input <- c(test_long_sig, rep(na_sig, 986))
+  expect_equal(lengths(field(match_signatures(input), "matrix")), c(16, 64, 1))
+  assign("match_hash", 
+         digest::digest(list(trim_signature(input[!is.na(input)], 1:40), 
+                             trim_signature(input[!is.na(input)], 1:40))), 
          envir = .matchr_env)
-  expect_error(sum(suppressWarnings(create_signature(rep("test", 1199)))))
-  expect_equal(sum(suppressWarnings(suppressMessages(
-    create_signature(rep("test", 1200))))), NA_integer_)
+  assign("match_backup", list(matrix(1:16, nrow = 4), NULL, NULL), 
+         envir = .matchr_env)
+  expect_error(match_signatures(c(input, input)))
+  expect_equal(lengths(field(match_signatures(input), "matrix")), c(16, 64, 1))
+  
 })
 
