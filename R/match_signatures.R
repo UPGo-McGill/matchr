@@ -123,8 +123,12 @@ match_signatures <- function(x, y = NULL, method = "grey",
   }
   
   # Sort out parallelization options
-  par_check_vec <- suppressMessages(sapply(lengths(x_list), function(x) 
-    set_par("match_signatures", x = x)))
+  par_check_msg <- utils::capture.output({
+    par_check_vec <- sapply(lengths(x_list), 
+                            function(x) set_par("match_signatures", x = x))}, 
+    type = c("message"))
+  par_check_msg <- unique(par_check_msg)
+  if (!quiet) message(par_check_msg)
   
   # Calculate correlation matrices
   for (i in resume_from:length(x_list)) {

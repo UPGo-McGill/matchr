@@ -27,14 +27,13 @@ test_that("a pair of matchr_signature vectors works", {
   expect_equal(r4, test_match)
 })
 
-# test_that("a long single matchr_signature works", {
-#   expect_equal(
-#     sum(lengths(
-#       match_signatures(rep(test_long_sig[5:12], 5))
-#       )), 77)
-# })
-# 
-# 
+test_that("multisession futures work", {
+  old_opt <- options(matchr.force_parallel = TRUE)
+  old_plan <- future::plan(future::multisession, workers = 2)
+  suppressMessages(expect_message(match_signatures(test_long_sig), "parallel"))
+  future::plan(old_plan)
+  options(old_opt)
+})
 
 test_that("backups work", {
   na_sig <- create_signature(test_na)
@@ -47,7 +46,9 @@ test_that("backups work", {
   assign("match_backup", list(matrix(1:16, nrow = 4), NULL, NULL), 
          envir = .matchr_env)
   expect_error(match_signatures(c(input, input)))
-  expect_equal(lengths(field(match_signatures(input, quiet = TRUE), "matrix")), 
-               c(16, 64, 1))
+  expect_message(match_signatures(input), "Backup detected")
 })
 
+test_that("get_clusters collapses empty vectors", {
+  expect_equal(sum(lengths(get_clusters(clust_x, clust_y))), 22)
+})

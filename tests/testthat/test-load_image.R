@@ -14,7 +14,6 @@ test_that("garbage strings produce NA", {
 })
 
 test_that("multisession futures work", {
-  skip_on_cran()
   old_plan <- future::plan(future::multisession, workers = 2)
   old_opt <- options(matchr.force_parallel = TRUE)
   expect_true(inherits(suppressMessages(

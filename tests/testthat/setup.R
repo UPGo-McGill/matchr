@@ -35,4 +35,4 @@ test_long_sig <- suppressWarnings(create_signature(urls))
 
 # match_signatures
 test_match <- match_signatures(test_long_sig)
-
+load("test-get_clusters.Rdata")
