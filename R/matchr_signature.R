@@ -38,10 +38,12 @@ is_signature <- function(x) {
 
 format.matchr_signature <- function(x, formatter = num_format, ...) {
 
-  x_valid <- which(!is.na(x))
+  x_empty <- which(lengths(field(x, "signature")) == 0)
+  x_valid <- setdiff(which(!is.na(x)), x_empty)
   values <- formatter(field(x[x_valid], "signature"))
     
   out <- rep(NA_character_, vec_size(x))
+  out[x_empty] <- rep("<Empty>", vec_size(x_empty))
   out[x_valid] <- values
   out
   
@@ -219,7 +221,7 @@ obj_print_data.matchr_signature <- function(x, width = getOption("width"), ...) 
 
 obj_print_header.matchr_signature <- function(x, ...) {
   
-  if (vec_size(x) > 1) plural <- " signatures\n" else plural <- " signature\n"
+  if (vec_size(x) == 1) plural <- " signature\n" else plural <- " signatures\n"
   header <- pillar::style_subtle(paste0('# An image signature vector: ', 
                                         prettyNum(length(x), ","), plural))
   cat(header)

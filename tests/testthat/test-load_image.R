@@ -15,6 +15,8 @@ test_that("garbage strings produce NA", {
 
 test_that("multisession futures work", {
   old_plan <- future::plan(future::multisession, workers = 2)
+  expect_message(load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png"),
+                 "non-parallel")
   old_opt <- options(matchr.force_parallel = TRUE)
   expect_true(inherits(suppressMessages(
     load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png")),
