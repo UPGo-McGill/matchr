@@ -30,6 +30,7 @@ test_that("a pair of matchr_signature vectors works", {
 test_that("multisession futures work", {
   old_opt <- options(matchr.force_parallel = TRUE)
   old_plan <- future::plan(future::multisession, workers = 2)
+  suppressWarnings(rm(par_1, envir = .matchr_env))
   suppressMessages(expect_message(match_signatures(test_long_sig), "parallel"))
   future::plan(old_plan)
   options(old_opt)

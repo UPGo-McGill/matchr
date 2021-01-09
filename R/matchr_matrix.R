@@ -58,8 +58,8 @@ is_matrix <- function(x) {
 
 format.matchr_matrix <- function(x, ...) {
   
-  dims <- paste(lengths(field(x, "x_files")), "x", lengths(field(x, "y_files")))
-  dims
+  paste(prettyNum(lengths(field(x, "x_files")), ","), "x", 
+        prettyNum(lengths(field(x, "y_files")), ","))
   
 }
 
@@ -67,9 +67,7 @@ format.matchr_matrix <- function(x, ...) {
 
 #' @export
 
-vec_ptype_abbr.matchr_matrix <- function(x, ...) {
-  "matrix"
-}
+vec_ptype_abbr.matchr_matrix <- function(x, ...) "matrix"
 
 # ------------------------------------------------------------------------------
 
@@ -136,9 +134,8 @@ vec_restore.matchr_matrix <- function(x, to, ..., n = NULL) {
     y_ratios = field(x, "y_ratios"),
     x_files = field(x, "x_files"),
     y_files = field(x, "y_files"),
-    x_total = sum(lengths(field(x, "x_files"))) + vec_size(attr(to, "x_na")),
-    # Need to rethink this TKTK
-    y_total = sum(lengths(field(x, "y_files"))) + vec_size(attr(to, "y_na")),
+    x_total = length(unique(c(unlist(field(x, "x_files")), attr(to, "x_na")))),
+    y_total = length(unique(c(unlist(field(x, "y_files")), attr(to, "y_na")))),
     x_na = attr(to, "x_na"),
     y_na = attr(to, "y_na")
   )

@@ -69,13 +69,11 @@ match_signatures <- function(x, y = NULL, method = "grey",
 
   # Prepare method
   if (method %in% c("grey", "gray", "greyscale", "grayscale")) {
-    method <- "grey"
     x <- trim_signature(x, 1:(sig_length(x) / 4)) 
     y <- trim_signature(y, 1:(sig_length(y) / 4)) 
   }
 
   if (method %in% c("colour", "color", "rgb", "RGB")) {
-    method <- "colour"
     x <- trim_signature(x, (sig_length(x) / 4 + 1):sig_length(x))
     y <- trim_signature(y, (sig_length(y) / 4 + 1):sig_length(y)) 
   }
@@ -123,12 +121,15 @@ match_signatures <- function(x, y = NULL, method = "grey",
   }
   
   # Sort out parallelization options
-  par_check_msg <- utils::capture.output({
-    par_check_vec <- sapply(lengths(x_list), 
-                            function(x) set_par("match_signatures", x = x))}, 
-    type = c("message"))
-  par_check_msg <- paste0(unique(par_check_msg), "\n")
-  if (!quiet) message(par_check_msg)
+  par_check_vec <- 
+    sapply(lengths(x_list), function(x) set_par("match_signatures", x = x))
+  
+  # Initialize progress reporting
+  handler_matchr("Matching signature")
+  prog_bar <- as.logical((vec_size(x) >= 5000) * as.numeric(!quiet) * 
+                           progressr::handlers(global = NA))
+  pb <- progressr::progressor(steps = vec_size(x), enable = prog_bar)
+  pb(amount = sum(lengths(x_list[seq_len(resume_from - 1)])))
   
   # Calculate correlation matrices
   for (i in resume_from:length(x_list)) {
@@ -139,7 +140,11 @@ match_signatures <- function(x, y = NULL, method = "grey",
         matrix(unlist(field(x, "signature")), ncol = vec_size(x))})
       y_matrix <- matrix(unlist(field(y_list[[i]], "signature")), 
                          ncol = vec_size(y_list[[i]]))
-      result[[i]] <- par_lapply(x_matrix, stats::cor, y_matrix)
+      result[[i]] <- par_lapply(x_matrix, function(x) {
+        res <- stats::cor(x, y_matrix)
+        pb(amount = ncol(x))
+        res
+        })
       result[[i]] <- do.call(rbind, result[[i]])
     } else {
       par_check <- FALSE
@@ -148,6 +153,7 @@ match_signatures <- function(x, y = NULL, method = "grey",
       y_matrix <- matrix(unlist(field(y_list[[i]], "signature")), 
                          ncol = vec_size(y_list[[i]]))
       result[[i]] <- stats::cor(x_matrix, y_matrix)
+      pb(amount = vec_size(x_list[[i]]))
     }
     if (backup) assign("match_backup", result, envir = .matchr_env)
   }
@@ -162,8 +168,8 @@ match_signatures <- function(x, y = NULL, method = "grey",
     y_ratios = lapply(y_list, get_ratios),
     x_files = lapply(x_list, field, "file"),
     y_files = lapply(y_list, field, "file"),
-    x_total = vec_size(x) + vec_size(x_na),
-    y_total = vec_size(y) + vec_size(y_na),
+    x_total = length(unique(c(field(x, "file"), field(x_na, "file")))),
+    y_total = length(unique(c(field(y, "file"), field(y_na, "file")))),
     x_na = field(x_na, "file"),
     y_na = field(y_na, "file")
   )

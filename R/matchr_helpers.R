@@ -173,13 +173,15 @@ set_par <- function(fun, ...) {
     par_check <- TRUE
     
     if (exists("quiet", envir = parent.frame(n = 1), mode = "logical")) {
-      
       quiet <- get("quiet", envir = parent.frame(n = 1))
-      
-      if (!quiet) message(
+      if (!quiet && !exists("par_1", envir = .matchr_env, mode = "logical")) {
+        message(
         "Function executing in parallel because option ", 
         "`matchr.force_parallel` is TRUE, but this may lead to degraded ", 
-        "performance. See `help(matchr_options)` for details.")
+        "performance. See `help(matchr_options)` for details. ",
+        "This message is displayed once per session.")
+        .matchr_env$par_1 <- TRUE
+        }
       }
   }
   
@@ -190,12 +192,14 @@ set_par <- function(fun, ...) {
       !"sequential" %in% class(future::plan())) {
     
     if (exists("quiet", envir = parent.frame(n = 1), mode = "logical")) {
-      
       quiet <- get("quiet", envir = parent.frame(n = 1))
-      
-      if (!quiet) message(
+      if (!quiet && !exists("par_2", envir = .matchr_env, mode = "logical")) {
+        message(
         "Function executing in non-parallel (sequential) mode to ", 
-        "optimize performance. See `help(matchr_options)` for details.")
+        "optimize performance. See `help(matchr_options)` for details. ",
+        "This message is displayed once per session.")
+        .matchr_env$par_2 <- TRUE
+        }
       }
   }
   
