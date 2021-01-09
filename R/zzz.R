@@ -40,7 +40,7 @@
 
   if (requireNamespace("future", quietly = TRUE)) {
 
-    options(future.globals.maxSize = .matchr_env$globals_max_size)
+    options(.matchr_env$globals_max_size)
 
   }
 

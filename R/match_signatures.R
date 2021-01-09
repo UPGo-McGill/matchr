@@ -127,7 +127,7 @@ match_signatures <- function(x, y = NULL, method = "grey",
     par_check_vec <- sapply(lengths(x_list), 
                             function(x) set_par("match_signatures", x = x))}, 
     type = c("message"))
-  par_check_msg <- unique(par_check_msg)
+  par_check_msg <- paste0(unique(par_check_msg), "\n")
   if (!quiet) message(par_check_msg)
   
   # Calculate correlation matrices

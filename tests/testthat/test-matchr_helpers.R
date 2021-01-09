@@ -10,6 +10,7 @@ test_that("package absences are handled gracefully", {
   unlockBinding("requireNamespace", as.environment("package:base"))
   assign("requireNamespace", requireNamespace1, "package:base")
   
+  suppressMessages(expect_message(.onAttach(), "Install"))
   expect_equal(number_of_threads(), 1)
   expect_true(
     inherits(load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png"),
@@ -25,7 +26,16 @@ test_that("package absences are handled gracefully", {
   assign("requireNamespace", requireNamespace2, "package:base")
   expect_message(par_lapply(1:3, function(x) x), "apply")
   expect_equal(length(handler_matchr("test")), 1)
-  assign("requireNamespace",old_fn, "package:base")
+  
+  assign("requireNamespace", old_fn, "package:base")
   lockBinding("requireNamespace", as.environment("package:base"))
 
+})
+
+test_that("future.globals are set and unset correctly", {
+  fut_var <- getOption("future.globals.maxSize")
+  .onLoad()
+  expect_equal(getOption("future.globals.maxSize"), +Inf)
+  .onUnload()
+  expect_equal(getOption("future.globals.maxSize"), fut_var)
 })

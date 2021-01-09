@@ -137,6 +137,7 @@ vec_restore.matchr_matrix <- function(x, to, ..., n = NULL) {
     x_files = field(x, "x_files"),
     y_files = field(x, "y_files"),
     x_total = sum(lengths(field(x, "x_files"))) + vec_size(attr(to, "x_na")),
+    # Need to rethink this TKTK
     y_total = sum(lengths(field(x, "y_files"))) + vec_size(attr(to, "y_na")),
     x_na = attr(to, "x_na"),
     y_na = attr(to, "y_na")
