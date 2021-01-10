@@ -6,29 +6,60 @@
 \usage{
 confirm_matches(
   data,
+  x_sigs = NULL,
+  y_sigs = NULL,
   check_threshold = 0.99,
   confirm_thresholds = c(0.95, 0.98),
-  batch_size = 100,
-  quiet = FALSE
+  quiet = FALSE,
+  ...
 )
 }
 \arguments{
-\item{data}{TKTK}
+\item{data}{A data frame produced from \code{\link{identify_matches}}.}
 
-\item{check_threshold}{TKTK}
+\item{x_sigs, y_sigs}{Vectors of class \code{matchr_signature}. If these arguments
+are NULL (default), new signatures will be calculated for the rows in \code{data}.}
 
-\item{confirm_thresholds}{TKTK}
+\item{check_threshold}{A numeric scalar. Matches with correlations higher
+than this value (default 0.99) will be treated as matching and not
+re-checked.}
 
-\item{batch_size}{TKTK}
+\item{confirm_thresholds}{A numeric vector of length 2. New correlation
+coefficients below the first value (default 0.95) will be classified as "no
+match", coefficients above the second value (default 0.98) will be classified
+as "likely match", and coefficients between the two values will be classified
+as "possible match".}
 
-\item{quiet}{TKTK}
+\item{quiet}{A logical scalar. Should the function execute quietly, or should
+it return status updates throughout the function (default)?}
+
+\item{...}{Additional named arguments to pass to
+\code{\link{create_signature}} if the \code{x_sigs} or \code{y_sigs} argument is empty,
+or to \code{\link{match_signatures}}.}
 }
 \value{
-TKTK
+The input \code{data} data frame, with an additional \code{confirmation} field
+which is a character vector with the following possible values:
+\itemize{
+\item "match": the original correlation coefficient was greater than or equal to
+\code{check_threshold}.
+\item "likely match": the original correlation coefficient was less than
+\code{check_threshold} and the new coefficient was greater than or equal to
+\code{confirm_thresholds[2]}.
+\item "possible match: the original correlation coefficient was less than
+\code{check_threshold} and the new coefficient was less than
+\code{confirm_thresholds[2]} and greater than or equal to
+\code{confirm_thresholds[1]}.
+\item "no match": the original correlation coefficient was less than
+\code{check_threshold} and the new coefficient was less than
+\code{confirm_thresholds[1]}.
+}
 }
 \description{
-\code{confirm_matches} TKTK
-}
-\details{
-TKTK
+\code{confirm_matches} takes the results of \code{\link{identify_matches}}
+and performs an additional analysis on image signature pairs whose
+correlations were not high enough to guarantee a match but not low enough to
+discount a match. The default implementation assumes that image signatures
+were compared using the greyscale components, and so it performs an
+additional correlation using the colour components.
 }

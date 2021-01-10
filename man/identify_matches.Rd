@@ -8,7 +8,7 @@ identify_matches(img_matrix, threshold = 0.975, quiet = FALSE)
 }
 \arguments{
 \item{img_matrix}{A vector of class \code{matchr_matrix}, containing image
-correlation matrices produced by \code{matchr::match_signatures}.}
+correlation matrices produced by \code{\link{match_signatures}}.}
 
 \item{threshold}{A numeric scalar. The minimum correlation constant to
 consider images to be matched.}
@@ -18,17 +18,19 @@ it return status updates throughout the function (default)?}
 }
 \value{
 A tibble if {dplyr} is installed or a data frame if not, with one
-row per identified match. The data frame has the following columns:
+row per identified match, and the following columns:
 \itemize{
 \item \code{matrix}: The match's index position in the input \code{matchr_matrix} vector.
 \item \code{x_index} and \code{y_index}: The match's row and column index positions in the
 correlation matrix.
 \item \code{x_file} and \code{y_file}: The file paths for the images which were matched.
-\item \code{correlation}: The Pearson correlation coefficient of the two files
+\item \code{correlation}: The Pearson correlation coefficient of the two files'
 image signatures.
 }
 }
 \description{
 \code{identify_matches} analyzes a \code{matchr_matrix} vector of image signature
-correlations to identify possible matches.
+correlations to identify possible matches. By default it sets a low
+threshold for identifying matches, with the assumption that the results will
+subsequently be refined using \code{\link{confirm_matches}}.
 }

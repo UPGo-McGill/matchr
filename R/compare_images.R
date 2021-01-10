@@ -48,8 +48,6 @@ compare_images <- function(result, x_sigs = NULL, y_sigs = NULL,
     output <-
       shiny::runApp(appDir = system.file("compare_images", package = "matchr"))
 
-    output <- new_matchr_change_table(output)
-
     return(output)
 
   }
