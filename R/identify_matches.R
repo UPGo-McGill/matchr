@@ -47,7 +47,14 @@ identify_matches <- function(img_matrix, threshold = 0.975, quiet = FALSE) {
     matches <- dplyr::bind_rows(match_list)
   } else matches <- do.call(rbind, match_list)
   matches <- matches[order(matches$matrix, matches$x_index, matches$y_index),]
-  matches <- matches[matches$x_file != matches$y_file,]  
+  
+  # Remove duplicates
+  matches <- matches[matches$x_file != matches$y_file,] 
+  matches$hash <- mapply(function(x, y) {
+    digest::digest(sort(c(x, y)))
+    }, matches$x_file, matches$y_file)
+  matches <- matches[!duplicated(matches$hash),]
+  matches$hash <- NULL
   
   # Return output
   return(matches)
