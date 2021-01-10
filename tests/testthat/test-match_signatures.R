@@ -53,3 +53,8 @@ test_that("backups work", {
 test_that("get_clusters collapses empty vectors", {
   expect_equal(sum(lengths(get_clusters(clust_x, clust_y))), 22)
 })
+
+test_that("match_signatures_pairwise works", {
+  expect_equal(sum(match_signatures_pairwise(test_long_sig, test_long_sig, 
+                                             "grey"), na.rm = TRUE), 13)
+})

@@ -86,8 +86,8 @@ confirm_matches <- function(data, x_sigs = NULL, y_sigs = NULL,
 
   # Rbind data and to_check
   if (requireNamespace("dplyr", quietly = TRUE)) {
-    data <- dplyr::bind_rows(data, to_check)} else data <- rbind(data, to_check)
-  data$colour <- NULL
+    data <- dplyr::bind_rows(data, to_check[,c(1:6, 8)])
+    } else data <- rbind(data, to_check[,c(1:6, 8)])
   data <- data[order(data$matrix, data$x_index, data$y_index),]
 
   # Return result
