@@ -8,8 +8,8 @@ new_matrix(
   matrix = list(),
   x_ratios = list(),
   y_ratios = list(),
-  x_files = list(),
-  y_files = list(),
+  x_sig = list(),
+  y_sig = list(),
   x_total = integer(length = 1L),
   y_total = integer(length = 1L),
   x_na = character(),
@@ -25,11 +25,11 @@ ratio in the x vector.}
 \item{y_ratios}{A list of numeric vectors: the highest and lowest aspect
 ratio in the y vector.}
 
-\item{x_files}{A list of character vectors: the paths or URLs of the files
-in the x vector.}
+\item{x_sig}{A list of \code{matchr_signature} vectors: the signatures of the
+files in the x vector.}
 
-\item{y_files}{A list of character vectors: the paths or URLs of the files
-in the y vector.}
+\item{y_sig}{A list of \code{matchr_signature} vectors: the signatures of the
+files in the y vector.}
 
 \item{x_total}{An integer scalar: the total number of x signatures analyzed.}
 

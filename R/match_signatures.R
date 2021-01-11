@@ -67,17 +67,6 @@ match_signatures <- function(x, y = NULL, method = "grey",
   if (vec_size(x) <= 1000) backup <- FALSE
   resume_from <- 1
 
-  # Prepare method
-  if (method %in% c("grey", "gray", "greyscale", "grayscale")) {
-    x <- trim_signature(x, 1:(sig_length(x) / 4)) 
-    y <- trim_signature(y, 1:(sig_length(y) / 4)) 
-  }
-
-  if (method %in% c("colour", "color", "rgb", "RGB")) {
-    x <- trim_signature(x, (sig_length(x) / 4 + 1):sig_length(x))
-    y <- trim_signature(y, (sig_length(y) / 4 + 1):sig_length(y)) 
-  }
-
   # Deal with NAs
   x_na <- x[is.na(x)]
   y_na <- y[is.na(y)]
@@ -94,6 +83,26 @@ match_signatures <- function(x, y = NULL, method = "grey",
     x_list <- list(x)
     y_list <- list(y)
   }
+  
+  # Get full signatures for final result
+  x_sig <- x_list
+  y_sig <- y_list
+  
+  # Prepare method
+  if (method %in% c("grey", "gray", "greyscale", "grayscale")) {
+    x_list <- lapply(x_list, function(x) trim_signature(
+      x, 1:(sig_length(x) / 4)))
+    y_list <- lapply(y_list, function(x) trim_signature(
+      x, 1:(sig_length(x) / 4)))
+  }
+  
+  if (method %in% c("colour", "color", "rgb", "RGB")) {
+    x_list <- lapply(x_list, function(x) trim_signature(
+      x, (sig_length(x) / 4 + 1):sig_length(x)))
+    y_list <- lapply(y_list, function(x) trim_signature(
+      x, (sig_length(x) / 4 + 1):sig_length(x)))
+  }
+  
   result <- vector("list", length(x_list))
   
   # Prepare backup
@@ -166,8 +175,8 @@ match_signatures <- function(x, y = NULL, method = "grey",
     matrix = result,
     x_ratios = lapply(x_list, get_ratios),
     y_ratios = lapply(y_list, get_ratios),
-    x_files = lapply(x_list, field, "file"),
-    y_files = lapply(y_list, field, "file"),
+    x_sig = x_sig,
+    y_sig = y_sig,
     x_total = length(unique(c(field(x, "file"), field(x_na, "file")))),
     y_total = length(unique(c(field(y, "file"), field(y_na, "file")))),
     x_na = field(x_na, "file"),
@@ -233,7 +242,8 @@ get_clusters <- function(x, y, stretch = 1.2) {
 
 # ------------------------------------------------------------------------------
 
-match_signatures_pairwise <- function(x, y, method = "colour", quiet = FALSE) {
+match_signatures_pairwise <- function(x, y, method = "colour", par_check = TRUE,
+                                      quiet = FALSE) {
   
   # Prepare method
   if (method %in% c("grey", "gray", "greyscale", "grayscale")) {
@@ -246,6 +256,6 @@ match_signatures_pairwise <- function(x, y, method = "colour", quiet = FALSE) {
     y <- trim_signature(y, (sig_length(y) / 4 + 1):sig_length(y)) 
   }
   
-  mapply(stats::cor, field(x, "signature"), field(y, "signature"), 
+  par_mapply(stats::cor, field(x, "signature"), field(y, "signature"), 
          SIMPLIFY = TRUE)
 }

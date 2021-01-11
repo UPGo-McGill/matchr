@@ -41,8 +41,7 @@ test_that("backups work", {
   input <- c(test_long_sig, rep(na_sig, 986))
   expect_equal(lengths(field(match_signatures(input), "matrix")), c(16, 64, 1))
   assign("match_hash", 
-         digest::digest(list(trim_signature(input[!is.na(input)], 1:40), 
-                             trim_signature(input[!is.na(input)], 1:40))), 
+         digest::digest(list(input[!is.na(input)], input[!is.na(input)])), 
          envir = .matchr_env)
   assign("match_backup", list(matrix(1:16, nrow = 4), NULL, NULL), 
          envir = .matchr_env)
@@ -57,4 +56,7 @@ test_that("get_clusters collapses empty vectors", {
 test_that("match_signatures_pairwise works", {
   expect_equal(sum(match_signatures_pairwise(test_long_sig, test_long_sig, 
                                              "grey"), na.rm = TRUE), 13)
+  expect_equal(round(sum(suppressMessages(match_signatures_pairwise(
+    test_identify$x_sig, test_identify$y_sig, par_check = FALSE))), 2), 5.89)
+  
 })

@@ -36,8 +36,8 @@ identify_matches <- function(img_matrix, threshold = 0.975, quiet = FALSE) {
       } else match <- as.data.frame(match_index)
     match$matrix <- x
     match <- match[, c(3, 1, 2)]
-    match$x_file <- field(img_matrix[x], "x_files")[[1]][match$x_index]
-    match$y_file <- field(img_matrix[x], "y_files")[[1]][match$y_index]
+    match$x_sig <- field(img_matrix[x], "x_sig")[[1]][match$x_index]
+    match$y_sig <- field(img_matrix[x], "y_sig")[[1]][match$y_index]
     match$correlation <- field(img_matrix[x], "matrix")[[1]][match_index]
     match
     })
@@ -45,13 +45,22 @@ identify_matches <- function(img_matrix, threshold = 0.975, quiet = FALSE) {
   # Consolidate and arrange output
   if (requireNamespace("dplyr", quietly = TRUE)) {
     matches <- dplyr::bind_rows(match_list)
-  } else matches <- do.call(rbind, match_list)
+  } else {
+    x_sig <- do.call(c, lapply(match_list, function(x) x$x_sig))
+    y_sig <- do.call(c, lapply(match_list, function(x) x$y_sig))
+    matches <- do.call(rbind, lapply(match_list, function(x) x[,c(1:3, 6)]))
+    matches$x_sig <- x_sig
+    matches$y_sig <- y_sig
+    matches <- matches[,c(1:3, 5:6, 4)]
+    }
   matches <- matches[order(matches$matrix, matches$x_index, matches$y_index),]
   
   # Remove duplicates
-  matches <- matches[matches$x_file != matches$y_file,] 
-  matches$hash <- mapply(function(x, y) sort(c(x, y)), matches$x_file, 
-                         matches$y_file, SIMPLIFY = FALSE)
+  matches <- 
+    matches[field(matches$x_sig, "file") != field(matches$y_sig, "file"),]
+  matches$hash <- mapply(function(x, y) sort(c(x, y)), 
+                         field(matches$x_sig, "file"), 
+                         field(matches$y_sig, "file"), SIMPLIFY = FALSE)
   matches <- matches[!duplicated(matches$hash),]
   matches$hash <- NULL
   

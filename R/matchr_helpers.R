@@ -34,26 +34,26 @@ par_lapply <- function(...) {
 
 # ------------------------------------------------------------------------------
 
-# par_mapply <- function(...) {
-# 
-#   if (requireNamespace("future", quietly = TRUE)) {
-#     if (requireNamespace("future.apply", quietly = TRUE)) {
-#       
-#       par_check <- TRUE
-#       
-#       if (exists("par_check", envir = parent.frame(n = 1), mode = "logical")) {
-#         par_check <- get("par_check", envir = parent.frame(n = 1))}
-#       
-#       if (par_check) future.apply::future_mapply(..., future.seed = NULL) else 
-#         mapply(...)
-#       
-#       } else {
-#         message("Please install the `future.apply` package to enable ",
-#                 "parallel processing.")
-#         mapply(...)
-#     }
-#   } else mapply(...)
-# }
+par_mapply <- function(...) {
+
+  if (requireNamespace("future", quietly = TRUE)) {
+    if (requireNamespace("future.apply", quietly = TRUE)) {
+
+      par_check <- TRUE
+
+      if (exists("par_check", envir = parent.frame(n = 1), mode = "logical")) {
+        par_check <- get("par_check", envir = parent.frame(n = 1))}
+
+      if (par_check) future.apply::future_mapply(..., future.seed = NULL) else
+        mapply(...)
+
+      } else {
+        message("Please install the `future.apply` package to enable ",
+                "parallel processing.")
+        mapply(...)
+    }
+  } else mapply(...)
+}
 
 # ------------------------------------------------------------------------------
 

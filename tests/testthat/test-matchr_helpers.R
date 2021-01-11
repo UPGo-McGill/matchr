@@ -19,6 +19,8 @@ test_that("package absences are handled gracefully", {
   r1 <- match_signatures(test_long_sig, compare_aspect_ratios = FALSE)
   expect_equal(attr(r1, "x_total"), sum(sapply(field(r1, "matrix"), nrow), 
                                         length(attr(r1, "x_na"))))
+  expect_equal(round(sum(match_signatures_pairwise(
+    test_identify$x_sig, test_identify$y_sig)), 2), 5.89)
   
   requireNamespace2 <- function(x, ...) {
     if (x %in% c("crayon", "future.apply")) FALSE else TRUE
@@ -26,6 +28,8 @@ test_that("package absences are handled gracefully", {
   assign("requireNamespace", requireNamespace2, "package:base")
   expect_message(par_lapply(1:3, function(x) x), "apply")
   expect_equal(length(handler_matchr("test")), 1)
+  expect_equal(round(sum(suppressMessages(match_signatures_pairwise(
+    test_identify$x_sig, test_identify$y_sig))), 2), 5.89)
   
   assign("requireNamespace", old_fn, "package:base")
   lockBinding("requireNamespace", as.environment("package:base"))

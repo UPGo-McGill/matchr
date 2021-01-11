@@ -6,8 +6,6 @@
 \usage{
 confirm_matches(
   data,
-  x_sigs = NULL,
-  y_sigs = NULL,
   check_threshold = 0.99,
   confirm_thresholds = c(0.95, 0.98),
   quiet = FALSE,
@@ -16,9 +14,6 @@ confirm_matches(
 }
 \arguments{
 \item{data}{A data frame produced from \code{\link{identify_matches}}.}
-
-\item{x_sigs, y_sigs}{Vectors of class \code{matchr_signature}. If these arguments
-are NULL (default), new signatures will be calculated for the rows in \code{data}.}
 
 \item{check_threshold}{A numeric scalar. Matches with correlations higher
 than this value (default 0.99) will be treated as matching and not
@@ -34,12 +29,11 @@ as "possible match".}
 it return status updates throughout the function (default)?}
 
 \item{...}{Additional named arguments to pass to
-\code{\link{create_signature}} if the \code{x_sigs} or \code{y_sigs} argument is empty,
-or to \code{\link{match_signatures}}.}
+\code{\link{match_signatures}}.}
 }
 \value{
-The input \code{data} data frame, with an additional \code{confirmation} field
-which is a character vector with the following possible values:
+The input \code{data} data frame, with an additional \code{match} field which
+is a character vector with the following possible values:
 \itemize{
 \item "match": the original correlation coefficient was greater than or equal to
 \code{check_threshold}.

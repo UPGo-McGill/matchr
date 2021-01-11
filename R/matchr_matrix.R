@@ -5,10 +5,10 @@
 #' ratio in the x vector.
 #' @param y_ratios A list of numeric vectors: the highest and lowest aspect 
 #' ratio in the y vector.
-#' @param x_files A list of character vectors: the paths or URLs of the files 
-#' in the x vector.
-#' @param y_files A list of character vectors: the paths or URLs of the files 
-#' in the y vector.
+#' @param x_sig A list of `matchr_signature` vectors: the signatures of the 
+#' files in the x vector.
+#' @param y_sig A list of `matchr_signature` vectors: the signatures of the 
+#' files in the y vector.
 #' @param x_total An integer scalar: the total number of x signatures analyzed.
 #' @param y_total An integer scalar: the total number of y signatures analyzed.
 #' @param x_na A character vector: the paths of x signatures which are NA.
@@ -16,22 +16,21 @@
 #' @return An object of class `matchr_matrix`.
 
 new_matrix <- function(matrix = list(), x_ratios = list(), y_ratios = list(),
-                       x_files = list(), y_files = list(), 
+                       x_sig = list(), y_sig = list(), 
                        x_total = integer(length = 1L), 
                        y_total = integer(length = 1L),
                        x_na = character(), y_na = character()) {
   vec_assert(matrix, list())
   vec_assert(x_ratios, list())
   vec_assert(y_ratios, list())
-  vec_assert(x_files, list())
-  vec_assert(y_files, list())
+  vec_assert(x_sig, list())
+  vec_assert(y_sig, list())
   vec_assert(x_total, integer())
   vec_assert(y_total, integer())
   vec_assert(x_na, character())
   vec_assert(y_na, character())
   new_rcrd(fields = list(matrix = matrix, x_ratios = x_ratios, 
-                         y_ratios = y_ratios, x_files = x_files, 
-                         y_files = y_files), 
+                         y_ratios = y_ratios, x_sig = x_sig, y_sig = y_sig), 
            x_total = x_total, y_total = y_total, x_na = x_na, y_na = y_na,
            class = "matchr_matrix")
 }
@@ -58,8 +57,8 @@ is_matrix <- function(x) {
 
 format.matchr_matrix <- function(x, ...) {
   
-  paste(prettyNum(lengths(field(x, "x_files")), ","), "x", 
-        prettyNum(lengths(field(x, "y_files")), ","))
+  paste(prettyNum(lengths(field(x, "x_sig")), ","), "x", 
+        prettyNum(lengths(field(x, "y_sig")), ","))
   
 }
 
@@ -132,20 +131,14 @@ vec_restore.matchr_matrix <- function(x, to, ..., n = NULL) {
     matrix = field(x, "matrix"),
     x_ratios = field(x, "x_ratios"),
     y_ratios = field(x, "y_ratios"),
-    x_files = field(x, "x_files"),
-    y_files = field(x, "y_files"),
-    x_total = length(unique(c(unlist(field(x, "x_files")), attr(to, "x_na")))),
-    y_total = length(unique(c(unlist(field(x, "y_files")), attr(to, "y_na")))),
+    x_sig = field(x, "x_sig"),
+    y_sig = field(x, "y_sig"),
+    x_total = length(unique(c(
+      unlist(sapply(field(x, "x_sig"), field, "file")), attr(to, "x_na")))),
+    y_total = length(unique(c(
+      unlist(sapply(field(x, "y_sig"), field, "file")), attr(to, "y_na")))),
     x_na = attr(to, "x_na"),
     y_na = attr(to, "y_na")
   )
   
 }
-
-
-
-#' # ------------------------------------------------------------------------------
-#' 
-#' #' export
-#' is.na.matchr_image <- function(x, ...) is.na(field(x, "array"))
-#' 
