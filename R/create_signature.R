@@ -213,12 +213,12 @@ create_signature_internal <- function(image, bands = 20,
         top_bound <- 
           max(black_strips[black_strips <= length(rm_total) / 2]) + 1
       })
-      # if (is.infinite(top_bound)) top_bound <- 1
+      if (is.infinite(top_bound)) top_bound <- 1
       suppressWarnings({
         bottom_bound <- 
           min(black_strips[black_strips > length(rm_total) / 2]) - 1
       })
-      # if (is.infinite(bottom_bound)) bottom_bound <- length(rm_total)
+      if (is.infinite(bottom_bound)) bottom_bound <- length(rm_total)
       
       a <- a[top_bound:bottom_bound,,]
       rm_1 <- rm_1[top_bound:bottom_bound]
@@ -234,9 +234,9 @@ create_signature_internal <- function(image, bands = 20,
   
   rm_total <- (rm_1 + rm_2 + rm_3) / 3
   
-  cm_1 <- sapply(chunk(rowMeans(a[,,1]), bands), mean)
-  cm_2 <- sapply(chunk(rowMeans(a[,,2]), bands), mean)
-  cm_3 <- sapply(chunk(rowMeans(a[,,3]), bands), mean)
+  cm_1 <- sapply(chunk(colMeans(a[,,1]), bands), mean)
+  cm_2 <- sapply(chunk(colMeans(a[,,2]), bands), mean)
+  cm_3 <- sapply(chunk(colMeans(a[,,3]), bands), mean)
   
   cm_total <- (cm_1 + cm_2 + cm_3) / 3
   

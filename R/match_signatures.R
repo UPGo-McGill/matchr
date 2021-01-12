@@ -194,6 +194,7 @@ get_clusters <- function(x, y, stretch = 1.2) {
   
   # Set number of groups to evaluate
   unique_points <- unique(stats::na.omit(c(x_ratios, y_ratios)))
+  if (length(unique_points) < 4) return(list(list(x), list(y)))
   sum_fun <- function(x, y) length(x_ratios[x_ratios >= x & x_ratios <= y]) * 
     length(y_ratios[y_ratios >= (x / stretch) & y_ratios <= (y * stretch)])
   set.seed(1)

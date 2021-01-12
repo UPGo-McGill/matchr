@@ -57,6 +57,6 @@ test_that("match_signatures_pairwise works", {
   expect_equal(sum(match_signatures_pairwise(test_long_sig, test_long_sig, 
                                              "grey"), na.rm = TRUE), 13)
   expect_equal(round(sum(suppressMessages(match_signatures_pairwise(
-    test_identify$x_sig, test_identify$y_sig, par_check = FALSE))), 2), 5.89)
+    test_identify$x_sig, test_identify$y_sig, par_check = FALSE))), 2), 5.83)
   
 })
