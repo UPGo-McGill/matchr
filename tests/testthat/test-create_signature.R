@@ -10,7 +10,7 @@ test_that("a vector of matchr_img works", {
 })
 
 test_that("a vector of paths works", {
-  expect(ceiling(sum(test_long_sig, na.rm = TRUE)) %in% 1129:1132,
+  expect(ceiling(sum(test_long_sig, na.rm = TRUE)) %in% 1137:1139,
          "test_long_sig")
 })
 
@@ -22,9 +22,12 @@ test_that("NA works", {
 test_that("rm_black_bars works", {
   expect_output(print(create_signature(urls[13], rm_black_bars = FALSE)),
                 "1.00")
-  expect_output(print(create_signature(urls[13])), "(2.08)|(2.04)")
+  expect_output(print(create_signature(urls[13])), "2.30")
   expect(is.na(create_signature(black_image)),
          "create_signature(black_image) did not return NA.")
+  expect_equal(ceiling(sum(create_signature(
+    c("http://upgo.lab.mcgill.ca/resources/img_8_top.jpg",
+      "http://upgo.lab.mcgill.ca/resources/img_8_bottom.jpg")))), 162)
 })
 
 test_that("tiny images return NA", {

@@ -30,6 +30,7 @@ is_image <- function(x) {
 # ------------------------------------------------------------------------------
 
 #' @export
+
 format.matchr_image <- function(x, ...) {
   
   max_chars <- getOption("width")
@@ -54,6 +55,7 @@ format.matchr_image <- function(x, ...) {
 # ------------------------------------------------------------------------------
 
 #' @export
+
 vec_ptype_abbr.matchr_image <- function(x, ...) {
   "image"
 }
@@ -61,15 +63,52 @@ vec_ptype_abbr.matchr_image <- function(x, ...) {
 # ------------------------------------------------------------------------------
 
 #' @export
+
 is.na.matchr_image <- function(x, ...) is.na(field(x, "array"))
 
 # ------------------------------------------------------------------------------
 
 #' @export
+
 dim.matchr_image <- function(x, ...) {
   dims <- lapply(field(x, "array"), dim)
   dims[sapply(dims, is.null)] <- NA
   dims[lengths(dims) < 3] <- lapply(dims[lengths(dims) < 3], function(x) x[1:3])
   do.call(rbind, dims)
+}
+
+# ------------------------------------------------------------------------------
+
+#' @export
+
+plot.matchr_image <- function(x, ...) {
+  
+  # Temporarily trim to just the first image
+  if (vec_size(x) > 1) {
+    warning("Only the first image will be plotted.")
+    x <- x[1]
+  }
+  
+  # Plot greyscale
+  if (is.na(dim(x)[,3])) {
+    
+    r <- gray(t(field(x, "array")[[1]]))
+    dim(r) <- dim(field(x, "array")[[1]])[1:2]
+    class(r) <- "raster"
+    plot(r)
+    invisible(x)
+    
+    # Plot colour
+  } else {
+    
+    r <- rgb(t(field(x, "array")[[1]][,,1]),
+             t(field(x, "array")[[1]][,,2]),
+             t(field(x, "array")[[1]][,,3]))
+    dim(r) <- dim(field(x, "array")[[1]])[1:2]
+    class(r) <- "raster"
+    plot(r)
+    invisible(x)
+    
+  }
 }
   

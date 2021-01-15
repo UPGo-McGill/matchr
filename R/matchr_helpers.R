@@ -17,9 +17,11 @@ par_lapply <- function(X, FUN, ..., future.scheduling = 1,
   if (requireNamespace("future", quietly = TRUE)) {
     if (requireNamespace("future.apply", quietly = TRUE)) {
       
+      par_check <- TRUE
+      
       if (exists("par_check", envir = parent.frame(n = 1), mode = "logical")) {
         par_check <- get("par_check", envir = parent.frame(n = 1))
-      } else par_check <- TRUE
+      }
       
       if (par_check) {
         future.apply::future_lapply(X = X, FUN = FUN, ..., 

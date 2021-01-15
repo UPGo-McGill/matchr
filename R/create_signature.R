@@ -206,9 +206,9 @@ create_signature_internal <- function(image, bands = 20,
     # First check for all black image and return NA if so
     if (sum(rm_total) == 0) return(NA)
     
-    if (sum(rm_total == 0) > 0) {
+    if (sum(rm_total < 0.005) > 0) {
       
-      black_strips <- which(rm_total == 0)
+      black_strips <- which(rm_total < 0.005)
       suppressWarnings({
         top_bound <- 
           max(black_strips[black_strips <= length(rm_total) / 2]) + 1
