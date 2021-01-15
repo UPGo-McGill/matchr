@@ -24,7 +24,7 @@ jobs:
       
       - name: Install X11 dependencies on MacOS
         run: |
-          brew cask install xquartz
+          brew install [--cask] xquartz
 
       - name: Query dependencies
         run: |
