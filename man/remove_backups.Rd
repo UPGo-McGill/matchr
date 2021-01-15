@@ -14,9 +14,8 @@ A character vector of the backups removed, invisibly.
 matchr functions keep in case of errors.
 }
 \details{
-The \code{\link{create_signature}} and \code{\link{match_signatures}}
-functions can create incremental backups of their progress in case they fail
-to complete. These backups are automatically removed once the function
-completes, but \code{remove_backups} can be used to remove them manually
-when necessary.
+The \code{\link{create_signature}} functions can create incremental backups
+of its progress in case it fails to complete. These backups are automatically
+removed once the function completes, but \code{remove_backups} can be used to
+remove them manually when necessary.
 }

@@ -11,25 +11,32 @@ number_of_threads <- function() {
 
 # ------------------------------------------------------------------------------
 
-par_lapply <- function(...) {
-
+par_lapply <- function(X, FUN, ..., future.scheduling = 1, 
+                       future.seed = NULL) {
+  
   if (requireNamespace("future", quietly = TRUE)) {
     if (requireNamespace("future.apply", quietly = TRUE)) {
       
-      par_check <- TRUE
-      
       if (exists("par_check", envir = parent.frame(n = 1), mode = "logical")) {
-        par_check <- get("par_check", envir = parent.frame(n = 1))}
+        par_check <- get("par_check", envir = parent.frame(n = 1))
+      } else par_check <- TRUE
       
-      if (par_check) future.apply::future_lapply(..., future.seed = NULL) else 
-        lapply(...)
+      if (par_check) {
+        future.apply::future_lapply(X = X, FUN = FUN, ..., 
+                                    future.scheduling = future.scheduling,
+                                    future.seed = future.seed)
+      } else lapply(X = X, FUN = FUN, ...)
       
-      } else {
-      message("Please install the `future.apply` package to enable ",
-              "parallel processing.")
-      lapply(...)
+    } else {
+      if (!exists("future_app", envir = .matchr_env, mode = "logical")) {
+        message("Please install the `future.apply` package to enable ",
+                "parallel processing. ", 
+                "This message is displayed once per session.")
+        .matchr_env$future_app <- TRUE
+      }
+      lapply(X = X, FUN = FUN, ...)
     }
-  } else lapply(...)
+  } else lapply(X = X, FUN = FUN, ...)
 }
 
 # ------------------------------------------------------------------------------
@@ -154,9 +161,6 @@ set_par <- function(fun, ...) {
   
   # Version for create_signature.matchr_image
   if (fun == "create_signature_matchr_image") par_check <- FALSE
-  
-  # Version for match_signatures
-  if (fun == "match_signatures" && args$x < 2000) par_check <- FALSE
   
   # First check global option
   par_opt <- 

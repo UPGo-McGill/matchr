@@ -9,7 +9,6 @@ match_signatures(
   y = NULL,
   method = "grey",
   compare_aspect_ratios = TRUE,
-  backup = TRUE,
   quiet = FALSE
 )
 }
@@ -35,13 +34,6 @@ image signatures from \code{y} are split into lists between the break point / 1.
 on the lower bound and the break point * 1.2 on the upper bound. This
 argument is forced to FALSE if either \code{x} or \code{y} has fewer than 10 non-NA
 elements.}
-
-\item{backup}{A logical scalar. Should the function store an ongoing backup
-of progress in a hidden object \code{.matchr_env$smatch_backup} in the package's
-environment (default)? If TRUE, the function will attempt to resume progress
-if it detects a previous backup, and it will remove the backup if the
-function successfully completes. Backups can be removed with
-\code{\link{remove_backups}}.}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}

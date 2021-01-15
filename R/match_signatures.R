@@ -37,12 +37,6 @@
 #' on the lower bound and the break point * 1.2 on the upper bound. This
 #' argument is forced to FALSE if either `x` or `y` has fewer than 10 non-NA
 #' elements.
-#' @param backup A logical scalar. Should the function store an ongoing backup
-#' of progress in a hidden object `.matchr_env$smatch_backup` in the package's
-#' environment (default)? If TRUE, the function will attempt to resume progress
-#' if it detects a previous backup, and it will remove the backup if the
-#' function successfully completes. Backups can be removed with
-#' \code{\link{remove_backups}}.
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
 #' @return TKTK A vector of class `matchr_matrix`. This object is a list
@@ -56,16 +50,14 @@
 #' @export
 
 match_signatures <- function(x, y = NULL, method = "grey",
-                             compare_aspect_ratios = TRUE, backup = TRUE,
-                             quiet = FALSE) {
+                             compare_aspect_ratios = TRUE, quiet = FALSE) {
 
   # Error handling and object initialization
-  stopifnot(
-    is_signature(x), is.logical(c(compare_aspect_ratios, backup, quiet)),
-    method %in% c("grey", "gray", "colour", "color", "rgb", "RGB", "both"))
+  stopifnot(is_signature(x), is.logical(c(compare_aspect_ratios, quiet)),
+            method %in% c("grey", "gray", "colour", "color", "rgb", "RGB", 
+                          "both"))
   if (missing(y)) y <- x else stopifnot(is_signature(y))
-  if (vec_size(x) <= 1000) backup <- FALSE
-  resume_from <- 1
+  if (compare_aspect_ratios) par_check <- TRUE else par_check <- FALSE
 
   # Deal with NAs
   x_na <- x[is.na(x)]
@@ -103,72 +95,32 @@ match_signatures <- function(x, y = NULL, method = "grey",
       x, (sig_length(x) / 4 + 1):sig_length(x)))
   }
   
-  result <- vector("list", length(x_list))
-  
-  # Prepare backup
-  if (backup) {
-    
-    # Check for previous backup
-    if (exists("match_backup", envir = .matchr_env)) {
-      
-      # Only proceed if old hash is identical to new hash
-      if (.matchr_env$match_hash == digest::digest(list(x, y)) &&
-          length(.matchr_env$match_backup) == length(result)) {
-        result <- .matchr_env$match_backup
-        resume_from <- length(result[!sapply(result, is.null)]) + 1
-        if (!quiet) message("Backup detected. Resuming from position ",
-                            sum(sapply(.matchr_env$match_backup, length)) + 1,
-                            ".\n", sep = "")
-      } else {
-        stop("The backup detected in .matchr_env$match_backup does not match ",
-             "the input. Remove the previous backup with ",
-             "`remove_backups()` to proceed.", call. = FALSE)
-      }
-    } else {
-      assign("match_hash", digest::digest(list(x, y)), envir = .matchr_env)
-    }
-  }
-  
-  # Sort out parallelization options
-  par_check_vec <- 
-    sapply(lengths(x_list), function(x) set_par("match_signatures", x = x))
-  
   # Initialize progress reporting
   handler_matchr("Matching signature")
   prog_bar <- as.logical((vec_size(x) >= 5000) * as.numeric(!quiet) * 
                            progressr::handlers(global = NA))
   pb <- progressr::progressor(steps = vec_size(x), enable = prog_bar)
-  pb(amount = sum(lengths(x_list[seq_len(resume_from - 1)])))
+
+  # Organize batches for parallel processing
+  batch_order <- order(lengths(x_list) * lengths(y_list), decreasing = TRUE)
   
   # Calculate correlation matrices
-  for (i in resume_from:length(x_list)) {
-    if (par_check_vec[i]) {
-      par_check <- TRUE
-      x_matrix <- chunk(x_list[[i]], number_of_threads())
-      x_matrix <- lapply(x_matrix, function(x) {
-        matrix(unlist(field(x, "signature")), ncol = vec_size(x))})
-      y_matrix <- matrix(unlist(field(y_list[[i]], "signature")), 
-                         ncol = vec_size(y_list[[i]]))
-      result[[i]] <- par_lapply(x_matrix, function(x) {
-        res <- stats::cor(x, y_matrix)
-        pb(amount = ncol(x))
-        res
-        })
-      result[[i]] <- do.call(rbind, result[[i]])
-    } else {
-      par_check <- FALSE
+  result <-   
+    par_lapply(batch_order, function(i) {
       x_matrix <- matrix(unlist(field(x_list[[i]], "signature")), 
                          ncol = vec_size(x_list[[i]]))
       y_matrix <- matrix(unlist(field(y_list[[i]], "signature")), 
                          ncol = vec_size(y_list[[i]]))
-      result[[i]] <- stats::cor(x_matrix, y_matrix)
+      result <- stats::cor(x_matrix, y_matrix)
       pb(amount = vec_size(x_list[[i]]))
-    }
-    if (backup) assign("match_backup", result, envir = .matchr_env)
-  }
+      result
+  }, future.scheduling = Inf
+  )
+  
+  # Reorder
+  result <- result[order(batch_order)] 
   
   # Return result
-  if (backup) rm(match_backup, match_hash, envir = .matchr_env)
   get_ratios <- function(x) c(min(field(x, "aspect_ratio"), na.rm = TRUE), 
                               max(field(x, "aspect_ratio"), na.rm = TRUE))
   new_matrix(
@@ -195,17 +147,21 @@ get_clusters <- function(x, y, stretch = 1.2) {
   # Set number of groups to evaluate
   unique_points <- unique(stats::na.omit(c(x_ratios, y_ratios)))
   if (length(unique_points) < 4) return(list(list(x), list(y)))
-  sum_fun <- function(x, y) length(x_ratios[x_ratios >= x & x_ratios <= y]) * 
-    length(y_ratios[y_ratios >= (x / stretch) & y_ratios <= (y * stretch)])
+  sum_fun <- function(x, y) {
+    x_length <- as.numeric(length(x_ratios[x_ratios >= x & x_ratios <= y]))
+    y_length <- as.numeric(length(y_ratios[y_ratios >= (x / stretch) & 
+                                             y_ratios <= (y * stretch)]))
+    x_length * y_length
+    }
   set.seed(1)
-  groups <- lapply(3:min(length(unique_points) - 1, 12), function(n) {
-    means <- stats::kmeans(unique_points, n)
-    mins <- sort(sapply(seq_len(n), function(n) 
-      min(unique_points[means$cluster == n])))
-    maxs <- sort(sapply(seq_len(n), function(n) 
-      max(unique_points[means$cluster == n])))
+  groups <- lapply(3:min(length(unique_points) - 1, 8), function(n) {
+    cl <- stats::kmeans(x_ratios, n)
+    mins <- sort(sapply(seq_len(n), function(n) min(x_ratios[cl$cluster == n])))
+    mins[1] <- min(c(x_ratios, y_ratios))
+    maxs <- sort(sapply(seq_len(n), function(n) max(x_ratios[cl$cluster == n])))
+    maxs[n] <- max(c(x_ratios, y_ratios))
     calcs <- mapply(sum_fun, mins, maxs)
-    list(sum(calcs), mins, maxs)
+    list(max(calcs), mins, maxs)
   })
   
   # Choose k value which minimizes calculations

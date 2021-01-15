@@ -116,7 +116,7 @@ obj_print_footer.matchr_matrix <- function(x, ...) {
   if (sum(length(attr(x, "x_na")), length(attr(x, "y_na"))) > 0) {
     footer <- pillar::style_subtle(paste0("# \u2026 with ", 
                                           length(attr(x, "x_na")), " x ",
-                                          length(attr(x, "y_na")), " NAs"))
+                                          length(attr(x, "y_na")), " NAs\n"))
     cat(footer)
   } 
 }
