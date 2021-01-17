@@ -4,7 +4,7 @@
 \alias{identify_matches}
 \title{Identify matches from a matchr image matrix}
 \usage{
-identify_matches(img_matrix, threshold = 0.975, quiet = FALSE)
+identify_matches(img_matrix, threshold = 0.975, confirm = TRUE, quiet = FALSE)
 }
 \arguments{
 \item{img_matrix}{A vector of class \code{matchr_matrix}, containing image
@@ -12,6 +12,13 @@ correlation matrices produced by \code{\link{match_signatures}}.}
 
 \item{threshold}{A numeric scalar. The minimum correlation constant to
 consider images to be matched.}
+
+\item{confirm}{A logical scalar. Should the function run
+\code{\link{confirm_matches}} on the results before returning them (default)?
+If TRUE, \code{\link{confirm_matches}} will be called with default
+parameters, i.e. under the assumption that the original signature matching
+was done using greyscale signatures, and the confirmation should be carried
+out with colour signatures with the default tolerance thresholds.}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}
@@ -26,6 +33,8 @@ correlation matrix.
 \item \code{x_file} and \code{y_file}: The file paths for the images which were matched.
 \item \code{correlation}: The Pearson correlation coefficient of the two files'
 image signatures.
+\item \code{match} (if \code{confirm = TRUE}): A character vector indicating match status.
+(See \code{\link{confirm_matches}} for details.)
 }
 }
 \description{

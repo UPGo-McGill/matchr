@@ -9,6 +9,12 @@
 #' correlation matrices produced by \code{\link{match_signatures}}.
 #' @param threshold A numeric scalar. The minimum correlation constant to
 #' consider images to be matched.
+#' @param confirm A logical scalar. Should the function run 
+#' \code{\link{confirm_matches}} on the results before returning them (default)?
+#' If TRUE, \code{\link{confirm_matches}} will be called with default 
+#' parameters, i.e. under the assumption that the original signature matching
+#' was done using greyscale signatures, and the confirmation should be carried
+#' out with colour signatures with the default tolerance thresholds.
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
 #' @return A tibble if {dplyr} is installed or a data frame if not, with one
@@ -19,12 +25,16 @@
 #' - `x_file` and `y_file`: The file paths for the images which were matched.
 #' -  `correlation`: The Pearson correlation coefficient of the two files'
 #' image signatures.
+#' - `match` (if `confirm = TRUE`): A character vector indicating match status.
+#' (See \code{\link{confirm_matches}} for details.)
 #' @export
 
-identify_matches <- function(img_matrix, threshold = 0.975, quiet = FALSE) {
+identify_matches <- function(img_matrix, threshold = 0.975, confirm = TRUE,
+                             quiet = FALSE) {
 
   # Error handling
-  stopifnot(is_matrix(img_matrix), is.numeric(threshold), is.logical(quiet))
+  stopifnot(is_matrix(img_matrix), is.numeric(threshold), is.logical(confirm), 
+            is.logical(quiet))
 
   # Find matches
   match_list <- lapply(seq_along(img_matrix), function(x) {
@@ -65,6 +75,7 @@ identify_matches <- function(img_matrix, threshold = 0.975, quiet = FALSE) {
   matches$hash <- NULL
   
   # Return output
+  if (confirm) matches <- confirm_matches(matches)
   return(matches)
 
 }

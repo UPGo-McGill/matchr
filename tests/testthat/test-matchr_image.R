@@ -24,7 +24,7 @@ test_that("other methods works", {
 })
 
 test_that("plots work", {
-  skip_on_cran()
+  skip_on_ci()
   plot_1 <- save_png(plot(load_image(urls[8])))
   plot_2 <- save_png(plot(load_image(urls[15])))
   expect_snapshot_file(plot_1, "plot_1.png")
