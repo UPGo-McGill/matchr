@@ -81,7 +81,7 @@ dim.matchr_image <- function(x, ...) {
 
 #' @export
 
-plot.matchr_image <- function(x, ...) { # nocov start
+plot.matchr_image <- function(x, ...) {
   
   # Temporarily trim to just the first image
   if (vec_size(x) > 1) {
@@ -110,5 +110,5 @@ plot.matchr_image <- function(x, ...) { # nocov start
     invisible(x)
     
   }
-} # nocov end
+}
   
