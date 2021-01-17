@@ -24,6 +24,7 @@ test_that("other methods works", {
 })
 
 test_that("plots work", {
+  expect_warning(plot(load_image(urls[8:9])), "Only the first image")
   skip_on_ci()
   plot_1 <- save_png(plot(load_image(urls[8])))
   plot_2 <- save_png(plot(load_image(urls[15])))
