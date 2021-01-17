@@ -1,7 +1,7 @@
 #### TESTS FOR match_signatures ################################################
 
-test_that("a short single matchr_signature with !compare_aspect_ratios works", {
-  r1 <- match_signatures(test_long_sig, compare_aspect_ratios = FALSE)
+test_that("a short single matchr_signature with !compare_ar works", {
+  r1 <- match_signatures(test_long_sig, compare_ar = FALSE)
   expect_equal(attr(r1, "x_total"), sum(sapply(field(r1, "matrix"), nrow), 
                                         length(attr(r1, "x_na"))))
   expect_equal(sum(field(r1, "matrix")[[1]][1:3, 1:3] > 0.999), 9)

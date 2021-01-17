@@ -160,25 +160,27 @@ Secondly, parallel versions of `create_signature` produce dramatic speed increas
 
 The core functionality of `match_signatures` is to calculate correlations between the image signatures in a pair of `matchr_signature` vectors. Because each signature in the left-hand vector needs to be compared to each signature in the right-hand vector, the computational requirements increase quadratically with vector size. (E.g. comparing two 100-length vectors implies 100 ^ 2 = 10,000 calculations, while comparing two 200-length vectors implies 200 ^ 2 = 40,000 calculations.)
 
-The `match_signatures` function includes an argument `compare_aspect_ratios`, which uses k-means clustering to split the input image signatures into groups with similar aspect ratios. This has two important implications. First, assuming the image sets being compared don't feature any extremely distorted scaling (e.g. landscape pictures stretched into portrait orientation), splitting by aspect ratio will tend to reduce the possibility for false positive matches, since, e.g., portrait and landscape images will not be compared to each other. Second, using `compare_aspect_ratios` can significantly shrink the number of image comparisons which need to be made, and thus speed up computation time. As a simple example, two sets of 100 images require 100 ^ 2 = 10,000 calculations to be compared, but if each set is split into 50 portrait and 50 landscape images, only 50 ^ 2 * 2 = 5,000 calculations will be needed. The function evaluates a range of different 
+The `match_signatures` function includes an argument `compare_ar`, which uses k-means clustering to split the input image signatures into groups with similar aspect ratios. This has two important implications. First, assuming the image sets being compared don't feature any extremely distorted scaling (e.g. landscape pictures stretched into portrait orientation), splitting by aspect ratio will tend to reduce the possibility for false positive matches, since, e.g., portrait and landscape images will not be compared to each other. Second, using `compare_ar` can significantly shrink the number of image comparisons which need to be made, and thus speed up computation time. As a simple example, two sets of 100 images require 100 ^ 2 = 10,000 calculations to be compared, but if each set is split into 50 portrait and 50 landscape images, only 50 ^ 2 * 2 = 5,000 calculations will be needed. The function evaluates a range of different 
 
 ```{r ms_timing, eval = FALSE}
-ms_bench <- 
-  bench::press(
-    length = c(1000, 10000),
-    workers = c(1, 2, 4, 8, 16, 32),
-    compare = c(TRUE, FALSE), {
-      if (workers == 1) plan(sequential) else plan(multisession, workers = workers)
-      bench::mark(ms = match_signatures(sig_high[1:length], sig_low[1:length], 
-                                        compare_aspect_ratios = compare, 
-                                        backup = FALSE, quiet = TRUE),
-                  iterations = 20, check = FALSE)
+sig_high <- create_signature(paths_high[1:30000])
+sig_low <- create_signature(paths_low[1:20000])
+
+ms_bench <- bench::press(
+  workers = c(1, 2, 4, 8),
+  ar = c(TRUE, FALSE), {
+    if (workers == 1) plan(sequential) else plan(multisession, workers = workers)
+    bench::mark(
+      small = match_signatures(sig_high[1:1000], sig_low[1:1000], compare_ar = ar, quiet = TRUE),
+      medium = match_signatures(sig_high, sig_low, compare_ar = ar, quiet = TRUE),
+      large = match_signatures(rep(sig_high, 3), rep(sig_low, 3), compare_ar = ar, quiet = TRUE),
+      iterations = 20, check = FALSE)
     })
 
 ms_bench %>% 
   unnest(c(time, gc)) %>% 
   ggplot() +
-  geom_boxplot(aes(time, as.factor(length), colour = as.factor(workers))) +
+  geom_boxplot(aes(time, expression, colour = as.factor(workers))) +
   scale_colour_viridis_d(name = "workers") +
   bench:::scale_x_bench_time() +
   facet_wrap(vars(compare), nrow = 2) +
@@ -193,7 +195,7 @@ load(here::here("inst", "ms_bench.Rdata"))
 ms_bench %>% 
   unnest(c(time, gc)) %>% 
   ggplot() +
-  geom_boxplot(aes(time, as.factor(length), colour = as.factor(workers))) +
+  geom_boxplot(aes(time, expression, colour = as.factor(workers))) +
   scale_colour_viridis_d(name = "workers") +
   bench:::scale_x_bench_time() +
   facet_wrap(vars(compare), nrow = 2) +

@@ -81,7 +81,7 @@ dim.matchr_image <- function(x, ...) {
 
 #' @export
 
-plot.matchr_image <- function(x, ...) {
+plot.matchr_image <- function(x, ...) { # nocov start
   
   # Temporarily trim to just the first image
   if (vec_size(x) > 1) {
@@ -92,7 +92,7 @@ plot.matchr_image <- function(x, ...) {
   # Plot greyscale
   if (is.na(dim(x)[,3])) {
     
-    r <- gray(t(field(x, "array")[[1]]))
+    r <- grDevices::gray(t(field(x, "array")[[1]]))
     dim(r) <- dim(field(x, "array")[[1]])[1:2]
     class(r) <- "raster"
     plot(r)
@@ -101,14 +101,14 @@ plot.matchr_image <- function(x, ...) {
     # Plot colour
   } else {
     
-    r <- rgb(t(field(x, "array")[[1]][,,1]),
-             t(field(x, "array")[[1]][,,2]),
-             t(field(x, "array")[[1]][,,3]))
+    r <- grDevices::rgb(t(field(x, "array")[[1]][,,1]),
+                        t(field(x, "array")[[1]][,,2]),
+                        t(field(x, "array")[[1]][,,3]))
     dim(r) <- dim(field(x, "array")[[1]])[1:2]
     class(r) <- "raster"
     plot(r)
     invisible(x)
     
   }
-}
+} # nocov end
   

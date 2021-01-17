@@ -8,7 +8,7 @@ match_signatures(
   x,
   y = NULL,
   method = "grey",
-  compare_aspect_ratios = TRUE,
+  compare_ar = TRUE,
   quiet = FALSE
 )
 }
@@ -23,17 +23,16 @@ greyscale signatures ("grey", "greyscale, "gray", or "grayscale", the
 default), their colour signatures ("colour", "color", "rgb", or "RGB), or
 both ("both")?}
 
-\item{compare_aspect_ratios}{A logical scalar. Should signatures only be
-compared for images with similar aspect ratios (default)? If TRUE, k-means
-clustering is used to identify breakpoints between aspect ratios that
-maximize between-group distance and minimize the total number of calculations
-that the function needs to execute. (Values of k between 3 and 12 are
-evaluated.) Image signatures from \code{x} are split into lists between these
-break points. In order to catch matches that would fall across a break point,
-image signatures from \code{y} are split into lists between the break point / 1.2
-on the lower bound and the break point * 1.2 on the upper bound. This
-argument is forced to FALSE if either \code{x} or \code{y} has fewer than 10 non-NA
-elements.}
+\item{compare_ar}{A logical scalar. Should signatures only be compared for
+images with similar aspect ratios (default)? If TRUE, k-means clustering is
+used to identify breakpoints between aspect ratios that maximize
+between-group distance and minimize the total number of calculations that the
+function needs to execute. (Values of k between 3 and 8 are evaluated.) Image
+signatures from \code{x} are split into lists between these break points. In order
+to catch matches that would fall across a break point, image signatures from
+\code{y} are split into lists between the break point / 1.2 on the lower bound and
+the break point * 1.2 on the upper bound. This argument is forced to FALSE if
+either \code{x} or \code{y} has fewer than 10 non-NA elements.}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}

@@ -26,17 +26,16 @@
 #' greyscale signatures ("grey", "greyscale, "gray", or "grayscale", the 
 #' default), their colour signatures ("colour", "color", "rgb", or "RGB), or 
 #' both ("both")?
-#' @param compare_aspect_ratios A logical scalar. Should signatures only be
-#' compared for images with similar aspect ratios (default)? If TRUE, k-means
-#' clustering is used to identify breakpoints between aspect ratios that
-#' maximize between-group distance and minimize the total number of calculations
-#' that the function needs to execute. (Values of k between 3 and 12 are
-#' evaluated.) Image signatures from `x` are split into lists between these
-#' break points. In order to catch matches that would fall across a break point,
-#' image signatures from `y` are split into lists between the break point / 1.2
-#' on the lower bound and the break point * 1.2 on the upper bound. This
-#' argument is forced to FALSE if either `x` or `y` has fewer than 10 non-NA
-#' elements.
+#' @param compare_ar A logical scalar. Should signatures only be compared for 
+#' images with similar aspect ratios (default)? If TRUE, k-means clustering is 
+#' used to identify breakpoints between aspect ratios that maximize 
+#' between-group distance and minimize the total number of calculations that the 
+#' function needs to execute. (Values of k between 3 and 8 are evaluated.) Image 
+#' signatures from `x` are split into lists between these break points. In order 
+#' to catch matches that would fall across a break point, image signatures from
+#' `y` are split into lists between the break point / 1.2 on the lower bound and 
+#' the break point * 1.2 on the upper bound. This argument is forced to FALSE if 
+#' either `x` or `y` has fewer than 10 non-NA elements.
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
 #' @return TKTK A vector of class `matchr_matrix`. This object is a list
@@ -50,14 +49,14 @@
 #' @export
 
 match_signatures <- function(x, y = NULL, method = "grey",
-                             compare_aspect_ratios = TRUE, quiet = FALSE) {
+                             compare_ar = TRUE, quiet = FALSE) {
 
   # Error handling and object initialization
-  stopifnot(is_signature(x), is.logical(c(compare_aspect_ratios, quiet)),
+  stopifnot(is_signature(x), is.logical(c(compare_ar, quiet)),
             method %in% c("grey", "gray", "colour", "color", "rgb", "RGB", 
                           "both"))
   if (missing(y)) y <- x else stopifnot(is_signature(y))
-  if (compare_aspect_ratios) par_check <- TRUE else par_check <- FALSE
+  if (compare_ar) par_check <- TRUE else par_check <- FALSE
 
   # Deal with NAs
   x_na <- x[is.na(x)]
@@ -65,9 +64,9 @@ match_signatures <- function(x, y = NULL, method = "grey",
   x <- x[!is.na(x)]
   y <- y[!is.na(y)]
   
-  # Split clusters for compare_aspect_ratios == TRUE
-  if (vec_size(x) < 10 || vec_size(y) < 10) compare_aspect_ratios <- FALSE
-  if (compare_aspect_ratios == TRUE) {
+  # Split clusters for compare_ar == TRUE
+  if (vec_size(x) < 10 || vec_size(y) < 10) compare_ar <- FALSE
+  if (compare_ar == TRUE) {
     clusters <- get_clusters(x, y)
     x_list <- clusters[[1]]
     y_list <- clusters[[2]]

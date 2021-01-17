@@ -16,7 +16,7 @@ test_that("package absences are handled gracefully", {
     inherits(load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png"),
              "matchr_image"))
   expect_equal(ceiling(sum(create_signature(test_img))), 67)
-  r1 <- match_signatures(test_long_sig, compare_aspect_ratios = FALSE)
+  r1 <- match_signatures(test_long_sig, compare_ar = FALSE)
   expect_equal(attr(r1, "x_total"), sum(sapply(field(r1, "matrix"), nrow), 
                                         length(attr(r1, "x_na"))))
   expect_equal(round(sum(match_signatures_pairwise(
