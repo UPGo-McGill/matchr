@@ -1,201 +1,26 @@
 #### compare_images ############################################################
 
-### Load objects ###############################################################
+### Prepare data ###############################################################
 
+# Load objects
 result <- shiny::getShinyOption("result")
-
-result$.UID <- paste0("id-", formatC(
-  seq_len(nrow(result)),
-  width = floor(log10(nrow(result))) + 1,
-  flag = "0"))
-
+result_full <- shiny::getShinyOption("result_full")
+result_corr <- shiny::getShinyOption("result_corr")
 x_dir <- shiny::getShinyOption("x_dir")
 y_dir <- shiny::getShinyOption("y_dir")
-x_sigs <- shiny::getShinyOption("x_sigs")
-y_sigs <- shiny::getShinyOption("y_sigs")
 remove_duplicates <- shiny::getShinyOption("remove_duplicates")
-
+if (remove_duplicates) result_b <- shiny::getShinyOption("result_b")
 shiny::addResourcePath("x", x_dir)
 shiny::addResourcePath("y", y_dir)
 
-
-### Remove duplicates ##########################################################
-
-if (remove_duplicates) {
-
-  ## Back up full result table -------------------------------------------------
-
-  result_full <- result
-
-
-  ## Helpers -------------------------------------------------------------------
-
-  can_merge <- function(x, y) length(intersect(x, y)) > 0
-
-  merge_fun <- function(x, y) sort(union(x, y))
-
-  reduce_fun <- function(img_list) {
-
-    Reduce(function(acc, curr) {
-
-      curr_vec <- curr[[1]]
-
-      to_merge_id_x <- Position(f = function(x) can_merge(x, curr_vec), acc)
-
-      if (is.na(to_merge_id_x)) acc[[length(acc) + 1]] <- curr_vec else {
-        acc[[to_merge_id_x]] <- merge_fun(acc[[to_merge_id_x]], curr_vec)
-      }
-
-      return(acc)
-    }, img_list)
-  }
-
-  ## Identify x images with correlation ~= 1 -----------------------------------
-
-  if (is.null(x_sigs)) x_sigs <- identify_image(unique(result$x_name)) else {
-    x_sigs <- x_sigs[sapply(x_sigs, attr, "file") %in% result$x_name]
-  }
-
-  x_matches <- match_signatures(x_sigs)
-  x_matches <- identify_matches(x_matches)
-  x_matches <- x_matches[x_matches$correlation >= 0.9995,]
-
-  ## Group x images together by correlation ------------------------------------
-
-  x_matches <- mapply(function(x, y) c(x, y), x_matches$x_name,
-                      x_matches$y_name, SIMPLIFY = FALSE)
-
-  x_matches <- reduce_fun(Map(list, x_matches))
-
-
-  ## Check for duplication -----------------------------------------------------
-
-  while (length(unique(unlist(x_matches))) !=
-      length(unlist(lapply(x_matches, unique)))) {
-
-    x_all <- unlist(lapply(x_matches, unique))
-
-    x_pos <-
-      x_matches[sapply(
-        x_matches, function(x) any(x_all[which(duplicated(x_all))] %in% x))]
-
-    x_neg <-
-      x_matches[!sapply(
-        x_matches, function(x) any(x_all[which(duplicated(x_all))] %in% x))]
-
-    x_matches <- reduce_fun(c(list(x_neg), lapply(x_pos, list)))
-
-  }
-
-
-  ## Create x table ------------------------------------------------------------
-
-  x_table <- lapply(seq_along(x_matches), function(n) {
-    data.frame(x_id = n, x_name = x_matches[[n]])
-  })
-
-  x_table <- if (requireNamespace("dplyr", quietly = TRUE)) {
-    dplyr::bind_rows(x_table)} else do.call(rbind, x_table)
-
-  x_table <- x_table[!duplicated(x_table),]
-
-
-  ## Join IDs to result table --------------------------------------------------
-
-  result <- merge(result, x_table, all = TRUE)
-
-
-  ## Identify y images with correlation ~= 1 with counterparts in x_table ------
-
-  y_candidates <- result[!is.na(result$x_id),]$y_name
-
-  if (is.null(y_sigs)) y_sigs <- identify_image(unique(y_candidates)) else {
-    y_sigs <- y_sigs[sapply(y_sigs, attr, "file") %in% y_candidates]
-  }
-
-  y_matches <- match_signatures(y_sigs)
-  y_matches <- identify_matches(y_matches)
-  y_matches <- y_matches[y_matches$correlation >= 0.9995,]
-
-
-  ## Group y images together by correlation ------------------------------------
-
-  y_matches <- mapply(function(x, y) c(x, y), y_matches$x_name,
-                      y_matches$y_name, SIMPLIFY = FALSE)
-
-  y_matches <- reduce_fun(Map(list, y_matches))
-
-
-  ## Check for duplication -----------------------------------------------------
-
-  while (length(unique(unlist(y_matches))) !=
-         length(unlist(lapply(y_matches, unique)))) {
-
-    y_all <- unlist(lapply(y_matches, unique))
-
-    y_pos <-
-      y_matches[sapply(
-        y_matches, function(x) any(y_all[which(duplicated(y_all))] %in% x))]
-
-    y_neg <-
-      y_matches[!sapply(
-        y_matches, function(x) any(y_all[which(duplicated(y_all))] %in% x))]
-
-    y_matches <- reduce_fun(c(list(y_neg), lapply(y_pos, list)))
-
-  }
-
-
-  ## Create y table ------------------------------------------------------------
-
-  y_table <- lapply(seq_along(y_matches), function(n) {
-    data.frame(y_id = n, x_name = y_matches[[n]])
-  })
-
-  y_table <- if (requireNamespace("dplyr", quietly = TRUE)) {
-    dplyr::bind_rows(y_table)} else do.call(rbind, y_table)
-
-  y_table <- y_table[!duplicated(y_table),]
-
-  colnames(y_table)[colnames(y_table) == "x_name"] <- "y_name"
-
-
-  ## Join IDs to result table --------------------------------------------------
-
-  result <- merge(result, y_table, all = TRUE)
-
-
-  ## Create trimmed result table -----------------------------------------------
-
-  result_b <- result[!is.na(result$x_id) & !is.na(result$y_id),]
-  result_b <-
-    result_b[order(result_b$x_id, result_b$y_id, -1 * result_b$correlation),]
-
-  result <- rbind(result_b[!duplicated(result_b[c("x_id", "y_id")]),],
-                  result[is.na(result$x_id) | is.na(result$y_id),])
-
-  result <- result[order(result$.UID),]
-
-}
-
-### Remove matches with perfect correlation ####################################
-
-result_corr <- result[result$correlation == 1,]
-result <- result[result$correlation != 1,]
-
-
-### Copy images to temp folders ################################################
-
+# Copy images to temp folders
 file.copy(result$x_name, x_dir)
 file.copy(result$y_name, y_dir)
 
-
-### Make new path vectors ######################################################
-
+# Make new path vectors
 x_paths <- strsplit(result$x_name, '/')
 x_paths <- sapply(x_paths, function(x) x[[length(x)]])
 x_paths <- paste0("x/", x_paths)
-
 y_paths <- strsplit(result$y_name, '/')
 y_paths <- sapply(y_paths, function(x) x[[length(x)]])
 y_paths <- paste0("y/", y_paths)
@@ -205,20 +30,15 @@ y_paths <- paste0("y/", y_paths)
 
 ui <- shiny::fluidPage(
 
-  ## Load waiter ---------------------------------------------------------------
+  # Load waiter
+  waiter::use_waiter(),
 
-  waiter::use_waiter(include_js = FALSE),
+  # App title
+  shiny::titlePanel(paste0(
+    "Image comparison for ", prettyNum(nrow(result), big.mark = ","), 
+    " matches")),
 
-
-  ## App title -----------------------------------------------------------------
-
-  shiny::titlePanel(paste0("Image comparison for ",
-                           prettyNum(nrow(result), big.mark = ","),
-                           " matches")),
-
-
-  ## Filter data frame ---------------------------------------------------------
-
+  # Filter data frame
   shiny::fluidRow(
     shiny::column(
       width = 12,
@@ -229,19 +49,19 @@ ui <- shiny::fluidPage(
         choiceNames = c(
           "All results",
           paste0("Match (",
-                 prettyNum(nrow(result[result$confirmation == "match",]),
+                 prettyNum(nrow(result[result$match == "match",]),
                            big.mark = ","),
                  ")"),
           paste0("Likely match (",
-                 prettyNum(nrow(result[result$confirmation == "likely match",]),
+                 prettyNum(nrow(result[result$match == "likely match",]),
                            big.mark = ","),
                  ")"),
           paste0("Possible match (",
-                 prettyNum(nrow(result[result$confirmation == "possible match",
+                 prettyNum(nrow(result[result$match == "possible match",
                                        ]), big.mark = ","),
                  ")"),
           paste0("No match (",
-                 prettyNum(nrow(result[result$confirmation == "no match",]),
+                 prettyNum(nrow(result[result$match == "no match",]),
                            big.mark = ","),
                  ")")
           ),
@@ -250,9 +70,7 @@ ui <- shiny::fluidPage(
         inline = TRUE))
   ),
 
-
-  ## Save output ---------------------------------------------------------------
-
+  # Save output
   shiny::fluidRow(
     shiny::column(width = 12,
                   shiny::actionButton("save", "Save changes and exit"),
@@ -261,20 +79,14 @@ ui <- shiny::fluidPage(
 
   shiny::fluidRow(shiny::column(width = 12, style = "height:50px")),
 
-
-  ## Display images ------------------------------------------------------------
-
+  # Display images
   shiny::fluidRow(
-
     shiny::column(width = 4, shiny::uiOutput("match"), align = "right"),
     shiny::column(width = 4, shiny::htmlOutput("image_1"), align = "right"),
     shiny::column(width = 4, shiny::htmlOutput("image_2"))
-
   ),
 
-
-  ## Save output ---------------------------------------------------------------
-
+  # Save output
   shiny::fluidRow(
     shiny::column(width = 12,
                   shiny::actionButton("save_2", "Save changes and exit"),
@@ -284,13 +96,10 @@ ui <- shiny::fluidPage(
   shiny::fluidRow(shiny::column(width = 12, style = "height:50px")),
 
   waiter::waiter_show_on_load(
-    html = shiny::tagList(if (remove_duplicates) h3("Removing duplicates",
-                                                    style = "color:gray"),
-                          waiter::spin_3circles()),
-    color = "white")
-
+    html = shiny::tagList(
+      if (remove_duplicates) h3("Removing duplicates", style = "color:gray"),
+      waiter::spin_3circles()), color = "white")
 )
-
 
 
 ### Server object ##############################################################
@@ -300,11 +109,11 @@ server <- function(input, output) {
   ## Make change_table, match_vector and active_index --------------------------
 
   if (remove_duplicates) {
-    change_table <- result[c(".UID", "x_name", "y_name", "confirmation",
+    change_table <- result[c(".UID", "x_name", "y_name", "match",
                              "x_id", "y_id")]
-  } else change_table <- result[c(".UID", "x_name", "y_name", "confirmation")]
+  } else change_table <- result[c(".UID", "x_name", "y_name", "match")]
 
-  colnames(change_table)[colnames(change_table) == "confirmation"] <-
+  colnames(change_table)[colnames(change_table) == "match"] <-
     "new_match_status"
 
   change_table$new_match_status <-
@@ -319,7 +128,7 @@ server <- function(input, output) {
 
   active_index <- shiny::reactive(
     if (input$filter == "all") seq_len(nrow(result)) else
-      which(result$confirmation == input$filter)
+      which(result$match == input$filter)
   )
 
 
@@ -433,13 +242,13 @@ server <- function(input, output) {
 
       }
 
-      change_table <- merge(change_table, result[c(".UID", "confirmation")])
+      change_table <- merge(change_table, result[c(".UID", "match")])
 
       change_table <- change_table[change_table$new_match_status !=
-                                     change_table$confirmation,]
+                                     change_table$match,]
 
       change_table$.UID <- NULL
-      change_table$confirmation <- NULL
+      change_table$match <- NULL
 
       if (requireNamespace("dplyr", quietly = TRUE)) {
         change_table <- dplyr::as_tibble(change_table)
