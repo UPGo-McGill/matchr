@@ -47,7 +47,7 @@ remotes::install_github("UPGo-McGill/matchr")
 
 ## Usage
 
-The standard matchr work flow involves importing one or more sets of images with `load_image`, generating image signatures from the image sets using `create_signature`, matching image signatures using `match_signatures`, then refining and verifying the matches using `confirm_matches`, `compare_images`, and `integrate_changes`.
+The standard matchr work flow involves importing one or more sets of images with `load_image`, generating image signatures from the image sets using `create_signature`, matching image signatures using `match_signatures`, then refining and verifying the matches using `identify_matches`, `confirm_matches`, `compare_images`, and `integrate_changes`.
 
 Because each of these steps can be very time- or computation-intensive, it is usually the most convenient to run the functions separately. But in the case of relatively small comparison tasks, `match_images` provides an "all-in-one" function which performs each task sequentially and delivers the final results.
 

@@ -204,7 +204,7 @@ create_signature_internal <- function(image, bands = 20,
     rm_total <- (rm_1 + rm_2 + rm_3) / 3
     
     # First check for all black image and return NA if so
-    if (sum(rm_total) == 0) return(NA)
+    if (mean(rm_total) < 0.005) return(NA)
     
     if (sum(rm_total < 0.005) > 0) {
       

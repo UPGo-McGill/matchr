@@ -57,7 +57,8 @@ The standard matchr work flow involves importing one or more sets of
 images with `load_image`, generating image signatures from the image
 sets using `create_signature`, matching image signatures using
 `match_signatures`, then refining and verifying the matches using
-`confirm_matches`, `compare_images`, and `integrate_changes`.
+`identify_matches`, `confirm_matches`, `compare_images`, and
+`integrate_changes`.
 
 Because each of these steps can be very time- or computation-intensive,
 it is usually the most convenient to run the functions separately. But
