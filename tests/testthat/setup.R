@@ -25,7 +25,7 @@ urls <-
 # load_image
 test_img <- load_image("https://upgo.lab.mcgill.ca/resources/img_1_small")
 black_image <- 
-  new_image(list(array(rep(0, 4800), dim = c(40, 40, 3))), "black_image")
+  new_image(list(array(rep(0.002, 4800), dim = c(40, 40, 3))), "black_image")
 test_na <- suppressWarnings(load_image(
   "https://upgo.lab.mcgill.ca/resources/img_2_corrupt.jpg"))
 

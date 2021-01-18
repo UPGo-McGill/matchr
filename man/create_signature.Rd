@@ -71,4 +71,8 @@ create_signature(img)
 
 # Or create signature directly from path/URL
 create_signature("https://upgo.lab.mcgill.ca/img/UPGo_logo.png")
+
+# By default top and bottom black bars are removed, but leave them with
+# rm_black_bars = FALSE
+create_signature(img, rm_black_bars = FALSE)
 }

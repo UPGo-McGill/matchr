@@ -110,7 +110,7 @@ match_signatures <- function(x, y = NULL, method = "grey",
                          ncol = vec_size(x_list[[i]]))
       y_matrix <- matrix(unlist(field(y_list[[i]], "signature")), 
                          ncol = vec_size(y_list[[i]]))
-      result <- stats::cor(x_matrix, y_matrix)
+      result <- suppressWarnings(stats::cor(x_matrix, y_matrix))
       pb(amount = vec_size(x_list[[i]]))
       result
   }, future.scheduling = Inf
