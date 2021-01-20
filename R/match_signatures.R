@@ -56,14 +56,13 @@
 match_signatures <- function(x, y = NULL, method = "grey",
                              compare_ar = TRUE, stretch = 1.2, 
                              quiet = FALSE) {
-
+  
   # Error handling and object initialization
   stopifnot(is_signature(x), is.logical(c(compare_ar, quiet)),
             method %in% c("grey", "gray", "colour", "color", "rgb", "RGB", 
                           "both"))
   if (missing(y)) y <- x else stopifnot(is_signature(y))
-  if (compare_ar) par_check <- TRUE else par_check <- FALSE
-
+  
   # Deal with NAs
   x_na <- x[is.na(x)]
   y_na <- y[is.na(y)]
@@ -87,44 +86,51 @@ match_signatures <- function(x, y = NULL, method = "grey",
   
   # Prepare method
   if (method %in% c("grey", "gray", "greyscale", "grayscale")) {
-    x_list <- lapply(x_list, function(x) trim_signature(
-      x, 1:(sig_length(x) / 4)))
-    y_list <- lapply(y_list, function(x) trim_signature(
-      x, 1:(sig_length(x) / 4)))
+    x_list <- lapply(x_list, trim_signature, 1:(sig_length(x) / 4))
+    y_list <- lapply(y_list, trim_signature, 1:(sig_length(x) / 4))
   }
   
   if (method %in% c("colour", "color", "rgb", "RGB")) {
-    x_list <- lapply(x_list, function(x) trim_signature(
-      x, (sig_length(x) / 4 + 1):sig_length(x)))
-    y_list <- lapply(y_list, function(x) trim_signature(
-      x, (sig_length(x) / 4 + 1):sig_length(x)))
+    x_list <- lapply(x_list, trim_signature, 
+                     (sig_length(x) / 4 + 1):sig_length(x))
+    y_list <- lapply(y_list, trim_signature, 
+                     (sig_length(x) / 4 + 1):sig_length(x))
   }
   
   # Initialize progress reporting
   handler_matchr("Matching signature")
-  prog_bar <- as.logical((vec_size(x) >= 5000) * as.numeric(!quiet) * 
+  prog_bar <- as.logical((vec_size(x) >= 5000) * as.numeric(!quiet) *
                            progressr::handlers(global = NA))
   pb <- progressr::progressor(steps = vec_size(x), enable = prog_bar)
-
-  # Organize batches for parallel processing
-  batch_order <- order(as.numeric(lengths(x_list)) * 
-                         as.numeric(lengths(y_list)), decreasing = TRUE)
+  
+  # Prepare parallel processing
+  par_check_vec <- 
+    mapply(function(x, y) set_par("match_signatures", x = x, y = y),
+           lengths(x_list), lengths(y_list), USE.NAMES = FALSE)
   
   # Calculate correlation matrices
-  result <-   
-    par_lapply(batch_order, function(i) {
+  result <- vector("list", length(x_list))
+  for (i in seq_along(x_list)) {
+    if (par_check_vec[i]) {
+      par_check <- TRUE
+      x_matrix <- chunk(x_list[[i]], number_of_threads() * 4)
+      x_matrix <- lapply(x_matrix, function(x) {
+        matrix(unlist(field(x, "signature")), ncol = vec_size(x))})
+      y_matrix <- matrix(unlist(field(y_list[[i]], "signature")), 
+                         ncol = vec_size(y_list[[i]]))
+      result[[i]] <- par_lapply(x_matrix, stats::cor, y_matrix)
+      result[[i]] <- do.call(rbind, result[[i]])
+      pb(amount = vec_size(x_list[[i]]))
+    } else {
+      par_check <- FALSE
       x_matrix <- matrix(unlist(field(x_list[[i]], "signature")), 
                          ncol = vec_size(x_list[[i]]))
       y_matrix <- matrix(unlist(field(y_list[[i]], "signature")), 
                          ncol = vec_size(y_list[[i]]))
-      result <- suppressWarnings(stats::cor(x_matrix, y_matrix))
+      result[[i]] <- stats::cor(x_matrix, y_matrix)
       pb(amount = vec_size(x_list[[i]]))
-      result
-  }, future.scheduling = Inf
-  )
-  
-  # Reorder
-  result <- result[order(batch_order)] 
+    }
+  }
   
   # Return result
   get_ratios <- function(x) c(min(field(x, "aspect_ratio"), na.rm = TRUE), 
@@ -140,7 +146,7 @@ match_signatures <- function(x, y = NULL, method = "grey",
     x_na = field(x_na, "file"),
     y_na = field(y_na, "file")
   )
-
+  
 }
 
 # ------------------------------------------------------------------------------
@@ -158,7 +164,7 @@ get_clusters <- function(x, y, stretch = 1.2, max_clust = 10) {
     y_length <- as.numeric(length(y_ratios[y_ratios >= (x / stretch) & 
                                              y_ratios <= (y * stretch)]))
     x_length * y_length
-    }
+  }
   set.seed(1)
   groups <- lapply(3:min(length(unique_points) - 1, max_clust), function(n) {
     cl <- stats::kmeans(x_ratios, n)
@@ -220,5 +226,5 @@ match_signatures_pairwise <- function(x, y, method = "colour", par_check = TRUE,
   }
   
   par_mapply(stats::cor, field(x, "signature"), field(y, "signature"), 
-         SIMPLIFY = TRUE)
+             SIMPLIFY = TRUE)
 }

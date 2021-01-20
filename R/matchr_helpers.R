@@ -164,6 +164,10 @@ set_par <- function(fun, ...) {
   # Version for create_signature.matchr_image
   if (fun == "create_signature_matchr_image") par_check <- FALSE
   
+  # Version for match_signatures
+  if (fun == "match_signatures" && as.numeric(args$x) * as.numeric(args$y) < 
+      20000000) par_check <- FALSE
+  
   # First check global option
   par_opt <- 
     getOption("matchr.force_parallel", 
