@@ -5,7 +5,6 @@
 # Load objects
 result <- shiny::getShinyOption("result")
 result_full <- shiny::getShinyOption("result_full")
-result_corr <- shiny::getShinyOption("result_corr")
 x_dir <- shiny::getShinyOption("x_dir")
 y_dir <- shiny::getShinyOption("y_dir")
 remove_duplicates <- shiny::getShinyOption("remove_duplicates")
@@ -393,11 +392,8 @@ server <- function(input, output, session) {
       change_table$x_name <- NULL
       change_table$y_name <- NULL
       
+      result_corr <- result_full[result_full$correlation >= corr_thresh,]
       result_corr$.UID <- NULL
-      result_corr$x_name <- NULL
-      result_corr$y_name <- NULL
-      result_corr$x_id <- NULL
-      result_corr$y_id <- NULL
       result_corr$match <- NULL
       result_corr$new_match_status <- "match"
       

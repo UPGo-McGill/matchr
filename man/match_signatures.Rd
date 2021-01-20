@@ -9,6 +9,7 @@ match_signatures(
   y = NULL,
   method = "grey",
   compare_ar = TRUE,
+  stretch = 1.2,
   quiet = FALSE
 )
 }
@@ -28,11 +29,17 @@ images with similar aspect ratios (default)? If TRUE, k-means clustering is
 used to identify breakpoints between aspect ratios that maximize
 between-group distance and minimize the total number of calculations that the
 function needs to execute. (Values of k between 3 and 8 are evaluated.) Image
-signatures from \code{x} are split into lists between these break points. In order
-to catch matches that would fall across a break point, image signatures from
-\code{y} are split into lists between the break point / 1.2 on the lower bound and
-the break point * 1.2 on the upper bound. This argument is forced to FALSE if
-either \code{x} or \code{y} has fewer than 10 non-NA elements.}
+signatures from \code{x} are split into lists between these break points. This
+argument is forced to FALSE if either \code{x} or \code{y} has fewer than 10 non-NA
+elements.}
+
+\item{stretch}{A numeric scalar. When \code{compare_ar} is TRUE, in order to catch
+matches that would fall across a break point, image signatures from \code{y} are
+split into lists between the break point / \code{stretch} (default 1.2) on the
+lower bound and the break point * \code{stretch} on the upper bound. Increasing
+this value will possibly catch matches between extremely distorted images,
+but at the cost of potentially larger numbers of false positives, and
+substantially increased processing time.}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}

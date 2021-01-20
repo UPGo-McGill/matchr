@@ -31,11 +31,16 @@
 #' used to identify breakpoints between aspect ratios that maximize 
 #' between-group distance and minimize the total number of calculations that the 
 #' function needs to execute. (Values of k between 3 and 8 are evaluated.) Image 
-#' signatures from `x` are split into lists between these break points. In order 
-#' to catch matches that would fall across a break point, image signatures from
-#' `y` are split into lists between the break point / 1.2 on the lower bound and 
-#' the break point * 1.2 on the upper bound. This argument is forced to FALSE if 
-#' either `x` or `y` has fewer than 10 non-NA elements.
+#' signatures from `x` are split into lists between these break points. This 
+#' argument is forced to FALSE if either `x` or `y` has fewer than 10 non-NA 
+#' elements.
+#' @param stretch A numeric scalar. When `compare_ar` is TRUE, in order to catch 
+#' matches that would fall across a break point, image signatures from `y` are 
+#' split into lists between the break point / `stretch` (default 1.2) on the 
+#' lower bound and the break point * `stretch` on the upper bound. Increasing 
+#' this value will possibly catch matches between extremely distorted images,
+#' but at the cost of potentially larger numbers of false positives, and 
+#' substantially increased processing time. 
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
 #' @return TKTK A vector of class `matchr_matrix`. This object is a list
@@ -49,7 +54,8 @@
 #' @export
 
 match_signatures <- function(x, y = NULL, method = "grey",
-                             compare_ar = TRUE, quiet = FALSE) {
+                             compare_ar = TRUE, stretch = 1.2, 
+                             quiet = FALSE) {
 
   # Error handling and object initialization
   stopifnot(is_signature(x), is.logical(c(compare_ar, quiet)),
@@ -67,7 +73,7 @@ match_signatures <- function(x, y = NULL, method = "grey",
   # Split clusters for compare_ar == TRUE
   if (vec_size(x) < 10 || vec_size(y) < 10) compare_ar <- FALSE
   if (compare_ar == TRUE) {
-    clusters <- get_clusters(x, y)
+    clusters <- get_clusters(x, y, stretch = stretch)
     x_list <- clusters[[1]]
     y_list <- clusters[[2]]
   } else {

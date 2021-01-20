@@ -165,13 +165,12 @@ compare_images <- function(result, remove_duplicates = TRUE,
   }
   
   # Remove results with perfect correlation
-  result_corr <- result[result$correlation >= corr_thresh,]
   result <- result[result$correlation < corr_thresh,]
   
   # Launch Shiny app if Shiny is present
   if (requireNamespace("shiny", quietly = TRUE)) {
     shiny::shinyOptions(result = result, result_full = result_full, 
-                        result_corr = result_corr, x_dir = x_dir, y_dir = y_dir,
+                        x_dir = x_dir, y_dir = y_dir,
                         remove_duplicates = remove_duplicates,
                         batch_size = batch_size, show_names = show_names,
                         corr_thresh = corr_thresh)
