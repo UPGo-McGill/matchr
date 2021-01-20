@@ -101,7 +101,8 @@ match_signatures <- function(x, y = NULL, method = "grey",
   pb <- progressr::progressor(steps = vec_size(x), enable = prog_bar)
 
   # Organize batches for parallel processing
-  batch_order <- order(lengths(x_list) * lengths(y_list), decreasing = TRUE)
+  batch_order <- order(as.numeric(lengths(x_list)) * 
+                         as.numeric(lengths(y_list)), decreasing = TRUE)
   
   # Calculate correlation matrices
   result <-   
@@ -138,7 +139,7 @@ match_signatures <- function(x, y = NULL, method = "grey",
 
 # ------------------------------------------------------------------------------
 
-get_clusters <- function(x, y, stretch = 1.2) {
+get_clusters <- function(x, y, stretch = 1.2, max_clust = 10) {
   
   x_ratios <- field(x, "aspect_ratio")
   y_ratios <- field(y, "aspect_ratio")
@@ -153,7 +154,7 @@ get_clusters <- function(x, y, stretch = 1.2) {
     x_length * y_length
     }
   set.seed(1)
-  groups <- lapply(3:min(length(unique_points) - 1, 8), function(n) {
+  groups <- lapply(3:min(length(unique_points) - 1, max_clust), function(n) {
     cl <- stats::kmeans(x_ratios, n)
     mins <- sort(sapply(seq_len(n), function(n) min(x_ratios[cl$cluster == n])))
     mins[1] <- min(c(x_ratios, y_ratios))

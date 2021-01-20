@@ -6,11 +6,16 @@
 #'
 #' @param result TKTK
 #' @param remove_duplicates TKTK
+#' @param batch_size TKTK
+#' @param show_names TKTK
+#' @param corr_threshold TKTK
 #' @param previous TKTK
 #' @return TKTK
 #' @export
 
-compare_images <- function(result, remove_duplicates = TRUE, previous = NULL) {
+compare_images <- function(result, remove_duplicates = TRUE, 
+                           batch_size = 100, show_names = FALSE, 
+                           corr_threshold = 0.9995, previous = NULL) {
   
   # Error checking and object initialization
   stopifnot(is.data.frame(result), is.logical(remove_duplicates))
@@ -47,12 +52,20 @@ compare_images <- function(result, remove_duplicates = TRUE, previous = NULL) {
     x_sig <- result$x_sig[!duplicated(field(result$x_sig, "file"))]
     x_matches <- match_signatures(x_sig)
     x_matches <- identify_matches(x_matches)
-    x_matches <- x_matches[x_matches$correlation >= 0.9995,]
+    x_matches <- x_matches[x_matches$correlation >= corr_threshold,]
     
     # Group x images together by correlation
     x_matches <- mapply(function(x, y) c(x, y), field(x_matches$x_sig, "file"),
                       field(x_matches$y_sig, "file"), SIMPLIFY = FALSE, 
                       USE.NAMES = FALSE)
+    
+    # Add duplicates
+    dup_x <- table(field(result$x_sig, "file"))
+    dup_x <- dup_x[dup_x >= 2]
+    dup_x <- lapply(names(dup_x), function(x) x)
+
+    # Reduce
+    x_matches <- c(x_matches, dup_x)
     x_matches <- reduce_fun(Map(list, x_matches))
     
     # Check for duplication
@@ -86,12 +99,20 @@ compare_images <- function(result, remove_duplicates = TRUE, previous = NULL) {
     y_matches <- result[!is.na(result$x_id),]$y_sig
     y_matches <- match_signatures(y_matches)
     y_matches <- identify_matches(y_matches)
-    y_matches <- y_matches[y_matches$correlation >= 0.9995,]
+    y_matches <- y_matches[y_matches$correlation >= corr_threshold,]
     
     # Group y images together by correlation
     y_matches <- mapply(function(x, y) c(x, y), field(y_matches$x_sig, "file"),
                         field(y_matches$y_sig, "file"), SIMPLIFY = FALSE, 
                         USE.NAMES = FALSE)
+    
+    # Add duplicates
+    dup_y <- table(field(result$y_sig, "file"))
+    dup_y <- dup_y[dup_y >= 2]
+    dup_y <- lapply(names(dup_y), function(x) x)
+    
+    # Reduce
+    y_matches <- c(y_matches, dup_y)
     y_matches <- reduce_fun(Map(list, y_matches))
     
     # Check for duplication
@@ -125,22 +146,28 @@ compare_images <- function(result, remove_duplicates = TRUE, previous = NULL) {
     result_b <- result[!is.na(result$x_id) & !is.na(result$y_id),]
     result_b <- result_b[order(result_b$x_id, result_b$y_id, 
                                -1 * result_b$correlation),]
-    result <- dplyr::bind_rows(result_b[!duplicated(result_b[c("x_id", "y_id")]),], 
-                               result[is.na(result$x_id) | is.na(result$y_id),])
+    result <- 
+      dplyr::bind_rows(result_b[!duplicated(result_b[c("x_id", "y_id")]),], 
+                       result[is.na(result$x_id) | is.na(result$y_id),])
     result <- result[order(result$.UID),]
     if (requireNamespace("dplyr", quietly = TRUE)) {
       result <- dplyr::as_tibble(result)}
+    
+  } else {
+    result$x_name <- field(result$x_sig, "file")
+    result$y_name <- field(result$y_sig, "file")
   }
   
   # Remove results with perfect correlation
-  result_corr <- result[result$correlation >= 0.9995,]
-  result <- result[result$correlation < 0.9995,]
+  result_corr <- result[result$correlation >= corr_threshold,]
+  result <- result[result$correlation < corr_threshold,]
   
   # Launch Shiny app if Shiny is present
   if (requireNamespace("shiny", quietly = TRUE)) {
     shiny::shinyOptions(result = result, result_full = result_full, 
                         result_corr = result_corr, x_dir = x_dir, y_dir = y_dir,
-                        remove_duplicates = remove_duplicates)
+                        remove_duplicates = remove_duplicates,
+                        batch_size = batch_size, show_names = show_names)
     if (remove_duplicates) shiny::shinyOptions(result_b = result_b)
     output <- shiny::runApp(appDir = system.file("compare_images",
                                                  package = "matchr"))
@@ -154,7 +181,7 @@ compare_images <- function(result, remove_duplicates = TRUE, previous = NULL) {
   viewer <- getOption("viewer")
   
   # Copy images to temp folders
-  result <- result[1:1000,]
+  result <- result[1:min(nrow(result), 1000),]
   file.copy(result$x_name, x_dir)
   file.copy(result$y_name, y_dir)
   

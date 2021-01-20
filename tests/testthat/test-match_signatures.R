@@ -31,13 +31,16 @@ test_that("a pair of matchr_signature vectors works", {
 #   old_opt <- options(matchr.force_parallel = TRUE)
 #   old_plan <- future::plan(future::multisession, workers = 2)
 #   suppressWarnings(rm(par_1, envir = .matchr_env))
-#   suppressMessages(expect_message(match_signatures(test_long_sig), "parallel"))
+#   suppressMessages(expect_message(match_signatures(test_long_sig), 
+#                                   "parallel"))
 #   future::plan(old_plan)
 #   options(old_opt)
 # })
 
 test_that("get_clusters collapses empty vectors", {
-  expect_equal(sum(lengths(get_clusters(clust_x, clust_y))), 16)
+  expect_equal(sum(lengths(get_clusters(clust_x, clust_y, max_clust = 17))), 32)
+  expect_equal(sum(lengths(get_clusters(test_long_sig[1:2], 
+                                        test_long_sig[1:2]))), 2)
 })
 
 test_that("match_signatures_pairwise works", {

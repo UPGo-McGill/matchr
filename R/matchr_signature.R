@@ -236,8 +236,8 @@ obj_print_header.matchr_signature <- function(x, ...) {
 obj_print_footer.matchr_signature <- function(x, ...) {
   
   if (vec_size(x) > 20) {
-    footer <- pillar::style_subtle(paste0("# \u2026 with ", vec_size(x) - 10, 
-                                          " more signatures\n"))
+    footer <- pillar::style_subtle(paste0(
+      "# \u2026 with ", prettyNum(vec_size(x) - 10, ","), " more signatures\n"))
     cat(footer)
   } 
 }

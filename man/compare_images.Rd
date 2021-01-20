@@ -4,12 +4,25 @@
 \alias{compare_images}
 \title{Compare image matches in the viewer window}
 \usage{
-compare_images(result, remove_duplicates = TRUE, previous = NULL)
+compare_images(
+  result,
+  remove_duplicates = TRUE,
+  batch_size = 100,
+  show_names = FALSE,
+  corr_threshold = 0.9995,
+  previous = NULL
+)
 }
 \arguments{
 \item{result}{TKTK}
 
 \item{remove_duplicates}{TKTK}
+
+\item{batch_size}{TKTK}
+
+\item{show_names}{TKTK}
+
+\item{corr_threshold}{TKTK}
 
 \item{previous}{TKTK}
 }
