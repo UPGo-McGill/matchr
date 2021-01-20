@@ -11,6 +11,7 @@ y_dir <- shiny::getShinyOption("y_dir")
 remove_duplicates <- shiny::getShinyOption("remove_duplicates")
 batch_size <- shiny::getShinyOption("batch_size")
 show_names <- shiny::getShinyOption("show_names")
+corr_thresh <- shiny::getShinyOption("corr_thresh")
 if (remove_duplicates) result_b <- shiny::getShinyOption("result_b")
 shiny::addResourcePath("x", x_dir)
 shiny::addResourcePath("y", y_dir)
@@ -383,8 +384,9 @@ server <- function(input, output, session) {
         
       }
       
-      result <- result_full[result_full$correlation < corr_threshold, c(
-        ".UID", "matrix", "x_index", "y_index", "x_sig", "y_sig", "correlation")]
+      result <- result_full[result_full$correlation < corr_thresh, c(
+        ".UID", "matrix", "x_index", "y_index", "x_sig", "y_sig", 
+        "correlation")]
       
       change_table <- merge(result, change_table)
       change_table$.UID <- NULL
@@ -399,7 +401,8 @@ server <- function(input, output, session) {
       result_corr$match <- NULL
       result_corr$new_match_status <- "match"
       
-      change_table <- bind_rows(change_table, result_corr)
+      # Need to change to rbind once there is a method that handles matchr_sig
+      change_table <- dplyr::bind_rows(change_table, result_corr)
       change_table <- change_table[order(
         change_table$matrix, change_table$x_index, change_table$y_index),]
 

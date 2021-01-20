@@ -8,20 +8,26 @@
 #' @param remove_duplicates TKTK
 #' @param batch_size TKTK
 #' @param show_names TKTK
-#' @param corr_threshold TKTK
+#' @param corr_thresh TKTK
 #' @param previous TKTK
 #' @return TKTK
 #' @export
 
 compare_images <- function(result, remove_duplicates = TRUE, 
                            batch_size = 100, show_names = FALSE, 
-                           corr_threshold = 0.9995, previous = NULL) {
+                           corr_thresh = 0.9995, previous = TRUE) {
   
   # Error checking and object initialization
   stopifnot(is.data.frame(result), is.logical(remove_duplicates))
   result$.UID <- paste0("id-", formatC(seq_len(nrow(
     result)), width = floor(log10(nrow(result))) + 1, flag = "0"))
   result_full <- result
+  
+  # Subset table if previous is TRUE
+  if (previous && suppressWarnings(!is.null(result$confirmed))) {
+    result <- result[result$confirmed == FALSE,]
+    result$confirmed <- NULL
+  }
   
   # Create temp objects and subfolders
   temp_dir <- tempfile()
@@ -52,7 +58,7 @@ compare_images <- function(result, remove_duplicates = TRUE,
     x_sig <- result$x_sig[!duplicated(field(result$x_sig, "file"))]
     x_matches <- match_signatures(x_sig)
     x_matches <- identify_matches(x_matches)
-    x_matches <- x_matches[x_matches$correlation >= corr_threshold,]
+    x_matches <- x_matches[x_matches$correlation >= corr_thresh,]
     
     # Group x images together by correlation
     x_matches <- mapply(function(x, y) c(x, y), field(x_matches$x_sig, "file"),
@@ -99,7 +105,7 @@ compare_images <- function(result, remove_duplicates = TRUE,
     y_matches <- result[!is.na(result$x_id),]$y_sig
     y_matches <- match_signatures(y_matches)
     y_matches <- identify_matches(y_matches)
-    y_matches <- y_matches[y_matches$correlation >= corr_threshold,]
+    y_matches <- y_matches[y_matches$correlation >= corr_thresh,]
     
     # Group y images together by correlation
     y_matches <- mapply(function(x, y) c(x, y), field(y_matches$x_sig, "file"),
@@ -159,15 +165,16 @@ compare_images <- function(result, remove_duplicates = TRUE,
   }
   
   # Remove results with perfect correlation
-  result_corr <- result[result$correlation >= corr_threshold,]
-  result <- result[result$correlation < corr_threshold,]
+  result_corr <- result[result$correlation >= corr_thresh,]
+  result <- result[result$correlation < corr_thresh,]
   
   # Launch Shiny app if Shiny is present
   if (requireNamespace("shiny", quietly = TRUE)) {
     shiny::shinyOptions(result = result, result_full = result_full, 
                         result_corr = result_corr, x_dir = x_dir, y_dir = y_dir,
                         remove_duplicates = remove_duplicates,
-                        batch_size = batch_size, show_names = show_names)
+                        batch_size = batch_size, show_names = show_names,
+                        corr_thresh = corr_thresh)
     if (remove_duplicates) shiny::shinyOptions(result_b = result_b)
     output <- shiny::runApp(appDir = system.file("compare_images",
                                                  package = "matchr"))

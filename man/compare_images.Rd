@@ -9,8 +9,8 @@ compare_images(
   remove_duplicates = TRUE,
   batch_size = 100,
   show_names = FALSE,
-  corr_threshold = 0.9995,
-  previous = NULL
+  corr_thresh = 0.9995,
+  previous = TRUE
 )
 }
 \arguments{
@@ -22,7 +22,7 @@ compare_images(
 
 \item{show_names}{TKTK}
 
-\item{corr_threshold}{TKTK}
+\item{corr_thresh}{TKTK}
 
 \item{previous}{TKTK}
 }

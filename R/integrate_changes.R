@@ -11,22 +11,22 @@
 
 integrate_changes <- function(result, change_table) {
 
-  stopifnot(is.data.frame(result))
-
-  result <- merge(result, change_table, all.x = TRUE)
-
+  stopifnot(is.data.frame(result), is.data.frame(change_table))
+  result <- merge(result, change_table[c(1:3, 6:7)], all.x = TRUE)
   stopifnot(sum(!is.na(result$new_match_status), na.rm = TRUE) ==
               nrow(change_table))
-
-  result[!is.na(result$new_match_status),]$confirmation <-
+  result[!is.na(result$new_match_status),]$match <-
     result[!is.na(result$new_match_status),]$new_match_status
 
-  result$new_match_status <- NULL
+  # Keep confirmed column if it already exists
+  if (suppressWarnings(!is.null(result$confirmed))) {
+    result$confirmed <- ifelse(is.na(result$new_match_status), result$confirmed,
+                               TRUE)
+  } else result$confirmed <- ifelse(is.na(result$new_match_status), FALSE, TRUE)
 
-  if (requireNamespace("dplyr", quietly = TRUE)) result <-
-    dplyr::as_tibble(result)
+  result$new_match_status <- NULL
+  if (requireNamespace("dplyr", quietly = TRUE)) result <- dplyr::as_tibble(
+    result)
 
   return(result)
 }
-
-
