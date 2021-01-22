@@ -10,7 +10,8 @@ compare_images(
   batch_size = 100,
   show_names = FALSE,
   corr_thresh = 0.9995,
-  previous = TRUE
+  previous = TRUE,
+  quiet = FALSE
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ compare_images(
 \item{corr_thresh}{TKTK}
 
 \item{previous}{TKTK}
+
+\item{quiet}{TKTK}
 }
 \value{
 TKTK

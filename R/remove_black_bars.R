@@ -31,17 +31,18 @@ remove_black_bars <- function(x) {
   if (sum(rm_total < 0.005) > 0) {
     
     black_strips <- which(rm_total < 0.005)
-    black_strips <- black_strips[apply(x[black_strips,,1:3], 1, function(x) 
-      sum(x > 0.02)) == 0]
+    black_strips <- black_strips[apply(x[black_strips,,1:3, drop = FALSE], 1, 
+                                       function(x) sum(x > 0.02)) == 0]
     
-    if (black_strips[1] != 1) top_bound <- 1 else {
+    if (length(black_strips) == 0 || black_strips[1] != 1) top_bound <- 1 else {
       # Get largest index position which is in a continuous sequence with 1
       top_bound <- sapply(seq_along(black_strips), function(x) 
         length(seq_len(black_strips[x])) == length((black_strips[seq_len(x)])))
       top_bound <- max(which(top_bound)) + 1L
     }
     
-    if (black_strips[length(black_strips)] != length(rm_total)) {
+    if (length(black_strips) == 0 || 
+        black_strips[length(black_strips)] != length(rm_total)) {
       bottom_bound <- length(rm_total)
     } else {
       # Get smallest index position which is in a continuous sequence with end

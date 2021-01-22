@@ -4,14 +4,14 @@
 
 # Load objects
 result <- shiny::getShinyOption("result")
-result_full <- shiny::getShinyOption("result_full")
 x_dir <- shiny::getShinyOption("x_dir")
 y_dir <- shiny::getShinyOption("y_dir")
 remove_duplicates <- shiny::getShinyOption("remove_duplicates")
 batch_size <- shiny::getShinyOption("batch_size")
 show_names <- shiny::getShinyOption("show_names")
 corr_thresh <- shiny::getShinyOption("corr_thresh")
-if (remove_duplicates) result_b <- shiny::getShinyOption("result_b")
+previous <- shiny::getShinyOption("previous")
+quiet <- shiny::getShinyOption("quiet")
 shiny::addResourcePath("x", x_dir)
 shiny::addResourcePath("y", y_dir)
 
@@ -23,6 +23,15 @@ ui <- shiny::fluidPage(
   # Load waiter and shinyjs
   waiter::use_waiter(),
   shinyjs::useShinyjs(),
+  
+  # Loading screen
+  waiter::waiter_show_on_load(
+    html = shiny::tagList(
+      shiny::strong(h1(
+        "matchr image comparison", style = 
+          "color:#FFFFFF; font-family: Futura, Helvetica, Arial, sans-serif;")
+      ), waiter::spin_3circles()), color = "#5A70BA"),
+  waiter::waiter_hide_on_render("image_2"),
   
   # App title
   shiny::titlePanel(shiny::strong(paste0(
@@ -67,7 +76,8 @@ ui <- shiny::fluidPage(
       "save_t_4", "Save changes and exit"), align = "right")),
     style = "background-color:#FFFFFF;color:#000000;"),
   
-  shiny::fluidRow(shiny::hr(), style = "background-color:#FFFFFF;color:#000000;"),
+  shiny::fluidRow(shiny::hr(), 
+                  style = "background-color:#FFFFFF;color:#000000;"),
   
   # Display images
   shiny::fluidRow(
@@ -121,14 +131,7 @@ ui <- shiny::fluidPage(
   # Tags
   style = "background-color:#5A70BA;color:#FFFFFF;",
   shiny::tags$head(shiny::tags$style(HTML(
-    '* {font-family: Futura, Helvetica, Arial, sans-serif !important};'))),
-  
-  # Loading screen
-  waiter::waiter_show_on_load(
-    html = shiny::tagList(
-      shiny::strong(h1("matchr image comparison", style = 
-           "color:#FFFFFF; font-family: Futura, Helvetica, Arial, sans-serif;")
-           ), waiter::spin_3circles()), color = "#5A70BA")
+    '* {font-family: Futura, Helvetica, Arial, sans-serif !important};')))
   
 )
 
@@ -140,6 +143,153 @@ server <- function(input, output, session) {
   ## Load objects --------------------------------------------------------------
   
   # These are in server to come after loading screen
+  result$.UID <- paste0("id-", formatC(seq_len(nrow(
+    result)), width = floor(log10(nrow(result))) + 1, flag = "0"))
+  result_full <- result
+  
+  # Subset table if previous is TRUE
+  if (previous && suppressWarnings(!is.null(result$confirmed))) {
+    result <- result[result$confirmed == FALSE,]
+    result$confirmed <- NULL
+  }
+  
+  # Remove duplicates
+  if (remove_duplicates) {
+    
+    # waiter::waiter_update(
+    #   html = shiny::tagList(
+    #     shiny::strong(h1(
+    #       "Removing duplicates", style = 
+    #         "color:#FFFFFF; font-family: Futura, Helvetica, Arial, sans-serif;")
+    #     ), waiter::spin_3circles()))
+    
+    # Helpers
+    can_merge <- function(x, y) length(intersect(x, y)) > 0
+    merge_fun <- function(x, y) sort(union(x, y))
+    reduce_fun <- function(img_list) {
+      Reduce(function(acc, curr) {
+        curr_vec <- curr[[1]]
+        to_merge_id_x <- Position(function(x) can_merge(x, curr_vec), acc)
+        if (is.na(to_merge_id_x)) acc[[length(acc) + 1]] <- curr_vec else {
+          acc[[to_merge_id_x]] <- merge_fun(acc[[to_merge_id_x]], curr_vec)
+        }
+        return(acc)
+      }, img_list)
+    }
+    
+    # Identify x images with correlation ~= 1
+    x_sig <- result$x_sig[!duplicated(field(result$x_sig, "file"))]
+    x_matches <- match_signatures(x_sig)
+    x_matches <- identify_matches(x_matches)
+    x_matches <- x_matches[x_matches$correlation >= corr_thresh,]
+    
+    # Group x images together by correlation
+    x_matches <- mapply(function(x, y) c(x, y), field(x_matches$x_sig, "file"),
+                        field(x_matches$y_sig, "file"), SIMPLIFY = FALSE, 
+                        USE.NAMES = FALSE)
+    
+    # Add duplicates
+    dup_x <- table(field(result$x_sig, "file"))
+    dup_x <- dup_x[dup_x >= 2]
+    dup_x <- lapply(names(dup_x), function(x) x)
+    
+    # Reduce
+    x_matches <- c(x_matches, dup_x)
+    x_matches <- reduce_fun(Map(list, x_matches))
+    
+    # Check for duplication
+    while (length(unique(unlist(x_matches))) != 
+           length(unlist(lapply(x_matches, unique)))) {
+      x_all <- unlist(lapply(x_matches, unique))
+      x_pos <- x_matches[sapply(x_matches, function(x) 
+        any(x_all[which(duplicated(x_all))] %in% x))]
+      x_neg <- x_matches[!sapply(x_matches, function(x) 
+        any(x_all[which(duplicated(x_all))] %in% x))]
+      x_matches <- reduce_fun(c(list(x_neg), lapply(x_pos, list)))
+    }
+    
+    # Create x table
+    if (requireNamespace("dplyr", quietly = TRUE)) {
+      x_table <- lapply(seq_along(x_matches), function(n) 
+        dplyr::tibble(x_id = n, x_name = x_matches[[n]]))
+      x_table <- dplyr::bind_rows(x_table)
+    } else {
+      x_table <- lapply(seq_along(x_matches), function(n) 
+        data.frame(x_id = n, x_name = x_matches[[n]]))
+      x_table <- do.call(rbind, x_table)
+    }
+    x_table <- x_table[!duplicated(x_table),]
+    
+    # Join IDs to result table
+    result$x_name <- field(result$x_sig, "file")
+    result <- merge(result, x_table, all = TRUE)
+    
+    # Identify y images with correlation ~= 1 with counterparts in x_table
+    y_matches <- result[!is.na(result$x_id),]$y_sig
+    y_matches <- match_signatures(y_matches)
+    y_matches <- identify_matches(y_matches)
+    y_matches <- y_matches[y_matches$correlation >= corr_thresh,]
+    
+    # Group y images together by correlation
+    y_matches <- mapply(function(x, y) c(x, y), field(y_matches$x_sig, "file"),
+                        field(y_matches$y_sig, "file"), SIMPLIFY = FALSE, 
+                        USE.NAMES = FALSE)
+    
+    # Add duplicates
+    dup_y <- table(field(result$y_sig, "file"))
+    dup_y <- dup_y[dup_y >= 2]
+    dup_y <- lapply(names(dup_y), function(x) x)
+    
+    # Reduce
+    y_matches <- c(y_matches, dup_y)
+    y_matches <- reduce_fun(Map(list, y_matches))
+    
+    # Check for duplication
+    while (length(unique(unlist(y_matches))) !=
+           length(unlist(lapply(y_matches, unique)))) {
+      y_all <- unlist(lapply(y_matches, unique))
+      y_pos <- y_matches[sapply(y_matches, function(x) 
+        any(y_all[which(duplicated(y_all))] %in% x))]
+      y_neg <- y_matches[!sapply(y_matches, function(x) 
+        any(y_all[which(duplicated(y_all))] %in% x))]
+      y_matches <- reduce_fun(c(list(y_neg), lapply(y_pos, list)))
+    }
+    
+    # Create y table
+    if (requireNamespace("dplyr", quietly = TRUE)) {
+      y_table <- lapply(seq_along(y_matches), function(n) 
+        dplyr::tibble(y_id = n, y_name = y_matches[[n]]))
+      y_table <- dplyr::bind_rows(y_table)
+    } else {
+      y_table <- lapply(seq_along(y_matches), function(n) 
+        data.frame(y_id = n, y_name = y_matches[[n]]))
+      y_table <- do.call(rbind, y_table)
+    }
+    y_table <- y_table[!duplicated(y_table),]
+    
+    # Join IDs to result table
+    result$y_name <- field(result$y_sig, "file")
+    result <- merge(result, y_table, all = TRUE)
+    
+    # Create trimmed result table
+    result_b <- result[!is.na(result$x_id) & !is.na(result$y_id),]
+    result_b <- result_b[order(result_b$x_id, result_b$y_id, 
+                               -1 * result_b$correlation),]
+    result <- 
+      dplyr::bind_rows(result_b[!duplicated(result_b[c("x_id", "y_id")]),], 
+                       result[is.na(result$x_id) | is.na(result$y_id),])
+    result <- result[order(result$.UID),]
+    if (requireNamespace("dplyr", quietly = TRUE)) {
+      result <- dplyr::as_tibble(result)}
+    
+  } else {
+    result$x_name <- field(result$x_sig, "file")
+    result$y_name <- field(result$y_sig, "file")
+  }
+  
+  # Remove results with perfect correlation
+  result <- result[result$correlation < corr_thresh,]
+  
   # Copy images to temp folders
   file.copy(result$x_name, x_dir)
   file.copy(result$y_name, y_dir)
