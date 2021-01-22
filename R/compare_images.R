@@ -54,7 +54,7 @@ compare_images <- function(result, remove_duplicates = TRUE,
   warning("For interactive image comparison, install the \"shiny\" package. ",
           "A maximum of 1000 image pairs will be shown in the Viewer.",
           call. = FALSE)
-  viewer <- getOption("viewer")
+  viewer <- getOption("viewer", default = utils::browseURL)
   
   # Copy images to temp folders
   result <- result[1:min(nrow(result), 1000),]
@@ -115,8 +115,16 @@ compare_images <- function(result, remove_duplicates = TRUE,
   html_file <- file.path(temp_dir, "index.html")
   code <- paste(code_head, image_elements, code_foot, sep = "\n")
   writeLines(text = code, con = html_file)
-  if (!is.null(viewer)) viewer(html_file) else utils::browseURL(html_file)
-  # unlink(temp_dir, recursive = TRUE)
-  invisible(result)
+  
+  if (interactive()) {
+    viewer(html_file)
+    # Allow enough time to render HTML
+    Sys.sleep(2)
+    unlink(temp_dir, recursive = TRUE)
+    return(invisible(result))
+  } else {
+    unlink(temp_dir, recursive = TRUE)
+    return(code)
+  }
   
 }

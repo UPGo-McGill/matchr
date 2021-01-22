@@ -37,7 +37,7 @@ test_long_sig <- suppressWarnings(create_signature(urls))
 test_match <- match_signatures(test_long_sig)
 
 # identify_matches
-test_identify <- identify_matches(test_match)
+test_identify <- identify_matches(test_match, confirm = FALSE)
 
 # confirm_matches
 test_confirm <- confirm_matches(test_identify)
