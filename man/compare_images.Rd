@@ -7,30 +7,36 @@
 compare_images(
   result,
   remove_duplicates = TRUE,
-  batch_size = 100,
+  batch_size = 100L,
   show_names = FALSE,
   corr_thresh = 0.9995,
-  previous = TRUE,
-  quiet = FALSE
+  previous = TRUE
 )
 }
 \arguments{
-\item{result}{TKTK}
+\item{result}{A data frame produced by \code{\link{identify_matches}} (with
+confirm = TRUE or with \code{\link{confirm_matches}} subsequently run on the
+results).}
 
 \item{remove_duplicates}{TKTK}
 
-\item{batch_size}{TKTK}
+\item{batch_size}{An integer scalar. The number of images to display at a
+time in the Shiny app (default 100).}
 
 \item{show_names}{TKTK}
 
 \item{corr_thresh}{TKTK}
 
 \item{previous}{TKTK}
-
-\item{quiet}{TKTK}
 }
 \value{
-TKTK
+If the Shiny package is present, a data frame with the same fields as
+the input \code{result}, except that the field \code{match} will be replaced with
+\code{new_match_status}, which is a character vector with possible entries
+"match" and "no match". The output will have one row for each image pairing
+that was confirmed, which is determined by how many pages into the Shiny app
+the user proceeded, and thus how many pairings were viewed. If all pages are
+viewed, then the output will have the same number of rows as the input.
 }
 \description{
 \code{compare_images} TKTK

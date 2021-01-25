@@ -45,14 +45,13 @@ substantially increased processing time.}
 it return status updates throughout the function (default)?}
 }
 \value{
-TKTK A vector of class \code{matchr_matrix}. This object is a list
-containing a number of correlation matrices (each of class \code{matchr_matrix})
-equal to the number of aspect-ratio categories. If \code{x} and \code{y} are both
-present, each matrix will have \code{length(x)} rows and \code{length(y)} columns, and
-for the matrix \code{Q} the cell \code{Q[i, j]} will be the Pearson correlation
-coefficient between images \code{x[[i]]} and \code{y[[j]]}. If \code{y} is not present, each
-matrix will be square, and the cell \code{Q[i, j]} will be the correlation between
-images \code{x[[i]]} and \code{x[[j]]}.
+A vector of class \code{matchr_matrix}, each element of which is a
+correlation matrix for the \code{x} and \code{y} signatures falling in a given aspect
+ratio range. If \code{x} and \code{y} are both present, each matrix will have
+\code{length(x)} rows and \code{length(y)} columns, and for the matrix \code{Q} the cell
+\code{Q[i, j]} will be the Pearson correlation coefficient between images \code{x[[i]]}
+and \code{y[[j]]}. If \code{y} is not present, each matrix will be square, and the cell
+\code{Q[i, j]} will be the correlation between images \code{x[[i]]} and \code{x[[j]]}.
 }
 \description{
 \code{match_signatures} takes one or two lists of images and produces a

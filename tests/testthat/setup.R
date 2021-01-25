@@ -42,6 +42,16 @@ test_identify <- identify_matches(test_match, confirm = FALSE)
 # confirm_matches
 test_confirm <- confirm_matches(test_identify)
 
+# integrate_changes
+test_changes <- test_confirm
+test_changes[6,]$match <- "no match"
+test_changes$new_match_status <- test_changes$match
+test_changes$match <- NULL
+test_integrate <- integrate_changes(test_confirm, test_changes)
+test_confirm_2 <- test_confirm
+test_confirm_2$confirmed <- c(TRUE, FALSE, FALSE, FALSE, FALSE, FALSE)
+test_changes_2 <- test_changes[2:6,]
+test_integrate_2 <- integrate_changes(test_confirm_2, test_changes_2)
 
 # Data to be loaded for tests ---------------------------------------------
 

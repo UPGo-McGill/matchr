@@ -43,14 +43,13 @@
 #' substantially increased processing time. 
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
-#' @return TKTK A vector of class `matchr_matrix`. This object is a list
-#' containing a number of correlation matrices (each of class `matchr_matrix`)
-#' equal to the number of aspect-ratio categories. If `x` and `y` are both
-#' present, each matrix will have `length(x)` rows and `length(y)` columns, and
-#' for the matrix `Q` the cell `Q[i, j]` will be the Pearson correlation
-#' coefficient between images `x[[i]]` and `y[[j]]`. If `y` is not present, each
-#' matrix will be square, and the cell `Q[i, j]` will be the correlation between
-#' images `x[[i]]` and `x[[j]]`.
+#' @return A vector of class `matchr_matrix`, each element of which is a
+#' correlation matrix for the `x` and `y` signatures falling in a given aspect
+#' ratio range. If `x` and `y` are both present, each matrix will have 
+#' `length(x)` rows and `length(y)` columns, and for the matrix `Q` the cell 
+#' `Q[i, j]` will be the Pearson correlation coefficient between images `x[[i]]` 
+#' and `y[[j]]`. If `y` is not present, each matrix will be square, and the cell 
+#' `Q[i, j]` will be the correlation between images `x[[i]]` and `x[[j]]`.
 #' @export
 
 match_signatures <- function(x, y = NULL, method = "grey",

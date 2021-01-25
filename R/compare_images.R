@@ -4,24 +4,32 @@
 #'
 #' TKTK
 #'
-#' @param result TKTK
+#' @param result A data frame produced by \code{\link{identify_matches}} (with
+#' confirm = TRUE or with \code{\link{confirm_matches}} subsequently run on the
+#' results).
 #' @param remove_duplicates TKTK
-#' @param batch_size TKTK
+#' @param batch_size An integer scalar. The number of images to display at a 
+#' time in the Shiny app (default 100).
 #' @param show_names TKTK
 #' @param corr_thresh TKTK
 #' @param previous TKTK
-#' @param quiet TKTK
-#' @return TKTK
+#' @return If the Shiny package is present, a data frame with the same fields as
+#' the input `result`, except that the field `match` will be replaced with
+#' `new_match_status`, which is a character vector with possible entries
+#' "match" and "no match". The output will have one row for each image pairing
+#' that was confirmed, which is determined by how many pages into the Shiny app
+#' the user proceeded, and thus how many pairings were viewed. If all pages are
+#' viewed, then the output will have the same number of rows as the input.
 #' @export
 
 compare_images <- function(result, remove_duplicates = TRUE, 
-                           batch_size = 100, show_names = FALSE, 
-                           corr_thresh = 0.9995, previous = TRUE,
-                           quiet = FALSE) {
+                           batch_size = 100L, show_names = FALSE, 
+                           corr_thresh = 0.9995, previous = TRUE) {
   
   # Error checking and object initialization
   stopifnot(is.data.frame(result), is.numeric(c(batch_size, corr_thresh)),
-            is.logical(c(remove_duplicates, show_names, previous, quiet)))
+            is.logical(c(remove_duplicates, show_names, previous)))
+  if (!is.integer(batch_size)) batch_size <- floor(batch_size)
   temp_dir <- tempfile()
   dir.create(temp_dir)
   x_dir <- paste0(temp_dir, "/x")
@@ -43,8 +51,7 @@ compare_images <- function(result, remove_duplicates = TRUE,
     shiny::shinyOptions(result = result, x_dir = x_dir, y_dir = y_dir,
                         remove_duplicates = remove_duplicates,
                         batch_size = batch_size, show_names = show_names,
-                        corr_thresh = corr_thresh, previous = previous,
-                        quiet = quiet)
+                        corr_thresh = corr_thresh, previous = previous)
     output <- shiny::runApp(appDir = system.file("compare_images",
                                                  package = "matchr"))
     return(output)

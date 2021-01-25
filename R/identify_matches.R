@@ -36,8 +36,14 @@ identify_matches <- function(img_matrix, threshold = 0.975, confirm = TRUE,
   stopifnot(is_matrix(img_matrix), is.numeric(threshold), is.logical(confirm), 
             is.logical(quiet))
 
+  # Initialize progress reporting
+  handler_matchr("Identifying matches, batch")
+  prog_bar <- as.logical(as.numeric(!quiet) * progressr::handlers(global = NA))
+  pb <- progressr::progressor(steps = vec_size(img_matrix), enable = prog_bar)
+  
   # Find matches
   match_list <- lapply(seq_along(img_matrix), function(x) {
+    pb()
     match_index <- which(field(img_matrix[x], "matrix")[[1]] >= threshold,
                          arr.ind = TRUE)
     dimnames(match_index)[[2]] <- c("x_index", "y_index")
