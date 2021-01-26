@@ -23,16 +23,20 @@ ui <- shiny::fluidPage(
   waiter::use_waiter(),
   waiter::use_hostess(),
   shinyjs::useShinyjs(),
-  
+  # tags$head(tags$style(".ldBar path.mainline{stroke-width: 25}")),
   # Loading screen
   waiter::waiter_show_on_load(
     html = shiny::tagList(
       shiny::strong(shiny::h1(
-        "matchr image comparison", style = 
-          "color:#FFFFFF; font-family: Futura, Helvetica, Arial, sans-serif;")), 
-      shiny::br(),
-      shiny::h3(""),
-      waiter::spin_3circles()), color = "#5A70BA"),
+        "matchr image comparison", style =
+          "color:#FFFFFF; font-family: Futura, Helvetica, Arial, sans-serif;")),
+      shiny::div(style = "height: 40px;"),
+      shiny::div(waiter::spin_3circles(), style = "height: 70px;"),
+      shiny::div(style = "height: 20px;"),
+      shiny::div(style = "height: 30px;"), # 20 with text, 30 without
+      shiny::div(style = "height: 45px;")), 
+    color = "#5A70BA"),
+    
   waiter::waiter_hide_on_render("image_2"),
   
   # App title
@@ -142,35 +146,37 @@ ui <- shiny::fluidPage(
 
 server <- function(input, output, session) {
   
-  # Helpers
-  can_merge <- function(x, y) length(intersect(x, y)) > 0
-  merge_fun <- function(x, y) sort(union(x, y))
-  reduce_fun <- function(img_list, xy = NULL) {
+  # Reduce helper
+  reduce <- function(x, hostess_check = "none") {
+    iterations <- floor(length(x) / 48)
     
-    iterations <- ceiling(length(img_list) / 100)
-    n <- 0
-    
-    Reduce(function(acc, curr) {
-      n <- n + 1
-      n <<- n
-      if (xy == "x") {
-        if (n %% iterations == 0) hostess_x$set(n / iterations)  
-      } else {
-        if (n %% iterations == 0) hostess_y$set(n / iterations)  
-      }
+    out <- Reduce(function(a, n) {
+      if (hostess_check == "x" && n %% iterations == 0) hostess$set(n / iterations + 2)
+      if (hostess_check == "y" && n %% iterations == 0) hostess$set(n / iterations + 52)
+      merge_index <- lapply(a, intersect, x[[n]])
       
-      curr_vec <- curr[[1]]
-      to_merge_id_x <- Position(function(x) can_merge(x, curr_vec), acc)
-      if (is.na(to_merge_id_x)) acc[[length(acc) + 1]] <- curr_vec else {
-        acc[[to_merge_id_x]] <- merge_fun(acc[[to_merge_id_x]], curr_vec)
-      }
-      return(acc)
-    }, img_list)
+      if (sum(lengths(merge_index)) > 0) {
+        
+        merge_index <- lengths(merge_index)
+        merge_index <- which(merge_index > 0)
+        
+        merged <- a[merge_index]
+        merged <- unlist(merged)
+        merged <- union(merged, x[[n]])
+        merged <- sort(merged)
+        merged <- list(merged)
+        
+        not_merged <- a[-merge_index]
+        out <- c(merged, not_merged)
+        
+      } else out <- c(a, list(x[[n]]))
+    }, seq_along(x), init = list())
+    
+    stopifnot(length(unique(unlist(out))) == length(unlist(lapply(out, unique))))
+    out
   }
   
-  hostess_x <- waiter::Hostess$new("x")
-  hostess_y <- waiter::Hostess$new("y")
-  
+
   ## Load objects --------------------------------------------------------------
   
   # These are in server to come after loading screen
@@ -184,29 +190,34 @@ server <- function(input, output, session) {
     result$confirmed <- NULL
   }
   
-  shiny::tagList(
-    shiny::strong(shiny::h1(
-      "matchr image comparison", style = 
-        "color:#FFFFFF; font-family: Futura, Helvetica, Arial, sans-serif;")), 
-    shiny::br(),
-    waiter::spin_3circles())
   # Remove duplicates
   if (remove_duplicates) {
+    
+    hostess <- waiter::Hostess$new("dup_1")
     
     waiter::waiter_update(
       html = shiny::tagList(
         shiny::strong(shiny::h1(
           "matchr image comparison", style =
-            "color:#FFFFFF; font-family: Futura, Helvetica, Arial, sans-serif;")
-        ), 
-        shiny::br(),
-        shiny::span(shiny::h3("Identifying 'x' duplicates", style =
-                                "color:#FFFFFF; font-family: Futura, Helvetica, Arial, sans-serif;"),
-                    waiter::spin_3circles())))
+            "color:#FFFFFF; font-family: Futura, Helvetica, Arial, sans-serif;")),
+        shiny::div(style = "height: 40px;"),
+        shiny::div(style = "height: 70px;"),
+        shiny::div(style = "height: 20px;"),
+        shiny::div(shiny::h4("Identifying `x` duplicates"),
+                   style = "height: 20px;"), # 20 with text, 30 without
+        shiny::div(style = "height: 45px;"),
+        shiny::span(waiter::hostess_loader("dup_1", preset = "circle",
+                                           text_color = "white",
+                                           class = "label-center",
+                                           stroke_color = "white",
+                                           center_page = TRUE))))
     
     # Identify x images with correlation ~= 1
     x_sig <- result$x_sig[!duplicated(field(result$x_sig, "file"))]
     x_matches <- match_signatures(x_sig)
+    
+    hostess$set(1)
+    
     x_matches <- identify_matches(x_matches)
     x_matches <- x_matches[x_matches$correlation >= corr_thresh,]
     
@@ -215,42 +226,37 @@ server <- function(input, output, session) {
                         field(x_matches$y_sig, "file"), SIMPLIFY = FALSE, 
                         USE.NAMES = FALSE)
     
+    hostess$set(2)
+    
     # Add duplicates
     dup_x <- table(field(result$x_sig, "file"))
     dup_x <- dup_x[dup_x >= 2]
     dup_x <- lapply(names(dup_x), function(x) x)
     
+    hostess <- waiter::Hostess$new("dup_2", min = 1, max = 50)
+    
     waiter::waiter_update(
       html = shiny::tagList(
-        # shiny::strong(shiny::h1(
-        #   "matchr image comparison", style =
-        #     "color:#FFFFFF; font-family: Futura, Helvetica, Arial, sans-serif;")
-        # ), 
-        # shiny::h3("Removing 'x' duplicates", style = 
-        #             "color: #FFFFFF; font-family: Futura, Helvetica, Arial, sans-serif;"),
-        # shiny::br(),
-        # shiny::br(),
-        # shiny::br(),
-        # shiny::br(),
-        shiny::span(waiter::hostess_loader("x", preset = "line", text_color = "white",
-                               class = "label-center", stroke_color = "white"#,
-                               #center_page = TRUE
-                               ))))
+        shiny::strong(shiny::h1(
+          "matchr image comparison", style =
+            "color:#FFFFFF; font-family: Futura, Helvetica, Arial, sans-serif;")),
+        shiny::div(style = "height: 40px;"),
+        shiny::div(style = "height: 70px;"),
+        shiny::div(style = "height: 20px;"),
+        shiny::div(shiny::h4("Removing `x` duplicates"),
+                   style = "height: 20px;"), # 20 with text, 30 without
+        shiny::div(style = "height: 45px;"),
+        shiny::span(waiter::hostess_loader("dup_2", preset = "circle",
+                                           text_color = "white",
+                                           class = "label-center",
+                                           stroke_color = "white",
+                                           center_page = TRUE,
+                                           "data-value" = 2,
+                                           "data-transition-in" = FALSE))))
     
     # Reduce
     x_matches <- c(x_matches, dup_x)
-    x_matches <- reduce_fun(Map(list, x_matches), "x")
-    
-    # Check for duplication
-    while (length(unique(unlist(x_matches))) != 
-           length(unlist(lapply(x_matches, unique)))) {
-      x_all <- unlist(lapply(x_matches, unique))
-      x_pos <- x_matches[sapply(x_matches, function(x) 
-        any(x_all[which(duplicated(x_all))] %in% x))]
-      x_neg <- x_matches[!sapply(x_matches, function(x) 
-        any(x_all[which(duplicated(x_all))] %in% x))]
-      x_matches <- reduce_fun(c(list(x_neg), lapply(x_pos, list)))
-    }
+    x_matches <- reduce(x_matches, "x")
     
     # Create x table
     if (requireNamespace("dplyr", quietly = TRUE)) {
@@ -268,17 +274,34 @@ server <- function(input, output, session) {
     result$x_name <- field(result$x_sig, "file")
     result <- merge(result, x_table, all = TRUE)
     
+    hostess <- waiter::Hostess$new("dup_3")
+    
     waiter::waiter_update(
       html = shiny::tagList(
         shiny::strong(shiny::h1(
-          "Identifying 'y' duplicates", style =
-            "color:#FFFFFF; font-family: Futura, Helvetica, Arial, sans-serif;")
-        ), waiter::spin_3circles()))
-    
+          "matchr image comparison", style =
+            "color:#FFFFFF; font-family: Futura, Helvetica, Arial, sans-serif;")),
+        shiny::div(style = "height: 40px;"),
+        shiny::div(style = "height: 70px;"),
+        shiny::div(style = "height: 20px;"),
+        shiny::div(shiny::h4("Identifying `y` duplicates"),
+                   style = "height: 20px;"), # 20 with text, 30 without
+        shiny::div(style = "height: 45px;"),
+        shiny::span(waiter::hostess_loader("dup_3", preset = "circle",
+                                           text_color = "white",
+                                           class = "label-center",
+                                           stroke_color = "white",
+                                           center_page = TRUE,
+                                           "data-value" = 50,
+                                           "data-transition-in" = FALSE))))
     
     # Identify y images with correlation ~= 1 with counterparts in x_table
-    y_matches <- result[!is.na(result$x_id),]$y_sig
-    y_matches <- match_signatures(y_matches)
+    y_sig <- result[!is.na(result$x_id),]$y_sig
+    y_sig <- y_sig[!duplicated(field(y_sig, "file"))]
+    y_matches <- match_signatures(y_sig)
+    
+    hostess$set(51)
+    
     y_matches <- identify_matches(y_matches)
     y_matches <- y_matches[y_matches$correlation >= corr_thresh,]
     
@@ -287,34 +310,39 @@ server <- function(input, output, session) {
                         field(y_matches$y_sig, "file"), SIMPLIFY = FALSE, 
                         USE.NAMES = FALSE)
     
+    hostess$set(52)
+    
     # Add duplicates
-    dup_y <- table(field(result$y_sig, "file"))
+    dup_y <- result[!is.na(result$x_id),]$y_sig
+    dup_y <- table(field(dup_y, "file"))
     dup_y <- dup_y[dup_y >= 2]
     dup_y <- lapply(names(dup_y), function(x) x)
+    
+    
+    hostess <- waiter::Hostess$new("dup_4")
     
     waiter::waiter_update(
       html = shiny::tagList(
         shiny::strong(shiny::h1(
-          "Removing 'y' duplicates", style =
-            "color:#FFFFFF; font-family: Futura, Helvetica, Arial, sans-serif;")
-        ),
-        waiter::hostess_loader("y", preset = "line", text_color = "white",
-                               class = "label-center")))
+          "matchr image comparison", style =
+            "color:#FFFFFF; font-family: Futura, Helvetica, Arial, sans-serif;")),
+        shiny::div(style = "height: 40px;"),
+        shiny::div(style = "height: 70px;"),
+        shiny::div(style = "height: 20px;"),
+        shiny::div(shiny::h4("Removing `y` duplicates"),
+                   style = "height: 20px;"), # 20 with text, 30 without
+        shiny::div(style = "height: 45px;"),
+        shiny::span(waiter::hostess_loader("dup_4", preset = "circle",
+                                           text_color = "white",
+                                           class = "label-center",
+                                           stroke_color = "white",
+                                           center_page = TRUE,
+                                           "data-value" = 52,
+                                           "data-transition-in" = FALSE))))
     
     # Reduce
     y_matches <- c(y_matches, dup_y)
-    y_matches <- reduce_fun(Map(list, y_matches), "y")
-    
-    # Check for duplication
-    while (length(unique(unlist(y_matches))) !=
-           length(unlist(lapply(y_matches, unique)))) {
-      y_all <- unlist(lapply(y_matches, unique))
-      y_pos <- y_matches[sapply(y_matches, function(x) 
-        any(y_all[which(duplicated(y_all))] %in% x))]
-      y_neg <- y_matches[!sapply(y_matches, function(x) 
-        any(y_all[which(duplicated(y_all))] %in% x))]
-      y_matches <- reduce_fun(c(list(y_neg), lapply(y_pos, list)))
-    }
+    y_matches <- reduce(y_matches, "y")
     
     # Create y table
     if (requireNamespace("dplyr", quietly = TRUE)) {
@@ -622,6 +650,7 @@ server <- function(input, output, session) {
       }
   })
   
+  # hostess_infinite$close()
   waiter::waiter_hide()
   
 }
