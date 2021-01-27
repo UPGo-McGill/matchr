@@ -63,7 +63,7 @@ ui <- shiny::fluidPage(
   
   # App title
   shiny::titlePanel(shiny::strong(paste0(
-    "matchr image comparison for ", prettyNum(nrow(result), big.mark = ","), 
+    "matchr image comparison for ", prettyNum(nrow(change_table), big.mark = ","), 
     " matches"))),
   shiny::fluidRow(style = "height:20px"),
   shiny::fluidRow(style = "height:5px;background-color:#000000"),
@@ -213,7 +213,7 @@ server <- function(input, output, session) {
   if (remove_duplicates) {
     
     # Identify x images with correlation ~= 1
-    x_sig <- result$x_sig[!duplicated(field(result$x_sig, "file"))]
+    x_sig <- result$x_sig[!duplicated(vctrs::field(result$x_sig, "file"))]
     x_matches <- match_signatures(x_sig)
     
     if (prog_check) hostess$set(1)
@@ -222,14 +222,15 @@ server <- function(input, output, session) {
     x_matches <- x_matches[x_matches$correlation >= corr_thresh,]
     
     # Group x images together by correlation
-    x_matches <- mapply(function(x, y) c(x, y), field(x_matches$x_sig, "file"),
-                        field(x_matches$y_sig, "file"), SIMPLIFY = FALSE, 
+    x_matches <- mapply(function(x, y) c(x, y), 
+                        vctrs::field(x_matches$x_sig, "file"),
+                        vctrs::field(x_matches$y_sig, "file"), SIMPLIFY = FALSE, 
                         USE.NAMES = FALSE)
     
     if (prog_check) hostess$set(2)
     
     # Add duplicates
-    dup_x <- table(field(result$x_sig, "file"))
+    dup_x <- table(vctrs::field(result$x_sig, "file"))
     dup_x <- dup_x[dup_x >= 2]
     dup_x <- lapply(names(dup_x), function(x) x)
     x_matches <- c(x_matches, dup_x)
@@ -274,7 +275,7 @@ server <- function(input, output, session) {
     x_table <- x_table[!duplicated(x_table),]
     
     # Join IDs to result table
-    result$x_name <- field(result$x_sig, "file")
+    result$x_name <- vctrs::field(result$x_sig, "file")
     result <- merge(result, x_table, all = TRUE)
     
     if (prog_check) {
@@ -304,7 +305,7 @@ server <- function(input, output, session) {
     
     # Identify y images with correlation ~= 1 with counterparts in x_table
     y_sig <- result[!is.na(result$x_id),]$y_sig
-    y_sig <- y_sig[!duplicated(field(y_sig, "file"))]
+    y_sig <- y_sig[!duplicated(vctrs::field(y_sig, "file"))]
     y_matches <- match_signatures(y_sig)
     
     if (prog_check) hostess$set(51)
@@ -313,15 +314,16 @@ server <- function(input, output, session) {
     y_matches <- y_matches[y_matches$correlation >= corr_thresh,]
     
     # Group y images together by correlation
-    y_matches <- mapply(function(x, y) c(x, y), field(y_matches$x_sig, "file"),
-                        field(y_matches$y_sig, "file"), SIMPLIFY = FALSE, 
+    y_matches <- mapply(function(x, y) c(x, y), 
+                        vctrs::field(y_matches$x_sig, "file"),
+                        vctrs::field(y_matches$y_sig, "file"), SIMPLIFY = FALSE, 
                         USE.NAMES = FALSE)
     
     if (prog_check) hostess$set(52)
     
     # Add duplicates
     dup_y <- result[!is.na(result$x_id),]$y_sig
-    dup_y <- table(field(dup_y, "file"))
+    dup_y <- table(vctrs::field(dup_y, "file"))
     dup_y <- dup_y[dup_y >= 2]
     dup_y <- lapply(names(dup_y), function(x) x)
     y_matches <- c(y_matches, dup_y)
@@ -367,7 +369,7 @@ server <- function(input, output, session) {
     y_table <- y_table[!duplicated(y_table),]
     
     # Join IDs to result table
-    result$y_name <- field(result$y_sig, "file")
+    result$y_name <- vctrs::field(result$y_sig, "file")
     result <- merge(result, y_table, all = TRUE)
     
     # Create trimmed result table
@@ -382,8 +384,8 @@ server <- function(input, output, session) {
       result <- dplyr::as_tibble(result)}
     
   } else {
-    result$x_name <- field(result$x_sig, "file")
-    result$y_name <- field(result$y_sig, "file")
+    result$x_name <- vctrs::field(result$x_sig, "file")
+    result$y_name <- vctrs::field(result$y_sig, "file")
   }
   
   # Remove results with perfect correlation

@@ -27,6 +27,9 @@ integrate_changes <- function(result, change_table) {
   result$new_match_status <- NULL
   if (requireNamespace("dplyr", quietly = TRUE)) result <- dplyr::as_tibble(
     result)
+  
+  result <- result[c("matrix", "x_index", "y_index", "x_sig", "y_sig",
+                     "correlation", "match", "confirmed")]
 
   return(result)
 }
