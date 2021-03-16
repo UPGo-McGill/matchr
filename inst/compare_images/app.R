@@ -63,7 +63,8 @@ ui <- shiny::fluidPage(
   
   # App title
   shiny::titlePanel(shiny::strong(paste0(
-    "matchr image comparison for ", prettyNum(nrow(change_table), big.mark = ","), 
+    "matchr image comparison for ", prettyNum(nrow(result), big.mark = ","), # TKTK any way to get this working with change_table?
+    # "matchr image comparison for ", prettyNum(nrow(change_table), big.mark = ","), 
     " matches"))),
   shiny::fluidRow(style = "height:20px"),
   shiny::fluidRow(style = "height:5px;background-color:#000000"),
