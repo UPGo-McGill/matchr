@@ -52,9 +52,8 @@
 #' `Q[i, j]` will be the correlation between images `x[[i]]` and `x[[j]]`.
 #' @export
 
-match_signatures <- function(x, y = NULL, method = "grey",
-                             compare_ar = TRUE, stretch = 1.2, 
-                             quiet = FALSE) {
+match_signatures <- function(x, y = NULL, method = "grey", compare_ar = TRUE, 
+                             stretch = 1.2, quiet = FALSE) {
   
   # Error handling and object initialization
   stopifnot(is_signature(x), is.logical(c(compare_ar, quiet)),
@@ -112,7 +111,7 @@ match_signatures <- function(x, y = NULL, method = "grey",
   for (i in seq_along(x_list)) {
     if (par_check_vec[i]) {
       par_check <- TRUE
-      x_matrix <- chunk(x_list[[i]], number_of_threads() * 4)
+      x_matrix <- chunk(x_list[[i]], number_of_threads() * 10)
       x_matrix <- lapply(x_matrix, function(x) {
         matrix(unlist(field(x, "signature")), ncol = vec_size(x))})
       y_matrix <- matrix(unlist(field(y_list[[i]], "signature")), 
