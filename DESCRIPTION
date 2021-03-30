@@ -25,6 +25,7 @@ Depends:
 Imports: 
     digest (>= 0.6.27),
     downloader (>= 0.4),
+    memuse (>= 4.0),
     pillar (>= 1.4.7),
     progressr (>= 0.7.0),
     readbitmap (>= 0.1.5),

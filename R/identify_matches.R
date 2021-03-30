@@ -20,8 +20,9 @@
 #' @return A tibble if {dplyr} is installed or a data frame if not, with one
 #' row per identified match, and the following columns:
 #' - `matrix`: The match's index position in the input `matchr_matrix` vector.
-#' - `x_index` and `y_index`: The match's row and column index positions in the 
-#' correlation matrix.
+#' - `list_index`, `x_index` and `y_index`: The match's list, row and column 
+#' index positions in the `matchr_matrix` vector element (which is represented
+#' as a matrix but is actually a list of matrices).
 #' - `x_file` and `y_file`: The file paths for the images which were matched.
 #' -  `correlation`: The Pearson correlation coefficient of the two files'
 #' image signatures.
@@ -39,47 +40,77 @@ identify_matches <- function(img_matrix, threshold = 0.975, confirm = TRUE,
   # Initialize progress reporting
   handler_matchr("Identifying matches, batch")
   prog_bar <- as.logical(as.numeric(!quiet) * progressr::handlers(global = NA))
-  pb <- progressr::progressor(steps = vec_size(img_matrix), enable = prog_bar)
+  pb <- progressr::progressor(steps = sum(sapply(field(img_matrix, "matrix"), 
+                                                 vec_size)), enable = prog_bar)
   
   # Find matches
-  match_list <- lapply(seq_along(img_matrix), function(x) {
-    pb()
-    match_index <- which(field(img_matrix[x], "matrix")[[1]] >= threshold,
-                         arr.ind = TRUE)
-    dimnames(match_index)[[2]] <- c("x_index", "y_index")
-    if (requireNamespace("dplyr", quietly = TRUE)) {
-      match <- dplyr::as_tibble(match_index)
-      } else match <- as.data.frame(match_index)
-    match$matrix <- x
-    match <- match[, c(3, 1, 2)]
-    match$x_sig <- field(img_matrix[x], "x_sig")[[1]][match$x_index]
-    match$y_sig <- field(img_matrix[x], "y_sig")[[1]][match$y_index]
-    match$correlation <- field(img_matrix[x], "matrix")[[1]][match_index]
-    match
+  match_list <- 
+    lapply(seq_along(img_matrix), function(x) {
+      
+      match_index <- lapply(field(img_matrix, "matrix")[[x]], function(y) {
+        pb()
+        m <- which(y >= threshold, arr.ind = TRUE)
+        dimnames(m)[[2]] <- c("x_index", "y_index")
+        m
+      })
+      
+      match <- lapply(seq_along(match_index), function(i) {
+        if (requireNamespace("dplyr", quietly = TRUE)) {
+          match <- dplyr::as_tibble(match_index[[i]])
+        } else match <- as.data.frame(match_index[[i]])
+        match$list_index <- i
+        match$matrix <- x
+        match <- match[c(4, 3, 1, 2)]
+        match
+      })
+      
+      match <-
+        mapply(function(match, match_index, x_sig, matrix) {
+          match$x_sig <- x_sig[match$x_index]
+          match$correlation <- matrix[match_index]
+          match
+        },
+        match, match_index, field(img_matrix, "x_sig")[[x]], 
+        field(img_matrix, "matrix")[[x]], SIMPLIFY = FALSE
+        )
+      
+      if (requireNamespace("dplyr", quietly = TRUE)) {
+        match <- dplyr::bind_rows(match)
+      } else {
+        x_sig <- do.call(c, lapply(match, function(x) x$x_sig))
+        match <- do.call(rbind, lapply(match, function(x) x[,c(1:4, 6)]))
+        match$x_sig <- x_sig
+        match <- match[c(1:4, 6, 5)]
+        }
+      
+      match$y_sig <- field(img_matrix, "y_sig")[[x]][match$y_index]
+      match <- match[c(1:5, 7, 6)]
+      match
     })
-
+  
   # Consolidate and arrange output
   if (requireNamespace("dplyr", quietly = TRUE)) {
     matches <- dplyr::bind_rows(match_list)
   } else {
     x_sig <- do.call(c, lapply(match_list, function(x) x$x_sig))
     y_sig <- do.call(c, lapply(match_list, function(x) x$y_sig))
-    matches <- do.call(rbind, lapply(match_list, function(x) x[,c(1:3, 6)]))
+    matches <- do.call(rbind, lapply(match_list, function(x) x[c(1:4, 7)]))
     matches$x_sig <- x_sig
     matches$y_sig <- y_sig
-    matches <- matches[,c(1:3, 5:6, 4)]
+    matches <- matches[c(1:4, 6:7, 5)]
     }
-  matches <- matches[order(matches$matrix, matches$x_index, matches$y_index),]
-  
+  matches <- matches[order(matches$matrix, matches$list_index, matches$x_index, 
+                           matches$y_index),]
+
   # Remove duplicates
-  matches <- 
+  matches <-
     matches[field(matches$x_sig, "file") != field(matches$y_sig, "file"),]
-  matches$hash <- mapply(function(x, y) sort(c(x, y)), 
-                         field(matches$x_sig, "file"), 
+  matches$hash <- mapply(function(x, y) sort(c(x, y)),
+                         field(matches$x_sig, "file"),
                          field(matches$y_sig, "file"), SIMPLIFY = FALSE)
   matches <- matches[!duplicated(matches$hash),]
   matches$hash <- NULL
-  
+
   # Return output
   if (confirm) matches <- confirm_matches(matches)
   return(matches)

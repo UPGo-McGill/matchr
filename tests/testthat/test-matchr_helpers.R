@@ -17,7 +17,7 @@ test_that("package absences are handled gracefully", {
              "matchr_image"))
   expect_equal(ceiling(sum(create_signature(test_img))), 67)
   r1 <- match_signatures(test_long_sig, compare_ar = FALSE)
-  expect_equal(attr(r1, "x_total"), sum(sapply(field(r1, "matrix"), nrow), 
+  expect_equal(attr(r1, "x_total"), sum(sapply(field(r1, "matrix"), sapply, nrow), 
                                         length(attr(r1, "x_na"))))
   expect_equal(round(sum(match_signatures_pairwise(
     test_identify$x_sig, test_identify$y_sig)), 2), 5.83)

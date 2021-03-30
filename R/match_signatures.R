@@ -41,6 +41,10 @@
 #' this value will possibly catch matches between extremely distorted images,
 #' but at the cost of potentially larger numbers of false positives, and 
 #' substantially increased processing time. 
+#' @param mem_scale A numeric scalar between 0 and 1. What portion of total
+#' system memory should be made available for a single correlation matrix
+#' calculation (default 0.2)? Increasing this value might speed up function
+#' execution, but at the cost of significantly increased system instability.
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
 #' @return A vector of class `matchr_matrix`, each element of which is a
@@ -53,13 +57,14 @@
 #' @export
 
 match_signatures <- function(x, y = NULL, method = "grey", compare_ar = TRUE, 
-                             stretch = 1.2, quiet = FALSE) {
+                             stretch = 1.2, mem_scale = 0.2, quiet = FALSE) {
   
   # Error handling and object initialization
   stopifnot(is_signature(x), is.logical(c(compare_ar, quiet)),
             method %in% c("grey", "gray", "colour", "color", "rgb", "RGB", 
                           "both"))
   if (missing(y)) y <- x else stopifnot(is_signature(y))
+  par_check <- TRUE
   
   # Deal with NAs
   x_na <- x[is.na(x)]
@@ -70,17 +75,18 @@ match_signatures <- function(x, y = NULL, method = "grey", compare_ar = TRUE,
   # Split clusters for compare_ar == TRUE
   if (vec_size(x) < 10 || vec_size(y) < 10) compare_ar <- FALSE
   if (compare_ar == TRUE) {
-    clusters <- get_clusters(x, y, stretch = stretch)
+    clusters <- get_clusters(x, y, stretch = stretch, max_clust = 8)
     x_list <- clusters[[1]]
     y_list <- clusters[[2]]
+    x_sig <- clusters[[1]]
+    y_sig <- clusters[[2]]
+    rm(clusters)
   } else {
     x_list <- list(x)
     y_list <- list(y)
+    x_sig <- list(x)
+    y_sig <- list(y)
   }
-  
-  # Get full signatures for final result
-  x_sig <- x_list
-  y_sig <- y_list
   
   # Prepare method
   if (method %in% c("grey", "gray", "greyscale", "grayscale")) {
@@ -95,41 +101,43 @@ match_signatures <- function(x, y = NULL, method = "grey", compare_ar = TRUE,
                      (sig_length(x) / 4 + 1):sig_length(x))
   }
   
+  # Establish memory limits
+  mem_limits <- get_mem_limit(x_list, y_list, mem_scale)
+  
+  # Split lists to stay within memory limits
+  if (sum(mem_limits > 1) > 0) {
+    x_list <- mapply(chunk, x_list, mem_limits)
+    x_list <- unlist(x_list, recursive = FALSE)
+    y_list <- mapply(rep, y_list, mem_limits)
+    y_list <- mapply(chunk, y_list, mem_limits)
+    y_list <- unlist(y_list, recursive = FALSE)
+    x_sig <- mapply(chunk, x_sig, mem_limits)
+    x_sig <- unlist(x_sig, recursive = FALSE)
+    y_sig <- mapply(rep, y_sig, mem_limits)
+    y_sig <- mapply(chunk, y_sig, mem_limits)
+    y_sig <- unlist(y_sig, recursive = FALSE)
+  }
+    
   # Initialize progress reporting
   handler_matchr("Matching signature")
   prog_bar <- as.logical((vec_size(x) >= 5000) * as.numeric(!quiet) *
                            progressr::handlers(global = NA))
   pb <- progressr::progressor(steps = vec_size(x), enable = prog_bar)
   
-  # Prepare parallel processing
-  par_check_vec <- 
-    mapply(function(x, y) set_par("match_signatures", x = x, y = y),
-           lengths(x_list), lengths(y_list), USE.NAMES = FALSE)
-  
   # Calculate correlation matrices
   result <- vector("list", length(x_list))
   for (i in seq_along(x_list)) {
-    if (par_check_vec[i]) {
-      par_check <- TRUE
-      x_matrix <- chunk(x_list[[i]], number_of_threads() * 10)
-      x_matrix <- lapply(x_matrix, function(x) {
-        matrix(unlist(field(x, "signature")), ncol = vec_size(x))})
-      y_matrix <- matrix(unlist(field(y_list[[i]], "signature")), 
-                         ncol = vec_size(y_list[[i]]))
-      result[[i]] <- suppressWarnings(par_lapply(x_matrix, stats::cor, 
-                                                 y_matrix))
-      result[[i]] <- do.call(rbind, result[[i]])
-      pb(amount = vec_size(x_list[[i]]))
-    } else {
-      par_check <- FALSE
-      x_matrix <- matrix(unlist(field(x_list[[i]], "signature")), 
-                         ncol = vec_size(x_list[[i]]))
-      y_matrix <- matrix(unlist(field(y_list[[i]], "signature")), 
-                         ncol = vec_size(y_list[[i]]))
-      result[[i]] <- suppressWarnings(stats::cor(x_matrix, y_matrix))
-      pb(amount = vec_size(x_list[[i]]))
+    x_matrix <- chunk(x_list[[i]], number_of_threads() * 10)
+    x_matrix <- lapply(x_matrix, function(x) {
+      matrix(unlist(field(x, "signature")), ncol = vec_size(x))})
+    y_matrix <- matrix(unlist(field(y_list[[i]], "signature")), 
+                       ncol = vec_size(y_list[[i]]))
+    result[[i]] <- suppressWarnings(par_lapply(x_matrix, stats::cor, y_matrix))
+    pb(amount = sum(sapply(x_list[[i]], vec_size)))
     }
-  }
+  
+  # Update x_sig
+  x_sig <- lapply(x_sig, chunk, number_of_threads() * 10)
   
   # Return result
   get_ratios <- function(x) c(min(field(x, "aspect_ratio"), na.rm = TRUE), 
@@ -207,6 +215,20 @@ get_clusters <- function(x, y, stretch = 1.2, max_clust = 10) {
                    MoreArgs = list(vec_1 = y, vec_2 = y_ratios))
   return(list(x_list, y_list))
 }
+
+# ------------------------------------------------------------------------------
+
+get_mem_limit <- function(x_list, y_list, mem_scale) {
+  
+  sys_mem <- memuse::Sys.meminfo()
+  max_mem <- as.numeric(sys_mem$totalram * mem_scale) / 1e6
+  out <- mapply(function(x, y) ceiling(7.89e-06 * x * y),
+                as.numeric(lengths(x_list)), as.numeric(lengths(y_list)))
+  out <- ceiling(out / max_mem)
+  out
+  
+}
+
 
 # ------------------------------------------------------------------------------
 

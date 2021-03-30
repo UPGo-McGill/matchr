@@ -10,6 +10,7 @@ match_signatures(
   method = "grey",
   compare_ar = TRUE,
   stretch = 1.2,
+  mem_scale = 0.2,
   quiet = FALSE
 )
 }
@@ -40,6 +41,11 @@ lower bound and the break point * \code{stretch} on the upper bound. Increasing
 this value will possibly catch matches between extremely distorted images,
 but at the cost of potentially larger numbers of false positives, and
 substantially increased processing time.}
+
+\item{mem_scale}{A numeric scalar between 0 and 1. What portion of total
+system memory should be made available for a single correlation matrix
+calculation (default 0.2)? Increasing this value might speed up function
+execution, but at the cost of significantly increased system instability.}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}

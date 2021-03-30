@@ -52,9 +52,9 @@ test_that("other methods works", {
 })
 
 test_that("a single NA is printed correctly", {
-  expect_output(print(test_long_sig[4], width = 20), "NA\\\033")
-  expect_output(print(test_long_sig[4], width = 40), "NA\\\033")
-  expect_output(print(test_long_sig[4], width = 45), "NA\\\033")
+  expect_output(print(test_long_sig[4], width = 20), "[^...ab]")
+  expect_output(print(test_long_sig[4], width = 40), "[^...ab]")
+  expect_output(print(test_long_sig[4], width = 45), "[^...ab]")
   expect_output(print(test_long_sig[4], width = 50), "...ab")
   expect_output(print(test_long_sig[4], width = 60), "\\(http")
 })

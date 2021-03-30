@@ -637,7 +637,7 @@ server <- function(input, output, session) {
       }
       
       result <- result_full[result_full$correlation < corr_thresh, c(
-        ".UID", "matrix", "x_index", "y_index", "x_sig", "y_sig", 
+        ".UID", "matrix", "list_index", "x_index", "y_index", "x_sig", "y_sig", 
         "correlation")]
       
       change_table <- merge(result, change_table)
@@ -653,7 +653,8 @@ server <- function(input, output, session) {
       # Need to change to rbind once there is a method that handles matchr_sig
       change_table <- dplyr::bind_rows(change_table, result_corr)
       change_table <- change_table[order(
-        change_table$matrix, change_table$x_index, change_table$y_index),]
+        change_table$matrix, change_table$list_index, change_table$x_index, 
+        change_table$y_index),]
 
       if (requireNamespace("dplyr", quietly = TRUE)) {
         change_table <- dplyr::as_tibble(change_table)

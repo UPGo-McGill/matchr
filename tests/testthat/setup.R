@@ -53,6 +53,7 @@ test_confirm_2$confirmed <- c(TRUE, FALSE, FALSE, FALSE, FALSE, FALSE)
 test_changes_2 <- test_changes[2:6,]
 test_integrate_2 <- integrate_changes(test_confirm_2, test_changes_2)
 
+
 # Data to be loaded for tests ---------------------------------------------
 
 load("test-get_clusters.Rdata")
