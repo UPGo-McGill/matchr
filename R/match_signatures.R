@@ -66,57 +66,17 @@ match_signatures <- function(x, y = NULL, method = "grey", compare_ar = TRUE,
   if (missing(y)) y <- x else stopifnot(is_signature(y))
   par_check <- TRUE
   
-  # Deal with NAs
-  x_na <- x[is.na(x)]
-  y_na <- y[is.na(y)]
-  x <- x[!is.na(x)]
-  y <- y[!is.na(y)]
-  
-  # Split clusters for compare_ar == TRUE
-  if (vec_size(x) < 10 || vec_size(y) < 10) compare_ar <- FALSE
-  if (compare_ar == TRUE) {
-    clusters <- get_clusters(x, y, stretch = stretch, max_clust = 8)
-    x_list <- clusters[[1]]
-    y_list <- clusters[[2]]
-    x_sig <- clusters[[1]]
-    y_sig <- clusters[[2]]
-    rm(clusters)
-  } else {
-    x_list <- list(x)
-    y_list <- list(y)
-    x_sig <- list(x)
-    y_sig <- list(y)
-  }
-  
-  # Prepare method
-  if (method %in% c("grey", "gray", "greyscale", "grayscale")) {
-    x_list <- lapply(x_list, trim_signature, 1:(sig_length(x) / 4))
-    y_list <- lapply(y_list, trim_signature, 1:(sig_length(x) / 4))
-  }
-  
-  if (method %in% c("colour", "color", "rgb", "RGB")) {
-    x_list <- lapply(x_list, trim_signature, 
-                     (sig_length(x) / 4 + 1):sig_length(x))
-    y_list <- lapply(y_list, trim_signature, 
-                     (sig_length(x) / 4 + 1):sig_length(x))
-  }
-  
-  # Establish memory limits
-  mem_limits <- get_mem_limit(x_list, y_list, mem_scale)
-  
-  # Split lists to stay within memory limits
-  if (sum(mem_limits > 1) > 0) {
-    x_list <- mapply(chunk, x_list, mem_limits)
-    x_list <- unlist(x_list, recursive = FALSE)
-    y_list <- mapply(rep, y_list, mem_limits)
-    y_list <- mapply(chunk, y_list, mem_limits)
-    y_list <- unlist(y_list, recursive = FALSE)
-    x_sig <- mapply(chunk, x_sig, mem_limits)
-    x_sig <- unlist(x_sig, recursive = FALSE)
-    y_sig <- mapply(rep, y_sig, mem_limits)
-    y_sig <- mapply(chunk, y_sig, mem_limits)
-    y_sig <- unlist(y_sig, recursive = FALSE)
-  }
+  # Prepare objects for processing
+  output <- match_signatures_prep(x, y, method, compare_ar, stretch, mem_scale)
+  x <- output[[1]]
+  y <- output[[2]]
+  x_na <- output[[3]]
+  y_na <- output[[4]]
+  x_list <- output[[5]]
+  y_list <- output[[6]]
+  x_sig <- output[[7]]
+  y_sig <- output[[8]]
+  rm(output)
     
   # Initialize progress reporting
   handler_matchr("Matching signature")
@@ -127,21 +87,13 @@ match_signatures <- function(x, y = NULL, method = "grey", compare_ar = TRUE,
   # Calculate correlation matrices
   result <- vector("list", length(x_list))
   for (i in seq_along(x_list)) {
-    x_matrix <- chunk(x_list[[i]], number_of_threads() * 10)
-    x_matrix <- lapply(x_matrix, function(x) {
-      matrix(unlist(field(x, "signature")), ncol = vec_size(x))})
-    y_matrix <- matrix(unlist(field(y_list[[i]], "signature")), 
-                       ncol = vec_size(y_list[[i]]))
-    result[[i]] <- suppressWarnings(par_lapply(x_matrix, stats::cor, y_matrix))
+    result[[i]] <- match_signatures_internal(x_list[[i]], y_list[[i]])
     pb(amount = sum(sapply(x_list[[i]], vec_size)))
     }
   
   # Update x_sig
-  x_sig <- lapply(x_sig, chunk, number_of_threads() * 10)
   
   # Return result
-  get_ratios <- function(x) c(min(field(x, "aspect_ratio"), na.rm = TRUE), 
-                              max(field(x, "aspect_ratio"), na.rm = TRUE))
   new_matrix(
     matrix = result,
     x_ratios = lapply(x_list, get_ratios),
@@ -229,6 +181,10 @@ get_mem_limit <- function(x_list, y_list, mem_scale) {
   
 }
 
+# ------------------------------------------------------------------------------
+
+get_ratios <- function(x) c(min(field(x, "aspect_ratio"), na.rm = TRUE), 
+                            max(field(x, "aspect_ratio"), na.rm = TRUE))
 
 # ------------------------------------------------------------------------------
 
@@ -249,3 +205,79 @@ match_signatures_pairwise <- function(x, y, method = "colour", par_check = TRUE,
   par_mapply(stats::cor, field(x, "signature"), field(y, "signature"), 
              SIMPLIFY = TRUE)
 }
+
+# ------------------------------------------------------------------------------
+
+match_signatures_prep <- function(x, y, method, compare_ar, stretch, 
+                                  mem_scale) {
+  
+  # Deal with NAs
+  x_na <- x[is.na(x)]
+  y_na <- y[is.na(y)]
+  x <- x[!is.na(x)]
+  y <- y[!is.na(y)]
+  
+  # Split clusters for compare_ar == TRUE
+  if (vec_size(x) < 10 || vec_size(y) < 10) compare_ar <- FALSE
+  if (compare_ar == TRUE) {
+    clusters <- get_clusters(x, y, stretch = stretch, max_clust = 8)
+    x_list <- clusters[[1]]
+    y_list <- clusters[[2]]
+    x_sig <- clusters[[1]]
+    y_sig <- clusters[[2]]
+    rm(clusters)
+  } else {
+    x_list <- list(x)
+    y_list <- list(y)
+    x_sig <- list(x)
+    y_sig <- list(y)
+  }
+  
+  # Prepare method
+  if (method %in% c("grey", "gray", "greyscale", "grayscale")) {
+    x_list <- lapply(x_list, trim_signature, 1:(sig_length(x) / 4))
+    y_list <- lapply(y_list, trim_signature, 1:(sig_length(x) / 4))
+  }
+  
+  if (method %in% c("colour", "color", "rgb", "RGB")) {
+    x_list <- lapply(x_list, trim_signature, 
+                     (sig_length(x) / 4 + 1):sig_length(x))
+    y_list <- lapply(y_list, trim_signature, 
+                     (sig_length(x) / 4 + 1):sig_length(x))
+  }
+  
+  # Establish memory limits
+  mem_limits <- get_mem_limit(x_list, y_list, mem_scale)
+  
+  # Split lists to stay within memory limits
+  if (sum(mem_limits > 1) > 0) {
+    x_list <- mapply(chunk, x_list, mem_limits)
+    x_list <- unlist(x_list, recursive = FALSE)
+    y_list <- mapply(rep, y_list, mem_limits)
+    y_list <- mapply(chunk, y_list, mem_limits)
+    y_list <- unlist(y_list, recursive = FALSE)
+    x_sig <- mapply(chunk, x_sig, mem_limits)
+    x_sig <- unlist(x_sig, recursive = FALSE)
+    y_sig <- mapply(rep, y_sig, mem_limits)
+    y_sig <- mapply(chunk, y_sig, mem_limits)
+    y_sig <- unlist(y_sig, recursive = FALSE)
+  }
+  
+  x_sig <- lapply(x_sig, chunk, number_of_threads() * 10)
+  
+  list(x, y, x_na, y_na, x_list, y_list, x_sig, y_sig)
+  
+}
+
+# ------------------------------------------------------------------------------
+
+match_signatures_internal <- function(x, y) {
+  
+  x_matrix <- chunk(x, number_of_threads() * 10)
+  x_matrix <- lapply(x_matrix, function(x) {
+    matrix(unlist(field(x, "signature")), ncol = vec_size(x))})
+  y_matrix <- matrix(unlist(field(y, "signature")), ncol = vec_size(y))
+  suppressWarnings(par_lapply(x_matrix, stats::cor, y_matrix))
+
+}
+  
