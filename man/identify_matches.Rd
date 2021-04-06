@@ -3,7 +3,7 @@
 \name{identify_matches}
 \alias{identify_matches}
 \alias{identify_matches.matchr_matrix}
-\alias{identify_matches.matchr_sig}
+\alias{identify_matches.matchr_signature}
 \title{Identify matches from a matchr image matrix}
 \usage{
 identify_matches(
@@ -24,9 +24,9 @@ identify_matches(
   ...
 )
 
-\method{identify_matches}{matchr_sig}(
+\method{identify_matches}{matchr_signature}(
   x,
-  y,
+  y = NULL,
   threshold = 0.975,
   confirm = TRUE,
   quiet = FALSE,

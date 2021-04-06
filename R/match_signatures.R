@@ -91,8 +91,6 @@ match_signatures <- function(x, y = NULL, method = "grey", compare_ar = TRUE,
     pb(amount = sum(sapply(x_list[[i]], vec_size)))
     }
   
-  # Update x_sig
-  
   # Return result
   new_matrix(
     matrix = result,
