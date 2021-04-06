@@ -5,8 +5,13 @@
 #' threshold for identifying matches, with the assumption that the results will
 #' subsequently be refined using \code{\link{confirm_matches}}.
 #'
-#' @param img_matrix A vector of class `matchr_matrix`, containing image 
+#' @param x A vector of class `matchr_sig`, containing image signatures produced
+#' by \code{\link{create_signature}}, or `matchr_matrix`, containing image 
 #' correlation matrices produced by \code{\link{match_signatures}}.
+#' @param y A vector of class `matchr_sig`, containing image signatures produced
+#' by \code{\link{create_signature}}. If x is not a `matchr_sig` vector, this
+#' argument is ignored, and will trigger a warning if a non-NULL value is
+#' supplied.
 #' @param threshold A numeric scalar. The minimum correlation constant to
 #' consider images to be matched.
 #' @param confirm A logical scalar. Should the function run 
@@ -17,6 +22,7 @@
 #' out with colour signatures with the default tolerance thresholds.
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
+#' @param ... Additional arguments passed to methods.
 #' @return A tibble if {dplyr} is installed or a data frame if not, with one
 #' row per identified match, and the following columns:
 #' - `matrix`: The match's index position in the input `matchr_matrix` vector.
@@ -30,63 +36,158 @@
 #' (See \code{\link{confirm_matches}} for details.)
 #' @export
 
-identify_matches <- function(img_matrix, threshold = 0.975, confirm = TRUE,
-                             quiet = FALSE) {
+identify_matches <- function(x, y = NULL, threshold = 0.975, confirm = TRUE, 
+                             quiet = FALSE, ...) {
+  
+  UseMethod("identify_matches")
+  
+}
+
+# ------------------------------------------------------------------------------
+
+#' @rdname identify_matches
+#' @method identify_matches matchr_matrix
+#' @export
+
+identify_matches.matchr_matrix <- function(x, y = NULL, threshold = 0.975, 
+                                           confirm = TRUE, quiet = FALSE, ...) {
 
   # Error handling
-  stopifnot(is_matrix(img_matrix), is.numeric(threshold), is.logical(confirm), 
+  stopifnot(is_matrix(x), is.numeric(threshold), is.logical(confirm), 
             is.logical(quiet))
 
   # Initialize progress reporting
   handler_matchr("Identifying matches, batch")
   prog_bar <- as.logical(as.numeric(!quiet) * progressr::handlers(global = NA))
-  pb <- progressr::progressor(steps = sum(sapply(field(img_matrix, "matrix"), 
+  pb <- progressr::progressor(steps = sum(sapply(field(x, "matrix"), 
                                                  vec_size)), enable = prog_bar)
   
   # Find matches
-  match_list <- 
-    lapply(seq_along(img_matrix), function(x) {
-      
-      match_index <- lapply(field(img_matrix, "matrix")[[x]], function(y) {
-        pb()
-        m <- which(y >= threshold, arr.ind = TRUE)
-        dimnames(m)[[2]] <- c("x_index", "y_index")
-        m
-      })
-      
-      match <- lapply(seq_along(match_index), function(i) {
-        if (requireNamespace("dplyr", quietly = TRUE)) {
-          match <- dplyr::as_tibble(match_index[[i]])
-        } else match <- as.data.frame(match_index[[i]])
-        match$list_index <- i
-        match$matrix <- x
-        match <- match[c(4, 3, 1, 2)]
-        match
-      })
-      
-      match <-
-        mapply(function(match, match_index, x_sig, matrix) {
-          match$x_sig <- x_sig[match$x_index]
-          match$correlation <- matrix[match_index]
-          match
-        },
-        match, match_index, field(img_matrix, "x_sig")[[x]], 
-        field(img_matrix, "matrix")[[x]], SIMPLIFY = FALSE
-        )
-      
-      if (requireNamespace("dplyr", quietly = TRUE)) {
-        match <- dplyr::bind_rows(match)
-      } else {
-        x_sig <- do.call(c, lapply(match, function(x) x$x_sig))
-        match <- do.call(rbind, lapply(match, function(x) x[,c(1:4, 6)]))
-        match$x_sig <- x_sig
-        match <- match[c(1:4, 6, 5)]
-        }
-      
-      match$y_sig <- field(img_matrix, "y_sig")[[x]][match$y_index]
-      match <- match[c(1:5, 7, 6)]
+  match_list <- lapply(seq_along(x), identify_matches_internal, x, pb, 
+                       threshold)
+  
+  # Finish output
+  matches <- identify_matches_finish(match_list)
+
+  # Return output
+  if (confirm) matches <- confirm_matches(matches)
+  return(matches)
+
+}
+
+# ------------------------------------------------------------------------------
+
+#' @rdname identify_matches
+#' @method identify_matches matchr_signature
+#' @param method,compare_ar,stretch,mem_scale Arguments passed to 
+#' \code{\link{match_signatures}}.
+#' @export
+
+identify_matches.matchr_signature <- function(
+  x, y = NULL, threshold = 0.975, confirm = TRUE, quiet = FALSE, 
+  method = "grey", compare_ar = TRUE, stretch = 1.2, mem_scale = 0.2, ...) {
+  
+  # Error handling and object initialization
+  stopifnot(is_signature(x), is.logical(c(compare_ar, quiet)),
+            method %in% c("grey", "gray", "colour", "color", "rgb", "RGB", 
+                          "both"))
+  if (missing(y)) y <- x else stopifnot(is_signature(y))
+  par_check <- TRUE
+  
+  # Prepare objects for processing
+  output <- match_signatures_prep(x, y, method, compare_ar, stretch, mem_scale)
+  x <- output[[1]]
+  y <- output[[2]]
+  x_list <- output[[5]]
+  y_list <- output[[6]]
+  x_sig <- output[[7]]
+  y_sig <- output[[8]]
+  rm(output)
+  
+  # Initialize progress reporting
+  handler_matchr("Identifying matches, row")
+  prog_bar <- as.logical((vec_size(x) >= 5000) * as.numeric(!quiet) *
+                           progressr::handlers(global = NA))
+  pb <- progressr::progressor(steps = vec_size(x), enable = prog_bar)
+  
+  # Calculate correlation matrices
+  result <- vector("list", length(x_list))
+  for (i in seq_along(x_list)) {
+    result[[i]] <- match_signatures_internal(x_list[[i]], y_list[[i]])
+    
+    result[[i]] <- new_matrix(
+      matrix = result[i],
+      x_ratios = list(get_ratios(x_list[[i]])),
+      y_ratios = list(get_ratios(y_list[[i]])),
+      x_sig = x_sig[i],
+      y_sig = y_sig[i],
+      x_total = vec_size(x_list[[i]]),
+      y_total = vec_size(y_list[[i]]),
+      x_na = character(),
+      y_na = character()
+    )
+    
+    result[[i]] <- identify_matches_internal(i, result[[i]], function() NULL, 
+                                             threshold)
+    
+    pb(amount = sum(sapply(x_list[[i]], vec_size)))
+  }
+
+  # Finish output
+  matches <- identify_matches_finish(result)
+  
+  # Return output
+  if (confirm) matches <- confirm_matches(matches)
+  return(matches)
+}
+
+# ------------------------------------------------------------------------------
+
+identify_matches_internal <- function(n, x, pb, threshold) {
+  
+  match_index <- lapply(field(x[[n]], "matrix")[[1]], function(y) {
+    pb()
+    m <- which(y >= threshold, arr.ind = TRUE)
+    dimnames(m)[[2]] <- c("x_index", "y_index")
+    m
+  })
+  
+  match <- lapply(seq_along(match_index), function(i) {
+    if (requireNamespace("dplyr", quietly = TRUE)) {
+      match <- dplyr::as_tibble(match_index[[i]])
+    } else match <- as.data.frame(match_index[[i]])
+    match$list_index <- i
+    match$matrix <- n
+    match <- match[c(4, 3, 1, 2)]
+    match
+  })
+  
+  match <-
+    mapply(function(match, match_index, x_sig, matrix) {
+      match$x_sig <- x_sig[match$x_index]
+      match$correlation <- matrix[match_index]
       match
-    })
+    },
+    match, match_index, field(x[[n]], "x_sig")[[1]], 
+    field(x[[n]], "matrix")[[1]], SIMPLIFY = FALSE
+    )
+  
+  if (requireNamespace("dplyr", quietly = TRUE)) {
+    match <- dplyr::bind_rows(match)
+  } else {
+    x_sig <- do.call(c, lapply(match, function(x) x$x_sig))
+    match <- do.call(rbind, lapply(match, function(x) x[,c(1:4, 6)]))
+    match$x_sig <- x_sig
+    match <- match[c(1:4, 6, 5)]
+  }
+  
+  match$y_sig <- field(x[[n]], "y_sig")[[1]][match$y_index]
+  match <- match[c(1:5, 7, 6)]
+  match
+  
+}
+
+identify_matches_finish <- function(match_list) {
   
   # Consolidate and arrange output
   if (requireNamespace("dplyr", quietly = TRUE)) {
@@ -98,10 +199,10 @@ identify_matches <- function(img_matrix, threshold = 0.975, confirm = TRUE,
     matches$x_sig <- x_sig
     matches$y_sig <- y_sig
     matches <- matches[c(1:4, 6:7, 5)]
-    }
+  }
   matches <- matches[order(matches$matrix, matches$list_index, matches$x_index, 
                            matches$y_index),]
-
+  
   # Remove duplicates
   matches <-
     matches[field(matches$x_sig, "file") != field(matches$y_sig, "file"),]
@@ -110,9 +211,6 @@ identify_matches <- function(img_matrix, threshold = 0.975, confirm = TRUE,
                          field(matches$y_sig, "file"), SIMPLIFY = FALSE)
   matches <- matches[!duplicated(matches$hash),]
   matches$hash <- NULL
-
-  # Return output
-  if (confirm) matches <- confirm_matches(matches)
-  return(matches)
-
+  
+  matches
 }

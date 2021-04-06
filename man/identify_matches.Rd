@@ -2,13 +2,50 @@
 % Please edit documentation in R/identify_matches.R
 \name{identify_matches}
 \alias{identify_matches}
+\alias{identify_matches.matchr_matrix}
+\alias{identify_matches.matchr_signature}
 \title{Identify matches from a matchr image matrix}
 \usage{
-identify_matches(img_matrix, threshold = 0.975, confirm = TRUE, quiet = FALSE)
+identify_matches(
+  x,
+  y = NULL,
+  threshold = 0.975,
+  confirm = TRUE,
+  quiet = FALSE,
+  ...
+)
+
+\method{identify_matches}{matchr_matrix}(
+  x,
+  y = NULL,
+  threshold = 0.975,
+  confirm = TRUE,
+  quiet = FALSE,
+  ...
+)
+
+\method{identify_matches}{matchr_signature}(
+  x,
+  y = NULL,
+  threshold = 0.975,
+  confirm = TRUE,
+  quiet = FALSE,
+  method = "grey",
+  compare_ar = TRUE,
+  stretch = 1.2,
+  mem_scale = 0.2,
+  ...
+)
 }
 \arguments{
-\item{img_matrix}{A vector of class \code{matchr_matrix}, containing image
+\item{x}{A vector of class \code{matchr_sig}, containing image signatures produced
+by \code{\link{create_signature}}, or \code{matchr_matrix}, containing image
 correlation matrices produced by \code{\link{match_signatures}}.}
+
+\item{y}{A vector of class \code{matchr_sig}, containing image signatures produced
+by \code{\link{create_signature}}. If x is not a \code{matchr_sig} vector, this
+argument is ignored, and will trigger a warning if a non-NULL value is
+supplied.}
 
 \item{threshold}{A numeric scalar. The minimum correlation constant to
 consider images to be matched.}
@@ -22,6 +59,11 @@ out with colour signatures with the default tolerance thresholds.}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}
+
+\item{...}{Additional arguments passed to methods.}
+
+\item{method, compare_ar, stretch, mem_scale}{Arguments passed to
+\code{\link{match_signatures}}.}
 }
 \value{
 A tibble if {dplyr} is installed or a data frame if not, with one
