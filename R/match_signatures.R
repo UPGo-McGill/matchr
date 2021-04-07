@@ -45,6 +45,8 @@
 #' system memory should be made available for a single correlation matrix
 #' calculation (default 0.2)? Increasing this value might speed up function
 #' execution, but at the cost of significantly increased system instability.
+#' @param mem_override A logical scalar. Should the function attempt to run even
+#' if it detects insufficient system memory (default FALSE)?
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
 #' @return A vector of class `matchr_matrix`, each element of which is a
@@ -57,7 +59,8 @@
 #' @export
 
 match_signatures <- function(x, y = NULL, method = "grey", compare_ar = TRUE, 
-                             stretch = 1.2, mem_scale = 0.2, quiet = FALSE) {
+                             stretch = 1.2, mem_scale = 0.2, 
+                             mem_override = FALSE, quiet = FALSE) {
   
   # Error handling and object initialization
   stopifnot(is_signature(x), is.logical(c(compare_ar, quiet)),
@@ -67,7 +70,8 @@ match_signatures <- function(x, y = NULL, method = "grey", compare_ar = TRUE,
   par_check <- TRUE
   
   # Prepare objects for processing
-  output <- match_signatures_prep(x, y, method, compare_ar, stretch, mem_scale)
+  output <- match_signatures_prep(x, y, method, compare_ar, stretch, mem_scale,
+                                  mem_override)
   x <- output[[1]]
   y <- output[[2]]
   x_na <- output[[3]]
@@ -168,12 +172,30 @@ get_clusters <- function(x, y, stretch = 1.2, max_clust = 10) {
 
 # ------------------------------------------------------------------------------
 
-get_mem_limit <- function(x_list, y_list, mem_scale) {
+get_mem_limit <- function(x_list, y_list, mem_scale, mem_override) {
   
   sys_mem <- memuse::Sys.meminfo()
   max_mem <- as.numeric(sys_mem$totalram * mem_scale) / 1e6
   out <- mapply(function(x, y) ceiling(7.89e-06 * x * y),
                 as.numeric(lengths(x_list)), as.numeric(lengths(y_list)))
+  
+  as.numeric(sys_mem$totalram) / 1e6
+  
+  if (sum(out) > as.numeric(sys_mem$totalram) / 1.5e6) {
+    total_mem <- as.character(sys_mem$totalram)
+    needed_mem <- paste0(sum(out) / 1000 * 1.5, " GiB")
+    if (mem_override) stop(
+      "Total system memory is likely insufficient to run `match_signatures`. ",
+      "(", needed_mem, " needed, but only ", total_mem, " available.) ",
+      "Try running `identify_matches` directly on the input matchr_signature ",
+      "vectors, or, to override this error, set `mem_override = TRUE`.",
+      call. = FALSE)
+    if (!mem_override) warning(
+      "Total system memory is likely insufficient to run `match_signatures`. ",
+      "(", needed_mem, " needed, but only ", total_mem, " available.) ",
+      call. = FALSE)
+  }
+  
   out <- ceiling(out / max_mem)
   out
   
@@ -207,7 +229,7 @@ match_signatures_pairwise <- function(x, y, method = "colour", par_check = TRUE,
 # ------------------------------------------------------------------------------
 
 match_signatures_prep <- function(x, y, method, compare_ar, stretch, 
-                                  mem_scale) {
+                                  mem_scale, mem_override) {
   
   # Deal with NAs
   x_na <- x[is.na(x)]
@@ -245,7 +267,7 @@ match_signatures_prep <- function(x, y, method, compare_ar, stretch,
   }
   
   # Establish memory limits
-  mem_limits <- get_mem_limit(x_list, y_list, mem_scale)
+  mem_limits <- get_mem_limit(x_list, y_list, mem_scale, mem_override)
   
   # Split lists to stay within memory limits
   if (sum(mem_limits > 1) > 0) {

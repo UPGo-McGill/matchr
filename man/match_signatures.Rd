@@ -11,6 +11,7 @@ match_signatures(
   compare_ar = TRUE,
   stretch = 1.2,
   mem_scale = 0.2,
+  mem_override = FALSE,
   quiet = FALSE
 )
 }
@@ -46,6 +47,9 @@ substantially increased processing time.}
 system memory should be made available for a single correlation matrix
 calculation (default 0.2)? Increasing this value might speed up function
 execution, but at the cost of significantly increased system instability.}
+
+\item{mem_override}{A logical scalar. Should the function attempt to run even
+if it detects insufficient system memory (default FALSE)?}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}

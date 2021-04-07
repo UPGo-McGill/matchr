@@ -95,7 +95,8 @@ identify_matches.matchr_signature <- function(
   par_check <- TRUE
   
   # Prepare objects for processing
-  output <- match_signatures_prep(x, y, method, compare_ar, stretch, mem_scale)
+  output <- suppressWarnings(match_signatures_prep(
+    x, y, method, compare_ar, stretch, mem_scale, mem_override = TRUE))
   x <- output[[1]]
   y <- output[[2]]
   x_list <- output[[5]]
@@ -186,6 +187,8 @@ identify_matches_internal <- function(n, x, pb, threshold) {
   match
   
 }
+
+# ------------------------------------------------------------------------------
 
 identify_matches_finish <- function(match_list) {
   
