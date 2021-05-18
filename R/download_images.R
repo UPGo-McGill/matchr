@@ -75,9 +75,9 @@ download_images <- function(x = NULL, destination, path = photos, id = id,
   n_duplicate <- sum((result == "duplicate") * pmax(1, lengths(path)))
   n_error <- sum((result == "error") * pmax(1, lengths(path)))
   result <- data.frame(id = id, path = I(path), result = result)
-  class(result2$path) <- "list"
+  class(result$path) <- "list"
   if (requireNamespace("dplyr", quietly = TRUE)) result <- 
-    dplyr::as_tibble(result2)
+    dplyr::as_tibble(result)
   
   # Return output
   if (!quiet) cat(n_success, "files successfully downloaded.\n")
