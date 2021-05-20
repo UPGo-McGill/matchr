@@ -16,11 +16,7 @@ remove_black_bars <- function(x) {
     x <- field(x, "array")[[1]]
   } else img_check <- FALSE
   
-  rm_1 <- rowMeans(x[,,1])
-  rm_2 <- rowMeans(x[,,2])
-  rm_3 <- rowMeans(x[,,3])
-  
-  rm_total <- (rm_1 + rm_2 + rm_3) / 3
+  rm_total <- rowMeans(x)
   
   # First check for all black image and return NA if so
   if (mean(rm_total) < 0.005) {
