@@ -247,3 +247,11 @@ sig_length <- function(x) {
   stopifnot(length(l) == 1)
   l
 }
+
+# ------------------------------------------------------------------------------
+
+fast_cor <- function(x, y) {
+  x <- t((t(x) - colMeans(x)) / apply(x, 2, stats::sd))
+  y <- t((t(y) - colMeans(y)) / apply(y, 2, stats::sd))
+  crossprod(x, y) / (nrow(x) - 1)
+}

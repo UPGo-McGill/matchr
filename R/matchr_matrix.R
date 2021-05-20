@@ -57,8 +57,7 @@ is_matrix <- function(x) {
 
 format.matchr_matrix <- function(x, ...) {
   
-  paste(prettyNum(sapply(field(x, "x_sig"), 
-                         function(x) sum(lengths(x))), ","), "x", 
+  paste(prettyNum(lengths(field(x, "x_sig")), ","), "x", 
         prettyNum(lengths(field(x, "y_sig")), ","))
   
 }
@@ -135,9 +134,9 @@ vec_restore.matchr_matrix <- function(x, to, ..., n = NULL) {
     x_sig = field(x, "x_sig"),
     y_sig = field(x, "y_sig"),
     x_total = length(unique(c(
-      unlist(sapply(field(x, "x_sig"), sapply, field, "file")), attr(to, "x_na")))),
+      field(do.call("c", field(x, "x_sig")), "file"), attr(to, "x_na")))),
     y_total = length(unique(c(
-      unlist(sapply(field(x, "y_sig"), sapply, field, "file")), attr(to, "y_na")))),
+      field(do.call("c", field(x, "y_sig")), "file"), attr(to, "y_na")))),
     x_na = attr(to, "x_na"),
     y_na = attr(to, "y_na")
   )

@@ -2,26 +2,24 @@
 
 test_that("a short single matchr_signature with !compare_ar works", {
   r1 <- match_signatures(test_long_sig, compare_ar = FALSE)
-  expect_equal(attr(r1, "x_total"), 
-               sum(sapply(field(r1, "matrix"), sapply, nrow), 
-                   length(attr(r1, "x_na"))))
-  expect_equal(
-    sum(do.call(rbind, field(r1, "matrix")[[1]])[1:3, 1:3] > 0.999), 9)
-  expect_equal(sum(do.call(rbind, field(r1, "matrix")[[1]])[1:3, 4:6] < 0.5), 9)
+  expect_equal(attr(r1, "x_total"), sum(sapply(field(r1, "matrix"), nrow), 
+                                        length(attr(r1, "x_na"))))
+  expect_equal(sum(field(r1, "matrix")[[1]][1:3, 1:3] > 0.999), 9)
+  expect_equal(sum(field(r1, "matrix")[[1]][1:3, 4:6] < 0.5), 9)
   expect_equal(sum(length(attr(r1, "x_na")), length(attr(r1, "y_na"))), 4)
 })
 
 test_that("a short single matchr_signature with compare_aspect_ratios works", {
   expect_equal(attr(test_match, "x_total"), 
-               sum(unlist(sapply(field(test_match, "matrix"), sapply, nrow)), 
+               sum(unlist(sapply(field(test_match, "matrix"), nrow)), 
                    length(attr(test_match, "x_na"))))
 })
 
 test_that("colour works", {
   r2 <- match_signatures(test_long_sig[8:9])
-  expect_equal(sum(do.call(rbind, field(r2, "matrix")[[1]]) > 0.99), 4)
+  expect_equal(sum(field(r2, "matrix")[[1]] > 0.99), 4)
   r3 <- match_signatures(test_long_sig[8:9], method = "colour")
-  expect_equal(sum(do.call(rbind, field(r3, "matrix")[[1]]) > 0.99), 2)
+  expect_equal(sum(field(r3, "matrix")[[1]] > 0.99), 2)
 })
 
 test_that("a pair of matchr_signature vectors works", {

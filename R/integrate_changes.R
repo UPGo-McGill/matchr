@@ -12,7 +12,7 @@
 integrate_changes <- function(result, change_table) {
 
   stopifnot(is.data.frame(result), is.data.frame(change_table))
-  result <- merge(result, change_table[c(1:4, 7:8)], all.x = TRUE)
+  result <- merge(result, change_table[c(1:3, 6:7)], all.x = TRUE)
   stopifnot(sum(!is.na(result$new_match_status), na.rm = TRUE) ==
               nrow(change_table))
   result[!is.na(result$new_match_status),]$match <-

@@ -67,7 +67,6 @@ match_signatures <- function(x, y = NULL, method = "grey", compare_ar = TRUE,
             method %in% c("grey", "gray", "colour", "color", "rgb", "RGB", 
                           "both"))
   if (missing(y)) y <- x else stopifnot(is_signature(y))
-  par_check <- TRUE
   
   # Prepare objects for processing
   output <- match_signatures_prep(x, y, method, compare_ar, stretch, mem_scale,
@@ -89,9 +88,10 @@ match_signatures <- function(x, y = NULL, method = "grey", compare_ar = TRUE,
   pb <- progressr::progressor(steps = vec_size(x), enable = prog_bar)
   
   # Calculate correlation matrices
+  blas <- getOption("matchr.blas", as.logical(Sys.getenv("MATCHR_BLAS", TRUE)))
   result <- vector("list", length(x_list))
   for (i in seq_along(x_list)) {
-    result[[i]] <- match_signatures_internal(x_list[[i]], y_list[[i]])
+    result[[i]] <- match_signatures_internal(x_list[[i]], y_list[[i]], blas)
     pb(amount = sum(sapply(x_list[[i]], vec_size)))
     }
   
@@ -283,7 +283,8 @@ match_signatures_prep <- function(x, y, method, compare_ar, stretch,
     y_sig <- unlist(y_sig, recursive = FALSE)
   }
   
-  x_sig <- lapply(x_sig, chunk, number_of_threads() * 10)
+  # Why is this here?
+  # x_sig <- lapply(x_sig, chunk, number_of_threads() * 10)
   
   list(x, y, x_na, y_na, x_list, y_list, x_sig, y_sig)
   
@@ -291,13 +292,21 @@ match_signatures_prep <- function(x, y, method, compare_ar, stretch,
 
 # ------------------------------------------------------------------------------
 
-match_signatures_internal <- function(x, y) {
-  
-  x_matrix <- chunk(x, number_of_threads() * 10)
-  x_matrix <- lapply(x_matrix, function(x) {
-    matrix(unlist(field(x, "signature")), ncol = vec_size(x))})
-  y_matrix <- matrix(unlist(field(y, "signature")), ncol = vec_size(y))
-  suppressWarnings(par_lapply(x_matrix, stats::cor, y_matrix))
+match_signatures_internal <- function(x, y, blas) {
 
-}
+  if (blas) {
+    x_matrix <- matrix(unlist(field(x, "signature")), ncol = vec_size(x))
+    y_matrix <- matrix(unlist(field(y, "signature")), ncol = vec_size(y))
+    fast_cor(x_matrix, y_matrix)
+  } else {
+    par_check <- TRUE
+    x_matrix <- chunk(x, number_of_threads() * 10)
+    x_matrix <- lapply(x_matrix, function(x) {
+      matrix(unlist(field(x, "signature")), ncol = vec_size(x))})
+    y_matrix <- matrix(unlist(field(y, "signature")), ncol = vec_size(y))
+    out <- suppressWarnings(par_lapply(x_matrix, stats::cor, y_matrix))
+    # TKTK NEED TO RBIND
+    out
+  }
   
+}

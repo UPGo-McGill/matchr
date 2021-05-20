@@ -146,44 +146,20 @@ identify_matches.matchr_signature <- function(
 
 identify_matches_internal <- function(n, x, pb, threshold) {
   
-  match_index <- lapply(field(x[[n]], "matrix")[[1]], function(y) {
-    pb()
-    m <- which(y >= threshold, arr.ind = TRUE)
-    dimnames(m)[[2]] <- c("x_index", "y_index")
-    m
-  })
-  
-  match <- lapply(seq_along(match_index), function(i) {
-    if (requireNamespace("dplyr", quietly = TRUE)) {
-      match <- dplyr::as_tibble(match_index[[i]])
-    } else match <- as.data.frame(match_index[[i]])
-    match$list_index <- i
-    match$matrix <- n
-    match <- match[c(4, 3, 1, 2)]
-    match
-  })
-  
-  match <-
-    mapply(function(match, match_index, x_sig, matrix) {
-      match$x_sig <- x_sig[match$x_index]
-      match$correlation <- matrix[match_index]
-      match
-    },
-    match, match_index, field(x[[n]], "x_sig")[[1]], 
-    field(x[[n]], "matrix")[[1]], SIMPLIFY = FALSE
-    )
+  match_index <- which(field(x[[n]], "matrix")[[1]] >= threshold, arr.ind = TRUE)
+  dimnames(match_index)[[2]] <- c("x_index", "y_index")
   
   if (requireNamespace("dplyr", quietly = TRUE)) {
-    match <- dplyr::bind_rows(match)
-  } else {
-    x_sig <- do.call(c, lapply(match, function(x) x$x_sig))
-    match <- do.call(rbind, lapply(match, function(x) x[,c(1:4, 6)]))
-    match$x_sig <- x_sig
-    match <- match[c(1:4, 6, 5)]
-  }
+    match <- dplyr::as_tibble(match_index)
+  } else match <- as.data.frame(match_index)
   
+  match$matrix <- n
+  match <- match[c("matrix", "x_index", "y_index")]
+  
+  match$x_sig <- field(x[[n]], "x_sig")[[1]][match$x_index]
   match$y_sig <- field(x[[n]], "y_sig")[[1]][match$y_index]
-  match <- match[c(1:5, 7, 6)]
+  match$correlation <- field(x[[n]], "matrix")[[1]][match_index]
+  
   match
   
 }
@@ -198,13 +174,14 @@ identify_matches_finish <- function(match_list) {
   } else {
     x_sig <- do.call(c, lapply(match_list, function(x) x$x_sig))
     y_sig <- do.call(c, lapply(match_list, function(x) x$y_sig))
-    matches <- do.call(rbind, lapply(match_list, function(x) x[c(1:4, 7)]))
+    matches <- do.call(rbind, lapply(match_list, function(x) 
+      x[c("matrix", "x_index", "y_index", "correlation")]))
     matches$x_sig <- x_sig
     matches$y_sig <- y_sig
-    matches <- matches[c(1:4, 6:7, 5)]
+    matches <- matches[c("matrix", "x_index", "y_index", "x_sig", "y_sig", 
+                         "correlation")]
   }
-  matches <- matches[order(matches$matrix, matches$list_index, matches$x_index, 
-                           matches$y_index),]
+  matches <- matches[order(matches$matrix, matches$x_index, matches$y_index),]
   
   # Remove duplicates
   matches <-

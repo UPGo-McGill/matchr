@@ -199,15 +199,21 @@ create_signature_internal <- function(image, bands = 20,
   if (is.logical(a)) return(NA)
   
   # Calculate row means
-  rm_1 <- sapply(chunk(rowMeans(a[,,1]), bands), mean)
-  rm_2 <- sapply(chunk(rowMeans(a[,,2]), bands), mean)
-  rm_3 <- sapply(chunk(rowMeans(a[,,3]), bands), mean)  
+  rm_1 <- rowMeans(a[,,1])
+  rm_2 <- rowMeans(a[,,2])
+  rm_3 <- rowMeans(a[,,3])
+  rm_1 <- sapply(chunk(rm_1, bands), mean)
+  rm_2 <- sapply(chunk(rm_2, bands), mean)
+  rm_3 <- sapply(chunk(rm_3, bands), mean)
   rm_total <- (rm_1 + rm_2 + rm_3) / 3
   
   # Calculate column means
-  cm_1 <- sapply(chunk(colMeans(a[,,1]), bands), mean)
-  cm_2 <- sapply(chunk(colMeans(a[,,2]), bands), mean)
-  cm_3 <- sapply(chunk(colMeans(a[,,3]), bands), mean)
+  cm_1 <- colMeans(a[,,1])
+  cm_2 <- colMeans(a[,,2])
+  cm_3 <- colMeans(a[,,3])
+  cm_1 <- sapply(chunk(cm_1, bands), mean)
+  cm_2 <- sapply(chunk(cm_2, bands), mean)
+  cm_3 <- sapply(chunk(cm_3, bands), mean)
   cm_total <- (cm_1 + cm_2 + cm_3) / 3
   
   # Return result

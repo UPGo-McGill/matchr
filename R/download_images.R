@@ -53,12 +53,13 @@ download_images <- function(x = NULL, destination, path = photos, id = id,
     as.numeric((length(path) >= 10)) *
       as.numeric(!quiet) *
       as.numeric(progressr::handlers(global = NA)))
-  pb <- progressr::progressor(steps = length(unlist(path)), enable = prog_bar)
+  iterator <- get_iterator(path)
+  pb <- progressr::progressor(steps = length(path), enable = prog_bar)
 
   # Download files
   result <- vector("list", length(path))
   for (i in seq_along(path)) {
-    pb(amount = length(path[[i]]))
+    if (i %% iterator == 0) pb(amount = iterator)
     if (any(i %in% duplicate_id)) {
       result[[i]] <- "duplicate"
       next

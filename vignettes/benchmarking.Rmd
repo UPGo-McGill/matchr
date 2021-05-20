@@ -1,5 +1,5 @@
 ---
-title: "Parallel processing and performance benchmarking"
+title: "Performance: BLAS, parallel processing, and benchmarking"
 author: "David Wachsmuth"
 output: rmarkdown::html_vignette
 vignette: >
@@ -23,6 +23,7 @@ The functions in matchr can be very computation- and time-intensive. While with 
 
 The key takeaways are:
 
+- Replace R's default BLAS library with one of the much faster alternatives, to enable dramatic speed up of certain linear-algebra tasks.
 - Enable parallel processing with the {future} package, most simply by setting `future::plan(multisession)`.
 - By default, matchr functions only enable parallel processing where empirical testing suggests that this will improve performance, but parallel processing can be forced by setting the global option `options(matchr.force_parallel = TRUE)`.
 
@@ -32,6 +33,16 @@ The following discussion will rely on examples taken from two large sets of imag
 paths_low <- list.files("example_low", full.names = TRUE)
 paths_high <- list.files("example_high", full.names = TRUE)
 ```
+
+## BLAS
+
+R relies on a "BLAS" (Basic Linear Algebra Subprograms) library for carrying out common linear algebra tasks such as matrix multiplication and solving systems of linear equations. However, the BLAS library included in R is far slower than other stable, free alternatives. Certain functions in matchr (in particular `match_signatures`) rely heavily on linear algebra, and consequently will run much faster if the default BLAS library is replaced with a faster one.
+
+The guidelines for replacing the BLAS library vary from platform to platform, but are usually quite straightforward. In general, OpenBLAS is a simple choice for Windows and Linux, and Apple's vecLib is a simple choice for macOS (and in fact [is included in binary installations of R, and can be enabled with a simple command](https://cran.r-project.org/bin/macosx/RMacOSX-FAQ.html#Which-BLAS-is-used-and-how-can-it-be-changed_003f)).
+
+Using OpenBLAS or vecLib may speed up `match_signature` by anywhere from 50% to 400%, depending on the system and the task, and other functions by a smaller amount. If you are running R on a system with the slow, default BLAS library and are unable to upgrade it, you can alert matchr to this fact by setting the global option `matchr.blas` to FALSE (with `options(matchr.blas = FALSE)`) for a temporary override, or by adding the line `MATCHR_BLAS = FALSE` to the .Renviron file for a permanent override. This will cause `match_signatures` to fall back on a parallel execution strategy which is slower than its default execution strategy using an optimized BLAS library, but faster than its default strategy using the default BLAS library.
+
+All the benchmarks which follow below were run using vecLib on macOS.
 
 ## Parallel processing
 
