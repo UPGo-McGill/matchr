@@ -3,6 +3,7 @@
 \name{matchr_options}
 \alias{matchr_options}
 \alias{matchr.options}
+\alias{matchr.blas}
 \alias{matchr.force_parallel}
 \title{Options used in matchr}
 \description{
@@ -13,16 +14,12 @@ package.
 
 
 \describe{
-\item{\option{matchr.force_parallel}:}{A logical scalar. Default future
-strategy plan used unless otherwise specified via . This will also
-be the future plan set when calling \code{plan("default")}.  If not specified,
-this option may be set when the \pkg{future} package is \emph{loaded} if
-command-line option \code{--parallel=ncores} (short \verb{-p ncores}) is specified; if
-\code{ncores > 1}, then option future.plan is set to \code{multisession}
-otherwise \code{sequential} (in addition to option \option{mc.cores} being set
-to \code{ncores}, if \code{ncores >= 1}).  If system environment variable
-\env{R_FUTURE_PLAN} is set, then that overrides the future plan set by the
-command-line option. (Default: \code{sequential})}
+\item{\option{matchr.blas}:}{A logical scalar. TKTK. (Default: \code{TRUE})}
+}
+
+\describe{
+\item{\option{matchr.force_parallel}:}{A logical scalar. TKTK (Default:
+\code{FALSE})}
 }
 }
 

@@ -305,7 +305,7 @@ match_signatures_internal <- function(x, y, blas) {
       matrix(unlist(field(x, "signature")), ncol = vec_size(x))})
     y_matrix <- matrix(unlist(field(y, "signature")), ncol = vec_size(y))
     out <- suppressWarnings(par_lapply(x_matrix, stats::cor, y_matrix))
-    # TKTK NEED TO RBIND
+    out <- do.call(rbind, out)
     out
   }
   
