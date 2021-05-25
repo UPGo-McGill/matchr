@@ -27,16 +27,14 @@ test_that("a pair of matchr_signature vectors works", {
   expect_equal(r4, test_match)
 })
 
-# TEMPORARILY DISABLED WHILE THE FUTURE STRATEGY IS UPDATED
-# test_that("multisession futures work", {
-#   old_opt <- options(matchr.force_parallel = TRUE)
-#   old_plan <- future::plan(future::multisession, workers = 2)
-#   suppressWarnings(rm(par_1, envir = .matchr_env))
-#   suppressMessages(expect_message(match_signatures(test_long_sig),
-#                                   "parallel"))
-#   future::plan(old_plan)
-#   options(old_opt)
-# })
+test_that("multisession futures work", {
+  old_opt <- options(matchr.blas = FALSE)
+  old_plan <- future::plan(future::multisession, workers = 2)
+  suppressWarnings(rm(par_1, envir = .matchr_env))
+  expect_equal(match_signatures(test_long_sig), test_match)
+  future::plan(old_plan)
+  options(old_opt)
+})
 
 test_that("get_clusters collapses empty vectors", {
   expect_equal(sum(lengths(get_clusters(clust_x, clust_y, max_clust = 17))), 32)
