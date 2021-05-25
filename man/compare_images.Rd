@@ -2,7 +2,7 @@
 % Please edit documentation in R/compare_images.R
 \name{compare_images}
 \alias{compare_images}
-\title{Compare image matches in the viewer window}
+\title{Compare image matches in a Shiny app}
 \usage{
 compare_images(
   result,

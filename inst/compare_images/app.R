@@ -4,15 +4,17 @@
 
 # Load objects
 result <- shiny::getShinyOption("result")
-x_dir <- shiny::getShinyOption("x_dir")
-y_dir <- shiny::getShinyOption("y_dir")
+x_paths <- shiny::getShinyOption("x_paths")
+y_paths <- shiny::getShinyOption("y_paths")
+x_dirs <- shiny::getShinyOption("x_dirs")
+y_dirs <- shiny::getShinyOption("y_dirs")
 remove_duplicates <- shiny::getShinyOption("remove_duplicates")
 batch_size <- shiny::getShinyOption("batch_size")
 show_names <- shiny::getShinyOption("show_names")
 corr_thresh <- shiny::getShinyOption("corr_thresh")
 previous <- shiny::getShinyOption("previous")
-shiny::addResourcePath("x", x_dir)
-shiny::addResourcePath("y", y_dir)
+if (length(x_dirs) > 0) mapply(shiny::addResourcePath, x_paths, x_dirs)
+if (length(y_dirs) > 0) mapply(shiny::addResourcePath, y_paths, y_dirs)
 prog_check <- nrow(result) > 2000 && remove_duplicates == TRUE
 
 
@@ -171,6 +173,7 @@ ui <- shiny::fluidPage(
 server <- function(input, output, session) {
   
   # Reduce helper
+  
   reduce <- function(x, h = "none") {
     iterations <- floor(length(x) / 48)
     
@@ -393,17 +396,13 @@ server <- function(input, output, session) {
   # Remove results with perfect correlation
   result <- result[result$correlation < corr_thresh,]
   
-  # Copy images to temp folders
-  file.copy(result$x_name, x_dir)
-  file.copy(result$y_name, y_dir)
-  
-  # Make new path vectors
-  x_paths <- strsplit(result$x_name, '/')
-  x_paths <- sapply(x_paths, function(x) x[[length(x)]])
-  x_paths <- paste0("x/", x_paths)
-  y_paths <- strsplit(result$y_name, '/')
-  y_paths <- sapply(y_paths, function(x) x[[length(x)]])
-  y_paths <- paste0("y/", y_paths)
+  # Update paths
+  if (length(x_dirs) > 0) result$x_name <- as.vector(
+    mapply(sub, x_dirs, x_paths, MoreArgs = list(result$x_name), 
+           USE.NAMES = FALSE))
+  if (length(y_dirs) > 0) result$y_name <- as.vector(
+    mapply(sub, y_dirs, y_paths, MoreArgs = list(result$y_name), 
+           USE.NAMES = FALSE))
   
   # Make change table
   if (remove_duplicates) {
@@ -572,22 +571,22 @@ server <- function(input, output, session) {
   ## Produce images ------------------------------------------------------------
 
   output$image_1 <- shiny::renderUI({
-    images <- lapply(x_paths[active_index()], function(x) {
+    images <- lapply(result$x_name[active_index()], function(x) {
       shiny::img(src = x, width = "250px", height = "250px")})
-    lines <- lapply(x_paths[active_index()], function(x) shiny::hr())
+    lines <- lapply(result$x_name[active_index()], function(x) shiny::hr())
     if (show_names) {
-      text <- lapply(x_paths[active_index()], shiny::h5, align = "center")
+      text <- lapply(result$x_name[active_index()], shiny::h5, align = "center")
       together <- c(rbind(text, images, lines))
     } else together <- c(rbind(images, lines))
     do.call(shiny::tagList, together)
   })
 
   output$image_2 <- shiny::renderUI({
-    images <- lapply(y_paths[active_index()], function(x) {
+    images <- lapply(result$y_name[active_index()], function(x) {
       shiny::img(src = x, width = "250px", height = "250px")})
-    lines <- lapply(y_paths[active_index()], function(x) shiny::hr())
+    lines <- lapply(result$y_name[active_index()], function(x) shiny::hr())
     if (show_names) {
-      text <- lapply(y_paths[active_index()], shiny::h5, align = "center")
+      text <- lapply(result$y_name[active_index()], shiny::h5, align = "center")
       together <- c(rbind(text, images, lines))
     } else together <- c(rbind(images, lines))
     do.call(shiny::tagList, together)
