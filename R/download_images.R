@@ -17,8 +17,12 @@
 #' the URL has no extension, it will be given the extension ".jpg".
 #' @param id If x is supplied, the name of a character field in x with IDs to
 #' match to the file downloads. If x is NULL, a character vector the same length 
-#' as `path`, indicating the IDs of the files to be downloaded. This parameter
-#' can be NULL. If it is supplied, files will be named according to the IDs.
+#' as `path`, indicating the IDs of the files to be downloaded. Downloaded files 
+#' will be named according to the IDs, as `id_n.jpg`, where `id` is an element 
+#' of the `id` argument, `n` is an integer sequence of the same length as the
+#' `id` element, and `.jpg` is the same file extension as the URL. (So if there 
+#' are three URLs which correspond to the `id` value of "XXXX", the files 
+#' downloaded will be "XXXX_1.jpg", "XXXX_2.jpg" and "XXXX_3.jpg".)
 #' @param check_duplicates A logical scalar (default TRUE) indicating whether to
 #' skip downloads for files whose IDs match files already present in the
 #' download folder. This argument is ignored if `id` is NULL.
@@ -37,9 +41,7 @@ download_images <- function(x = NULL, destination, path = photos, id = id,
   
   # Get paths and IDs
   path <- if (df) eval(parse(text = paste0("x$", substitute(path)))) else path
-  if (is.null(id)) {
-    id <- seq_along(path)
-  } else id <- if (df) eval(parse(text = paste0("x$", substitute(id)))) else id
+  id <- if (df) eval(parse(text = paste0("x$", substitute(id)))) else id
   files <- list.files(destination)
   file_id <- unique(sub("-\\d*.jpg", "", files))
   
@@ -64,9 +66,10 @@ download_images <- function(x = NULL, destination, path = photos, id = id,
       result[[i]] <- "duplicate"
       next
       }
-    result[[i]] <- tryCatch(utils::download.file(path[[i]], paste0(
-      destination, "/", id[[i]], "-", seq_along(path[[i]]), ".jpg"),
-      quiet = TRUE), error = function(e) "error")
+    result[[i]] <- 
+      suppressWarnings(tryCatch(utils::download.file(path[[i]], file.path(
+        destination, paste0(id[[i]], "-", seq_along(path[[i]]), ".jpg")),
+        quiet = TRUE), error = function(e) "error"))
   }
   
   # Assemble output

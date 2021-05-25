@@ -30,8 +30,12 @@ the URL has no extension, it will be given the extension ".jpg".}
 
 \item{id}{If x is supplied, the name of a character field in x with IDs to
 match to the file downloads. If x is NULL, a character vector the same length
-as \code{path}, indicating the IDs of the files to be downloaded. This parameter
-can be NULL. If it is supplied, files will be named according to the IDs.}
+as \code{path}, indicating the IDs of the files to be downloaded. Downloaded files
+will be named according to the IDs, as \code{id_n.jpg}, where \code{id} is an element
+of the \code{id} argument, \code{n} is an integer sequence of the same length as the
+\code{id} element, and \code{.jpg} is the same file extension as the URL. (So if there
+are three URLs which correspond to the \code{id} value of "XXXX", the files
+downloaded will be "XXXX_1.jpg", "XXXX_2.jpg" and "XXXX_3.jpg".)}
 
 \item{check_duplicates}{A logical scalar (default TRUE) indicating whether to
 skip downloads for files whose IDs match files already present in the
