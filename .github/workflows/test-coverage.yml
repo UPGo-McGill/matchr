@@ -22,11 +22,6 @@ jobs:
 
       - uses: r-lib/actions/setup-pandoc@master
 
-      - name: Install system dependencies (macOS)
-        run: |
-          rm '/usr/local/bin/gfortran'
-          brew install geos gdal proj udunits
-
       - name: Install X11 dependencies on MacOS
         run: |
           brew install xquartz --cask
