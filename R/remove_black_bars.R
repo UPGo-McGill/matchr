@@ -13,14 +13,14 @@ remove_black_bars <- function(x) {
   if (is_image(x)) {
     img_check <- TRUE
     x_img <- x
-    x <- field(x, "array")[[1]]
+    x <- get_array(x)[[1]]
   } else img_check <- FALSE
   
   rm_total <- rowMeans(x)
   
   # First check for all black image and return NA if so
   if (mean(rm_total) < 0.005) {
-    if (img_check) return(new_image(list(NA), field(x_img, "file")))
+    if (img_check) return(new_image(list(NA), get_path(x_img)))
     return(NA)
   }
   
@@ -54,7 +54,7 @@ remove_black_bars <- function(x) {
   }
   
   if (img_check) {
-    field(x_img, "array")[[1]] <- x
+    vctrs::field(x_img, "array")[[1]] <- x
     x <- x_img
   }
   

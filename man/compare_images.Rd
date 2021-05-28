@@ -10,7 +10,8 @@ compare_images(
   batch_size = 100L,
   show_names = FALSE,
   corr_thresh = 0.9995,
-  previous = TRUE
+  previous = TRUE,
+  quiet = FALSE
 )
 }
 \arguments{
@@ -18,7 +19,10 @@ compare_images(
 confirm = TRUE or with \code{\link{confirm_matches}} subsequently run on the
 results).}
 
-\item{remove_duplicates}{TKTK}
+\item{remove_duplicates}{A logical scalar. Should x-y pairs which are
+identical to other x-y pairs be reduced to a single x-y pair? This step can
+be computationally expensive for large datasets, but can dramatically reduce
+the number of matches to be verified.}
 
 \item{batch_size}{An integer scalar. The number of images to display at a
 time in the Shiny app (default 100).}
@@ -28,15 +32,18 @@ time in the Shiny app (default 100).}
 \item{corr_thresh}{TKTK}
 
 \item{previous}{TKTK}
+
+\item{quiet}{A logical scalar. Should the function execute quietly, or should
+it return status updates throughout the function (default)?}
 }
 \value{
-If the Shiny package is present, a data frame with the same fields as
-the input \code{result}, except that the field \code{match} will be replaced with
-\code{new_match_status}, which is a character vector with possible entries
-"match" and "no match". The output will have one row for each image pairing
-that was confirmed, which is determined by how many pages into the Shiny app
-the user proceeded, and thus how many pairings were viewed. If all pages are
-viewed, then the output will have the same number of rows as the input.
+A data frame with the same fields as the input \code{result}, except that
+the field \code{match} will be replaced with \code{new_match_status}, which is a
+character vector with possible entries "match" and "no match". The output
+will have one row for each image pairing that was confirmed, which is
+determined by how many pages into the Shiny app the user proceeded, and thus
+how many pairings were viewed. If all pages are viewed, then the output will
+have the same number of rows as the input.
 }
 \description{
 \code{compare_images} TKTK

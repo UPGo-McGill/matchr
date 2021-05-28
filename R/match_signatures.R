@@ -97,15 +97,15 @@ match_signatures <- function(x, y = NULL, method = "grey", compare_ar = TRUE,
   
   # Return result
   new_matrix(
-    matrix = result,
+    array = result,
     x_ratios = lapply(x_list, get_ratios),
     y_ratios = lapply(y_list, get_ratios),
     x_sig = x_sig,
     y_sig = y_sig,
-    x_total = length(unique(c(field(x, "file"), field(x_na, "file")))),
-    y_total = length(unique(c(field(y, "file"), field(y_na, "file")))),
-    x_na = field(x_na, "file"),
-    y_na = field(y_na, "file")
+    x_total = length(unique(c(get_path(x), get_path(x_na)))),
+    y_total = length(unique(c(get_path(y), get_path(y_na)))),
+    x_na = get_path(x_na),
+    y_na = get_path(y_na)
   )
   
 }
@@ -114,8 +114,8 @@ match_signatures <- function(x, y = NULL, method = "grey", compare_ar = TRUE,
 
 get_clusters <- function(x, y, stretch = 1.2, max_clust = 10) {
   
-  x_ratios <- field(x, "aspect_ratio")
-  y_ratios <- field(y, "aspect_ratio")
+  x_ratios <- get_ar(x)
+  y_ratios <- get_ar(y)
   
   # Set number of groups to evaluate
   unique_points <- unique(stats::na.omit(c(x_ratios, y_ratios)))
@@ -203,8 +203,8 @@ get_mem_limit <- function(x_list, y_list, mem_scale, mem_override) {
 
 # ------------------------------------------------------------------------------
 
-get_ratios <- function(x) c(min(field(x, "aspect_ratio"), na.rm = TRUE), 
-                            max(field(x, "aspect_ratio"), na.rm = TRUE))
+get_ratios <- function(x) c(min(get_ar(x), na.rm = TRUE), 
+                            max(get_ar(x), na.rm = TRUE))
 
 # ------------------------------------------------------------------------------
 
@@ -222,8 +222,7 @@ match_signatures_pairwise <- function(x, y, method = "colour", par_check = TRUE,
     y <- trim_signature(y, (sig_length(y) / 4 + 1):sig_length(y)) 
   }
   
-  par_mapply(stats::cor, field(x, "signature"), field(y, "signature"), 
-             SIMPLIFY = TRUE)
+  par_mapply(stats::cor, get_raw_sig(x), get_raw_sig(y), SIMPLIFY = TRUE)
 }
 
 # ------------------------------------------------------------------------------
@@ -295,15 +294,15 @@ match_signatures_prep <- function(x, y, method, compare_ar, stretch,
 match_signatures_internal <- function(x, y, blas) {
 
   if (blas) {
-    x_matrix <- matrix(unlist(field(x, "signature")), ncol = vec_size(x))
-    y_matrix <- matrix(unlist(field(y, "signature")), ncol = vec_size(y))
+    x_matrix <- matrix(unlist(get_raw_sig(x)), ncol = vec_size(x))
+    y_matrix <- matrix(unlist(get_raw_sig(y)), ncol = vec_size(y))
     fast_cor(x_matrix, y_matrix)
   } else {
     par_check <- TRUE
     x_matrix <- chunk(x, number_of_threads() * 10)
     x_matrix <- lapply(x_matrix, function(x) {
-      matrix(unlist(field(x, "signature")), ncol = vec_size(x))})
-    y_matrix <- matrix(unlist(field(y, "signature")), ncol = vec_size(y))
+      matrix(unlist(get_raw_sig(x)), ncol = vec_size(x))})
+    y_matrix <- matrix(unlist(get_raw_sig(y)), ncol = vec_size(y))
     out <- suppressWarnings(par_lapply(x_matrix, stats::cor, y_matrix))
     out <- do.call(rbind, out)
     out

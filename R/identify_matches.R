@@ -59,8 +59,8 @@ identify_matches.matchr_matrix <- function(x, y = NULL, threshold = 0.975,
   # Initialize progress reporting
   handler_matchr("Identifying matches, batch")
   prog_bar <- as.logical(as.numeric(!quiet) * progressr::handlers(global = NA))
-  pb <- progressr::progressor(steps = sum(sapply(field(x, "matrix"), 
-                                                 vec_size)), enable = prog_bar)
+  pb <- progressr::progressor(steps = sum(sapply(get_array(x), vec_size)), 
+                              enable = prog_bar)
   
   # Find matches
   match_list <- lapply(seq_along(x), identify_matches_internal, x, pb, 
@@ -117,7 +117,7 @@ identify_matches.matchr_signature <- function(
     result[[i]] <- match_signatures_internal(x_list[[i]], y_list[[i]])
     
     result[[i]] <- new_matrix(
-      matrix = result[i],
+      array = result[i],
       x_ratios = list(get_ratios(x_list[[i]])),
       y_ratios = list(get_ratios(y_list[[i]])),
       x_sig = x_sig[i],
@@ -146,7 +146,7 @@ identify_matches.matchr_signature <- function(
 
 identify_matches_internal <- function(n, x, pb, threshold) {
   
-  match_index <- which(field(x[[n]], "matrix")[[1]] >= threshold, arr.ind = TRUE)
+  match_index <- which(get_array(x[[n]])[[1]] >= threshold, arr.ind = TRUE)
   dimnames(match_index)[[2]] <- c("x_index", "y_index")
   
   if (requireNamespace("dplyr", quietly = TRUE)) {
@@ -156,9 +156,9 @@ identify_matches_internal <- function(n, x, pb, threshold) {
   match$matrix <- n
   match <- match[c("matrix", "x_index", "y_index")]
   
-  match$x_sig <- field(x[[n]], "x_sig")[[1]][match$x_index]
-  match$y_sig <- field(x[[n]], "y_sig")[[1]][match$y_index]
-  match$correlation <- field(x[[n]], "matrix")[[1]][match_index]
+  match$x_sig <- get_x_sig(x[[n]])[[1]][match$x_index]
+  match$y_sig <- get_y_sig(x[[n]])[[1]][match$y_index]
+  match$correlation <- get_array(x[[n]])[[1]][match_index]
   
   match
   
@@ -185,10 +185,10 @@ identify_matches_finish <- function(match_list) {
   
   # Remove duplicates
   matches <-
-    matches[field(matches$x_sig, "file") != field(matches$y_sig, "file"),]
+    matches[get_path(matches$x_sig) != get_path(matches$y_sig),]
   matches$hash <- mapply(function(x, y) sort(c(x, y)),
-                         field(matches$x_sig, "file"),
-                         field(matches$y_sig, "file"), SIMPLIFY = FALSE)
+                         get_path(matches$x_sig),
+                         get_path(matches$y_sig), SIMPLIFY = FALSE)
   matches <- matches[!duplicated(matches$hash),]
   matches$hash <- NULL
   

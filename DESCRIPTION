@@ -1,6 +1,6 @@
 Package: matchr
 Title: Fast and Reliable Matching of Images
-Version: 0.1
+Version: 0.2
 Authors@R: 
     person(given = "David",
            family = "Wachsmuth",
@@ -21,22 +21,22 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Config/testthat/edition: 3
 Depends:
-    R (>= 4.0)
+    R (>= 4.1)
 Imports: 
     digest (>= 0.6.27),
     downloader (>= 0.4),
-    memuse (>= 4.0),
-    pillar (>= 1.4.7),
+    memuse (>= 4.1),
+    pillar (>= 1.6.1),
     progressr (>= 0.7.0),
     readbitmap (>= 0.1.5),
-    vctrs (>= 0.3.5)
+    vctrs (>= 0.3.8)
 Suggests:
     bench (>= 1.1.1),
     covr (>= 3.5.0),
     crayon (>= 1.3.4),
     dplyr (>= 1.0.0),
     future (>= 1.21.0),
-    future.apply (>= 1.6.0),
+    future.apply (>= 1.7.0),
     ggplot2 (>= 3.3.2),
     here (>= 1.0.1),
     knitr (>= 1.30),
@@ -46,6 +46,5 @@ Suggests:
     shinyjs (>= 2.0.0),
     testthat (>= 3.0.0),
     tidyr (>= 1.1.2),
-    waiter (>= 0.1.3)
 BugReports: https://github.com/UPGo-McGill/matchr/issues
 VignetteBuilder: knitr

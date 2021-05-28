@@ -4,12 +4,12 @@
 \alias{new_image}
 \title{Create a new matchr_image object}
 \usage{
-new_image(x = list(), file = character())
+new_image(x = list(), path = character())
 }
 \arguments{
 \item{x}{A list of pixel arrays.}
 
-\item{file}{A character string, corresponding to the path or URL of the files
+\item{path}{A character string, corresponding to the path or URL of the files
 from which the arrays have been generated.}
 }
 \value{

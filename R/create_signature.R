@@ -76,11 +76,11 @@ create_signature.matchr_image <- function(image, bands = 20,
   })
   
   # Return output
-  file <- field(image, "file")
+  path <- get_path(image)
   aspect_ratio <- 
     sapply(sigs, function(x) ifelse(length(x) == 2, x[[2]][2] / x[[2]][1], 
                                     NA_real_))
-  result <- new_signature(lapply(sigs, `[[`, 1), file, aspect_ratio)
+  result <- new_signature(lapply(sigs, `[[`, 1), path, aspect_ratio)
   return(result)
   
 }
@@ -183,7 +183,7 @@ create_signature_internal <- function(image, bands = 20,
   
   # Error checking and variable initialization
   stopifnot(is.numeric(bands), is.logical(rm_black_bars))
-  a <- field(image, "array")[[1]]
+  a <- get_array(image)[[1]]
   
   # Return NA if input is NA or doesn't have enough pixels
   if (is.na(image)) return(NA)

@@ -5,7 +5,7 @@
 \title{Create a new matchr_matrix object}
 \usage{
 new_matrix(
-  matrix = list(),
+  array = list(),
   x_ratios = list(),
   y_ratios = list(),
   x_sig = list(),
@@ -17,7 +17,7 @@ new_matrix(
 )
 }
 \arguments{
-\item{matrix}{A list of correlation matrices.}
+\item{array}{A list of correlation matrices.}
 
 \item{x_ratios}{A list of numeric vectors: the highest and lowest aspect
 ratio in the x vector.}

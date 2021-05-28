@@ -1,17 +1,17 @@
 #' Create a new matchr_signature object
 #'
 #' @param x A list of numeric vectors.
-#' @param file A character string, corresponding to the path or URL of the files
+#' @param path A character string, corresponding to the path or URL of the files
 #' from which the signatures have been generated.
 #' @param aspect_ratio A numeric vector, giving the aspect ratio of the images.
 #' @return An object of class `matchr_signature`.
 
-new_signature <- function(x = list(), file = character(), 
+new_signature <- function(x = list(), path = character(), 
                           aspect_ratio = numeric()) {
   vec_assert(x, list())
-  vec_assert(file, character())
+  vec_assert(path, character())
   vec_assert(aspect_ratio, numeric())
-  new_rcrd(fields = list(signature = x, file = file, 
+  new_rcrd(fields = list(signature = x, path = path, 
                          aspect_ratio = aspect_ratio), 
            class = "matchr_signature")
 }
@@ -38,9 +38,9 @@ is_signature <- function(x) {
 
 format.matchr_signature <- function(x, formatter = num_format, ...) {
 
-  x_empty <- which(lengths(field(x, "signature")) == 0)
+  x_empty <- which(lengths(get_raw_sig(x)) == 0)
   x_valid <- setdiff(which(!is.na(x)), x_empty)
-  values <- formatter(field(x[x_valid], "signature"))
+  values <- formatter(get_raw_sig(x[x_valid]))
     
   out <- rep(NA_character_, vec_size(x))
   out[x_empty] <- rep("<Empty>", vec_size(x_empty))
@@ -108,7 +108,7 @@ vec_ptype_abbr.matchr_signature <- function(x, ...) "sig"
 
 is.na.matchr_signature <- function(x, ...) {
 
-  as.logical(sapply(lapply(field(x, "signature"), is.na), sum))
+  as.logical(sapply(lapply(get_raw_sig(x), is.na), sum))
 
 }
 
@@ -142,40 +142,38 @@ obj_print_data.matchr_signature <- function(x, width = getOption("width"), ...) 
   # Next size: only a.r.
   } else if (bracket_chars < 19) {
     bracket <- rep("", vec_size(x))
-    bracket[x_valid] <- sprintf(' (a.r. %.2f)', field(x[x_valid], 
-                                                      "aspect_ratio"))
+    bracket[x_valid] <- sprintf(' (a.r. %.2f)', get_ar(x[x_valid]))
     if (all(is.na(x))) sigs <- rep(pillar::style_na(NA), vec_size(x))
   
   # Next size: only aspect ratio
   } else if (bracket_chars < 25) {
     bracket <- rep("", vec_size(x))
-    bracket[x_valid] <- sprintf(' (aspect ratio %.2f)', field(x[x_valid], 
-                                                              "aspect_ratio"))
+    bracket[x_valid] <- sprintf(' (aspect ratio %.2f)', get_ar(x[x_valid]))
     if (all(is.na(x))) sigs <- rep(pillar::style_na(NA), vec_size(x))
     
   # Next size: a.r. plus path
   } else if (bracket_chars < 50) {
     file_max <- rep(bracket_chars - 2, vec_size(x))
     file_max[x_valid] <- bracket_chars - 13
-    file_length <- nchar(field(x, "file"))
+    file_length <- nchar(get_path(x))
     file <- ifelse(
       file_length > file_max,
-      paste0("...", substr(field(x, "file"), file_length - file_max + 4, 
+      paste0("...", substr(get_path(x), file_length - file_max + 4, 
                            file_length)),
-      field(x, "file"))
+      get_path(x))
     bracket <- sprintf(' (a.r. %.2f, %s)', 
-                       field(x, "aspect_ratio"),
+                       get_ar(x),
                        file)
     bracket[x_invalid] <- sprintf(' (%s)', file[x_invalid])
     if (all(is.na(x))) {
       sigs <- rep(pillar::style_na(NA), vec_size(x))
       file_max <- rep(bracket_chars + 18, vec_size(x))
-      file_length <- nchar(field(x, "file"))
+      file_length <- nchar(get_path(x))
       file <- ifelse(
         file_length > file_max,
-        paste0("...", substr(field(x, "file"), file_length - file_max + 4, 
+        paste0("...", substr(get_path(x), file_length - file_max + 4, 
                              file_length)),
-        field(x, "file"))
+        get_path(x))
       bracket <- sprintf(' (%s)', file)
       
     }
@@ -184,13 +182,11 @@ obj_print_data.matchr_signature <- function(x, width = getOption("width"), ...) 
   } else {
     file_max <- rep(bracket_chars - 2, vec_size(x))
     file_max[x_valid] <- bracket_chars - 21
-    file_length <- nchar(field(x, "file"))
+    file_length <- nchar(get_path(x))
     file <- ifelse(file_length > file_max, paste0(
-      "...", substr(field(x, "file"), file_length - file_max + 4, file_length)),
-      field(x, "file"))
-    bracket <- sprintf(' (aspect ratio %.2f, %s)', 
-                       field(x, "aspect_ratio"),
-                       file)
+      "...", substr(get_path(x), file_length - file_max + 4, file_length)),
+      get_path(x))
+    bracket <- sprintf(' (aspect ratio %.2f, %s)', get_ar(x), file)
     bracket[x_invalid] <- sprintf(' (%s)', file[x_invalid])
     bracket[x_invalid] <- 
       ifelse(nchar(bracket[x_invalid]) < bracket_chars + 1, paste0(
@@ -199,12 +195,12 @@ obj_print_data.matchr_signature <- function(x, width = getOption("width"), ...) 
     if (all(is.na(x))) {
       sigs <- rep(pillar::style_na(NA), vec_size(x))
       file_max <- rep(bracket_chars + 18, vec_size(x))
-      file_length <- nchar(field(x, "file"))
+      file_length <- nchar(get_path(x))
       file <- ifelse(
         file_length > file_max,
-        paste0("...", substr(field(x, "file"), file_length - file_max + 4, 
+        paste0("...", substr(get_path(x), file_length - file_max + 4, 
                              file_length)),
-        field(x, "file"))
+        get_path(x))
       bracket <- sprintf(' (%s)', file)
     }
   }
@@ -259,7 +255,7 @@ pillar_shaft.matchr_signature <- function(x, ...) {
 
 format.pillar_shaft_signature <- function(x, width, ...) {
   
-  data <- field(x, "signature")
+  data <- get_raw_sig(x)
   x_valid <- which(!is.na(data))
   
   if (requireNamespace("crayon", quietly = TRUE) && crayon::has_color()) {
@@ -284,10 +280,16 @@ format.pillar_shaft_signature <- function(x, width, ...) {
 sum.matchr_signature <- function(..., na.rm = FALSE) {
   
   args <- list(...)
-  sums <- lapply(args, field, "signature")
+  sums <- lapply(args, get_raw_sig)
   sums <- lapply(sums, sapply, sum)
   sums <- unlist(sums)
   sums <- sum(sums, na.rm = na.rm)
   sums
  
 }
+
+# ------------------------------------------------------------------------------
+
+#' @export
+
+length.matchr_signature <- function(x) vctrs::vec_size(x)

@@ -1,6 +1,6 @@
 #' Create a new matchr_matrix object
 #'
-#' @param matrix A list of correlation matrices.
+#' @param array A list of correlation matrices.
 #' @param x_ratios A list of numeric vectors: the highest and lowest aspect 
 #' ratio in the x vector.
 #' @param y_ratios A list of numeric vectors: the highest and lowest aspect 
@@ -15,12 +15,12 @@
 #' @param y_na A character vector: the paths of y signatures which are NA.
 #' @return An object of class `matchr_matrix`.
 
-new_matrix <- function(matrix = list(), x_ratios = list(), y_ratios = list(),
+new_matrix <- function(array = list(), x_ratios = list(), y_ratios = list(),
                        x_sig = list(), y_sig = list(), 
                        x_total = integer(length = 1L), 
                        y_total = integer(length = 1L),
                        x_na = character(), y_na = character()) {
-  vec_assert(matrix, list())
+  vec_assert(array, list())
   vec_assert(x_ratios, list())
   vec_assert(y_ratios, list())
   vec_assert(x_sig, list())
@@ -29,7 +29,7 @@ new_matrix <- function(matrix = list(), x_ratios = list(), y_ratios = list(),
   vec_assert(y_total, integer())
   vec_assert(x_na, character())
   vec_assert(y_na, character())
-  new_rcrd(fields = list(matrix = matrix, x_ratios = x_ratios, 
+  new_rcrd(fields = list(array = array, x_ratios = x_ratios, 
                          y_ratios = y_ratios, x_sig = x_sig, y_sig = y_sig), 
            x_total = x_total, y_total = y_total, x_na = x_na, y_na = y_na,
            class = "matchr_matrix")
@@ -47,9 +47,7 @@ new_matrix <- function(matrix = list(), x_ratios = list(), y_ratios = list(),
 #' FALSE otherwise.
 #' @export
 
-is_matrix <- function(x) {
-  inherits(x, "matchr_matrix")
-}
+is_matrix <- function(x) inherits(x, "matchr_matrix")
 
 # ------------------------------------------------------------------------------
 
@@ -57,8 +55,8 @@ is_matrix <- function(x) {
 
 format.matchr_matrix <- function(x, ...) {
   
-  paste(prettyNum(lengths(field(x, "x_sig")), ","), "x", 
-        prettyNum(lengths(field(x, "y_sig")), ","))
+  paste(prettyNum(lengths(get_x_sig(x)), ","), "x", 
+        prettyNum(lengths(get_y_sig(x)), ","))
   
 }
 
@@ -96,7 +94,7 @@ obj_print_data.matchr_matrix <- function(x, width = getOption("width"), ...) {
   lead_n <- pillar::style_subtle(lead_n)
   
   # Aspect ratios
-  ratios <- field(x, "x_ratios")
+  ratios <- get_x_ar(x)
   ratios <- sapply(ratios, function(x) 
     sprintf(" Aspect ratios %4.2f - %4.2f: ", x[1], x[2]))
   
@@ -128,15 +126,15 @@ obj_print_footer.matchr_matrix <- function(x, ...) {
 vec_restore.matchr_matrix <- function(x, to, ..., n = NULL) {
   
   new_matrix(
-    matrix = field(x, "matrix"),
-    x_ratios = field(x, "x_ratios"),
-    y_ratios = field(x, "y_ratios"),
-    x_sig = field(x, "x_sig"),
-    y_sig = field(x, "y_sig"),
-    x_total = length(unique(c(
-      field(do.call("c", field(x, "x_sig")), "file"), attr(to, "x_na")))),
-    y_total = length(unique(c(
-      field(do.call("c", field(x, "y_sig")), "file"), attr(to, "y_na")))),
+    array = get_array(x),
+    x_ratios = get_x_ar(x),
+    y_ratios = get_y_ar(x),
+    x_sig = get_x_sig(x),
+    y_sig = get_y_sig(x),
+    x_total = length(unique(c(get_path(do.call("c", get_x_sig(x))), 
+                              attr(to, "x_na")))),
+    y_total = length(unique(c(get_path(do.call("c", get_y_sig(x))), 
+                              attr(to, "y_na")))),
     x_na = attr(to, "x_na"),
     y_na = attr(to, "y_na")
   )
@@ -151,10 +149,16 @@ vec_restore.matchr_matrix <- function(x, to, ..., n = NULL) {
 as.matrix.matchr_matrix <- function(x, ...) {
   if (vec_size(x) > 1) warning("Only the first element will be converted.", 
                                call. = FALSE)
-  out <- do.call(rbind, field(x, "matrix")[[1]])
+  out <- get_array(x)[[1]]
   dimnames(out) <- list(
-    field(do.call(c, field(x, "x_sig")[[1]]), "file"),
-    field(field(x, "y_sig")[[1]], "file")
+    get_path(get_x_sig(x)[[1]]),
+    get_path(get_y_sig(x)[[1]])
   )
   out
 }
+
+# ------------------------------------------------------------------------------
+
+#' @export
+
+length.matchr_matrix <- function(x) vctrs::vec_size(x)

@@ -233,16 +233,6 @@ trim_signature <- function(x, range) {
   
 }
 
-# ------------------------------------------------------------------------------
-
-sig_length <- function(x) {
-  
-  vec_assert(x, new_signature())
-  l <- unique(sapply(field(x, "signature"), length))
-  if (length(l) == 2 && 1 %in% l) l <- setdiff(l, 1)
-  stopifnot(length(l) == 1)
-  l
-}
 
 # ------------------------------------------------------------------------------
 
@@ -250,4 +240,34 @@ fast_cor <- function(x, y) {
   x <- t((t(x) - colMeans(x)) / apply(x, 2, stats::sd))
   y <- t((t(y) - colMeans(y)) / apply(y, 2, stats::sd))
   crossprod(x, y) / (nrow(x) - 1)
+}
+
+# ------------------------------------------------------------------------------
+
+reduce <- function(x, handler_text, quiet) {
+
+  # Initialize progress reporting
+  handler_matchr(handler_text)
+  prog_bar <- as.logical((vec_size(x) >= 100) * as.numeric(!quiet) * 
+                           progressr::handlers(global = NA))
+  pb <- progressr::progressor(steps = vec_size(x), enable = prog_bar)
+  iterator <- get_iterator(x)
+  
+  out <- Reduce(function(a, n) {
+    if (n %% iterator == 0) pb(amount = iterator)
+    merge_index <- lapply(a, intersect, x[[n]])
+    
+    if (sum(lengths(merge_index)) > 0) {
+      merge_index <- which(lengths(merge_index) > 0)
+      merged <- a[merge_index]
+      merged <- unlist(merged)
+      merged <- union(merged, x[[n]])
+      merged <- list(sort(merged))
+      not_merged <- a[-merge_index]
+      out <- c(merged, not_merged)
+    } else out <- c(a, list(x[[n]]))
+  }, seq_along(x), init = list())
+  
+  stopifnot(length(unique(unlist(out))) == length(unlist(lapply(out, unique))))
+  out
 }

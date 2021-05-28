@@ -59,7 +59,6 @@ load_image <- function(file, quiet = FALSE) {
 load_image_internal <- function(x) {
   
   # Download to tempfile if path is URL
-  
   if (is_url(x)) {
     
     ext <- regmatches(x, regexpr("\\.([A-Za-z0-9]+$)", x))

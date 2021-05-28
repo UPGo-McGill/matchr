@@ -1,14 +1,14 @@
 #' Create a new matchr_image object
 #'
 #' @param x A list of pixel arrays.
-#' @param file A character string, corresponding to the path or URL of the files
+#' @param path A character string, corresponding to the path or URL of the files
 #' from which the arrays have been generated.
 #' @return An object of class `matchr_image`.
 
-new_image <- function(x = list(), file = character()) {
+new_image <- function(x = list(), path = character()) {
   vec_assert(x, list())
-  vec_assert(file, character())
-  new_rcrd(fields = list(array = x, file = file), class = "matchr_image")
+  vec_assert(path, character())
+  new_rcrd(fields = list(array = x, path = path), class = "matchr_image")
 }
 
 # ------------------------------------------------------------------------------
@@ -37,17 +37,17 @@ format.matchr_image <- function(x, ...) {
   d <- dim(x)
   cols <- ifelse(is.na(d[,3]), "greyscale", "RGB")
   cols[is.na(x)] <- "NA"
-  file <- field(x, "file")
-  file_length <- nchar(file)
-  file_max <- max_chars - nchar(cols) - 
+  path <- get_path(x)
+  path_length <- nchar(path)
+  path_max <- max_chars - nchar(cols) - 
     apply(d, 1, function(x) sum(nchar(x[1:2]), na.rm = TRUE)) - 12
-  file <- ifelse(file_length > file_max, 
-                 paste0("...", substr(file, file_length - file_max + 4, 
-                                      file_length)), file)
+  path <- ifelse(path_length > path_max, 
+                 paste0("...", substr(path, path_length - path_max + 4, 
+                                      path_length)), path)
   
   msg_1 <- sprintf('%i x %i, %s', d[,2], d[,1], cols)
   msg_1[is.na(x)] <- NA_character_
-  msg_2 <- sprintf(', %s', file)
+  msg_2 <- sprintf(', %s', path)
   msg <- paste0(msg_1, msg_2)
   msg
 }
@@ -64,14 +64,14 @@ vec_ptype_abbr.matchr_image <- function(x, ...) {
 
 #' @export
 
-is.na.matchr_image <- function(x, ...) is.na(field(x, "array"))
+is.na.matchr_image <- function(x, ...) is.na(get_array(x))
 
 # ------------------------------------------------------------------------------
 
 #' @export
 
 dim.matchr_image <- function(x, ...) {
-  dims <- lapply(field(x, "array"), dim)
+  dims <- lapply(get_array(x), dim)
   dims[sapply(dims, is.null)] <- NA
   dims[lengths(dims) < 3] <- lapply(dims[lengths(dims) < 3], function(x) x[1:3])
   do.call(rbind, dims)
@@ -92,8 +92,8 @@ plot.matchr_image <- function(x, ...) {
   # Plot greyscale
   if (is.na(dim(x)[,3])) {
     
-    r <- grDevices::gray(t(field(x, "array")[[1]]))
-    dim(r) <- dim(field(x, "array")[[1]])[1:2]
+    r <- grDevices::gray(t(get_array(x)[[1]]))
+    dim(r) <- dim(get_array(x)[[1]])[1:2]
     class(r) <- "raster"
     plot(r)
     invisible(x)
@@ -101,10 +101,10 @@ plot.matchr_image <- function(x, ...) {
     # Plot colour
   } else {
     
-    r <- grDevices::rgb(t(field(x, "array")[[1]][,,1]),
-                        t(field(x, "array")[[1]][,,2]),
-                        t(field(x, "array")[[1]][,,3]))
-    dim(r) <- dim(field(x, "array")[[1]])[1:2]
+    r <- grDevices::rgb(t(get_array(x)[[1]][,,1]),
+                        t(get_array(x)[[1]][,,2]),
+                        t(get_array(x)[[1]][,,3]))
+    dim(r) <- dim(get_array(x)[[1]])[1:2]
     class(r) <- "raster"
     plot(r)
     invisible(x)
@@ -112,3 +112,8 @@ plot.matchr_image <- function(x, ...) {
   }
 }
   
+# ------------------------------------------------------------------------------
+
+#' @export
+
+length.matchr_image <- function(x) vctrs::vec_size(x)

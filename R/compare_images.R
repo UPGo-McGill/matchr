@@ -7,24 +7,32 @@
 #' @param result A data frame produced by \code{\link{identify_matches}} (with
 #' confirm = TRUE or with \code{\link{confirm_matches}} subsequently run on the
 #' results).
-#' @param remove_duplicates TKTK
+#' @param remove_duplicates A logical scalar. Should x-y pairs which are
+#' identical to other x-y pairs be reduced to a single x-y pair? This step can
+#' be computationally expensive for large datasets, but can dramatically reduce 
+#' the number of matches to be verified.
 #' @param batch_size An integer scalar. The number of images to display at a 
 #' time in the Shiny app (default 100).
 #' @param show_names TKTK
 #' @param corr_thresh TKTK
 #' @param previous TKTK
-#' @return If the Shiny package is present, a data frame with the same fields as
-#' the input `result`, except that the field `match` will be replaced with
-#' `new_match_status`, which is a character vector with possible entries
-#' "match" and "no match". The output will have one row for each image pairing
-#' that was confirmed, which is determined by how many pages into the Shiny app
-#' the user proceeded, and thus how many pairings were viewed. If all pages are
-#' viewed, then the output will have the same number of rows as the input.
+#' @param quiet A logical scalar. Should the function execute quietly, or should
+#' it return status updates throughout the function (default)?
+#' @return A data frame with the same fields as the input `result`, except that 
+#' the field `match` will be replaced with `new_match_status`, which is a 
+#' character vector with possible entries "match" and "no match". The output 
+#' will have one row for each image pairing that was confirmed, which is 
+#' determined by how many pages into the Shiny app the user proceeded, and thus 
+#' how many pairings were viewed. If all pages are viewed, then the output will 
+#' have the same number of rows as the input.
 #' @export
 
 compare_images <- function(result, remove_duplicates = TRUE, 
                            batch_size = 100L, show_names = FALSE, 
-                           corr_thresh = 0.9995, previous = TRUE) {
+                           corr_thresh = 0.9995, previous = TRUE, 
+                           quiet = FALSE) {
+  
+  ## Setup ---------------------------------------------------------------------
   
   # Check if necessary packages are installed
   if (!requireNamespace("shiny", quietly = TRUE)) stop(
@@ -35,49 +43,238 @@ compare_images <- function(result, remove_duplicates = TRUE,
       "For interactive image comparison, install the \"shinyjs\" package.",
       call. = FALSE)
     
-    if (!requireNamespace("waiter", quietly = TRUE)) stop(
-      "For interactive image comparison, install the \"waiter\" package.",
-      call. = FALSE)
-  
   # Error checking and object initialization
   stopifnot(is.data.frame(result), is.numeric(c(batch_size, corr_thresh)),
             is.logical(c(remove_duplicates, show_names, previous)))
-  if (!is.integer(batch_size)) batch_size <- floor(batch_size)
+  batch_size <- floor(batch_size)
+  x_id <- y_id <- .UID <- NULL
   
   # Get list of files, paths and folders
-  x_names <- field(result$x_sig, "file")
-  x_dirs <- x_names[!is_url(x_names)]
+  x_paths <- get_path(result$x_sig)
+  x_dirs <- x_paths[!is_url(x_paths)]
   x_dirs <- sub("[^/]+$", "", x_dirs)
   x_dirs <- sort(unique(x_dirs))
   x_dirs <- sub("/$", "", x_dirs)
   x_paths <- paste("x", seq_along(x_dirs), sep = "_")
 
-  y_names <- field(result$y_sig, "file")
-  y_dirs <- y_names[!is_url(y_names)]
+  y_paths <- get_path(result$y_sig)
+  y_dirs <- y_paths[!is_url(y_paths)]
   y_dirs <- sub("[^/]+$", "", y_dirs)
   y_dirs <- sort(unique(y_dirs))
   y_dirs <- sub("/$", "", y_dirs)
   y_paths <- paste("y", seq_along(y_dirs), sep = "_")
 
-  # Launch Shiny app
-  if (requireNamespace("shiny", quietly = TRUE)) {
+  
+  ## Initialize df -------------------------------------------------------------
+  
+  # Prepare result table for processing
+  df <- result
+  df$.UID <- paste0("id-", formatC(seq_len(nrow(df)), width = floor(log10(
+    nrow(df))) + 1, flag = "0"))
+  df_all <- df
+  
+  # Subset table if previous is TRUE
+  if (previous && suppressWarnings(!is.null(df$confirmed))) {
+    df_prev <- df[df$confirmed == TRUE,]
+    df <- df[df$confirmed == FALSE,]
+    df$confirmed <- NULL
+  } else df_prev <- df[0,]
+  
+  # Remove results with perfect correlation
+  df_cor <- df[df$correlation >= corr_thresh,]
+  df <- df[df$correlation < corr_thresh,]
+  
+  
+  ## Remove duplicates ---------------------------------------------------------
+  
+  if (remove_duplicates) {
+    
+    # Identify x images with correlation ~= 1
+    x_matches <- 
+      df$x_sig[!duplicated(get_path(df$x_sig))] |> 
+      match_signatures() |> 
+      identify_matches(quiet = TRUE)
+    x_matches <- x_matches[x_matches$correlation >= corr_thresh,]
+    
+    # Group x images together by correlation
+    x_matches <- mapply(function(x, y) c(x, y), get_path(x_matches$x_sig),
+                        get_path(x_matches$y_sig), SIMPLIFY = FALSE, 
+                        USE.NAMES = FALSE)
+    
+    # Add duplicates
+    dup_x <- table(get_path(df$x_sig))
+    dup_x <- dup_x[dup_x >= 2]
+    dup_x <- lapply(names(dup_x), function(x) x)
+    x_matches <- c(x_matches, dup_x)
+    
+    # Reduce x_matches
+    x_reduced <- reduce(x_matches, "Identifying x duplicate", quiet)
 
-    if (!requireNamespace("shinyjs", quietly = TRUE)) stop(
-      "For interactive image comparison, install the \"shinyjs\" package.",
-      call. = FALSE)
-
-    if (!requireNamespace("waiter", quietly = TRUE)) stop(
-      "For interactive image comparison, install the \"waiter\" package.",
-      call. = FALSE)
-
-    shiny::shinyOptions(result = result, x_paths = x_paths, y_paths = y_paths,
-                        x_dirs = x_dirs, y_dirs = y_dirs,
-                        remove_duplicates = remove_duplicates,
-                        batch_size = batch_size, show_names = show_names,
-                        corr_thresh = corr_thresh, previous = previous)
-    output <- shiny::runApp(appDir = system.file("compare_images",
-                                                 package = "matchr"))
-    return(output)
+    # Create x table
+    if (requireNamespace("dplyr", quietly = TRUE)) {
+      x_table <- lapply(seq_along(x_reduced), function(n) 
+        dplyr::tibble(x_id = n, x_name = x_reduced[[n]]))
+      x_table <- dplyr::bind_rows(x_table)
+    } else {
+      x_table <- lapply(seq_along(x_reduced), function(n) 
+        data.frame(x_id = n, x_name = x_reduced[[n]]))
+      x_table <- do.call(rbind, x_table)
+    }
+    x_table <- x_table[!duplicated(x_table),]
+    
+    # Join IDs to df table
+    df$x_name <- get_path(df$x_sig)
+    df <- merge(df, x_table, all = TRUE)
+    
+    # Identify y images with correlation ~= 1 with counterparts in x_table
+    y_sig <- df[!is.na(df$x_id),]$y_sig
+    y_sig <- y_sig[!duplicated(get_path(y_sig))]
+    y_matches <- 
+      y_sig |> 
+      match_signatures() |> 
+      identify_matches(quiet = TRUE)
+    y_matches <- y_matches[y_matches$correlation >= corr_thresh,]
+    
+    # Group y images together by correlation
+    y_matches <- mapply(function(x, y) c(x, y), get_path(y_matches$x_sig),
+                        get_path(y_matches$y_sig), SIMPLIFY = FALSE, 
+                        USE.NAMES = FALSE)
+    
+    # Add duplicates
+    dup_y <- df[!is.na(df$x_id),]$y_sig
+    dup_y <- table(get_path(dup_y))
+    dup_y <- dup_y[dup_y >= 2]
+    dup_y <- lapply(names(dup_y), function(x) x)
+    y_matches <- c(y_matches, dup_y)
+    
+    # Reduce y_matches
+    y_reduced <- reduce(y_matches, "Identifying y match", quiet)
+    
+    # Create y table
+    if (requireNamespace("dplyr", quietly = TRUE)) {
+      y_table <- lapply(seq_along(y_reduced), function(n) 
+        dplyr::tibble(y_id = n, y_name = y_reduced[[n]]))
+      y_table <- dplyr::bind_rows(y_table)
+    } else {
+      y_table <- lapply(seq_along(y_reduced), function(n) 
+        data.frame(y_id = n, y_name = y_reduced[[n]]))
+      y_table <- do.call(rbind, y_table)
+    }
+    y_table <- y_table[!duplicated(y_table),]
+    
+    # Join IDs to df table
+    df$y_name <- get_path(df$y_sig)
+    df <- merge(df, y_table, all = TRUE)
+    
+    # Get full df for later
+    df_full <- df
+    
+    # Create trimmed df table
+    df_b <- df[!is.na(df$x_id) & !is.na(df$y_id),]
+    df_b <- df_b[order(df_b$x_id, df_b$y_id, -1 * df_b$correlation),]
+    df_dups <- df_b[duplicated(df_b[c("x_id", "y_id")]),]
+    df_b <- df_b[!duplicated(df_b[c("x_id", "y_id")]),]
+    df_unique <- df[is.na(df$x_id) | is.na(df$y_id),]
+    
+    df <- rbind(df_b[!names(df_b) %in% c("x_sig", "y_sig")], 
+                df_unique[!names(df_unique) %in% c("x_sig", "y_sig")])
+    df <- df[order(df$.UID),]
+    if (requireNamespace("dplyr", quietly = TRUE)) df <- dplyr::as_tibble(df)
+    
+  } else {
+    df_dups <- df[0,]
+    df$x_name <- get_path(df$x_sig)
+    df$y_name <- get_path(df$y_sig)
+    df_full <- df
   }
+  
+  # Update paths
+  if (length(x_dirs) > 0) df$x_name <- as.vector(mapply(
+    sub, x_dirs, x_paths, MoreArgs = list(df$x_name), USE.NAMES = FALSE))
+  if (length(y_dirs) > 0) df$y_name <- as.vector(mapply(
+    sub, y_dirs, y_paths, MoreArgs = list(df$y_name), USE.NAMES = FALSE))
+  
+  # Make change table
+  if (remove_duplicates) {
+    change_table <- df[c(".UID", "x_name", "y_name", "match", "x_id", "y_id")]
+  } else change_table <- df[c(".UID", "x_name", "y_name", "match")]
+  colnames(change_table)[colnames(change_table) == "match"] <- 
+    "new_match_status"
+  change_table$new_match_status <- ifelse(change_table$new_match_status %in% c(
+    "match", "likely match"), "match", "no match")
+  
+  # Need one table_n row per batch_size entries in each match status
+  table_n <- table(df$match)
+  table_n <- table_n[order(match(names(table_n), c(
+    "match", "likely match", "possible match", "no match")))]
+  table_n <-
+    data.frame(
+      name = unlist(mapply(function(x, y) rep(x, ceiling(y / batch_size)), 
+                           names(table_n), table_n, USE.NAMES = FALSE)),
+      i_1 = unlist(sapply(table_n, function(x) seq_len(ceiling(
+        x / batch_size)) * batch_size - (batch_size - 1), USE.NAMES = FALSE)),
+      i_2 = unlist(sapply(table_n, function(x) 
+        pmin(seq_len(ceiling(x / batch_size)) * batch_size, x), 
+        USE.NAMES = FALSE)),
+      row.names = NULL)
+  names(table_n) <- c("name", "i_1", "i_2")
+  
+  # Make summary table
+  summary_table <-
+    data.frame(
+      category = c("Total matches", "Matches previously checked", 
+                   "Matches with correlation ~= 1", 
+                   "Matches identified as duplicates", "Matches to check", 
+                   "Matches", "Likely matches", "Possible matches", 
+                   "Non-matches"),
+      value = prettyNum(
+        c(nrow(result), nrow(df_prev), nrow(df_cor), nrow(df_dups),  
+          nrow(result) - nrow(df_prev) - nrow(df_dups) - nrow(df_cor),
+          max(table_n[table_n$name == "match",]$i_2),
+          max(table_n[table_n$name == "likely match",]$i_2),
+          max(table_n[table_n$name == "possible match",]$i_2),
+          max(table_n[table_n$name == "no match",]$i_2)), big.mark = ","))
+  
+  # Launch Shiny app then return results
+  shiny::shinyOptions(df = df, table_n = table_n, summary_table = summary_table,
+                      x_paths = x_paths, y_paths = y_paths, x_dirs = x_dirs, 
+                      y_dirs = y_dirs, batch_size = batch_size, 
+                      show_names = show_names)
+  
+  out <- shiny::runApp(system.file("compare_images", package = "matchr"))
+  
+  if (remove_duplicates) {
+    
+    change_groups <- out[c("x_id", "y_id", "new_match_status")]
+    change_groups <- subset(change_groups, !is.na(x_id) & !is.na(y_id))
+    
+    # Get match status for de-duplicated matches
+    out_b <- merge(df_full, change_groups)
+    out_b <- out_b[c(".UID", "new_match_status")]
+    
+  } else out_b <- data.frame(.UID = character(), new_match_status = character())
+  
+  out_a <- subset(out, !.UID %in% out_b$.UID)
+  out_a <- out_a[c(".UID", "new_match_status")]
+  
+  # Add previous results
+  out_prev <- df_prev[c(".UID", "match")]
+  names(out_prev) <- c(".UID", "new_match_status")
+  
+  # Add correlation == 1 results
+  out_cor <- df_cor[".UID"]
+  out_cor$new_match_status <- "match"
+  
+  # Combine results
+  out_IDs <- rbind(out_a, out_b, out_prev, out_cor)
+  output <- df_all[setdiff(names(df_all), "match")]
+  output <- merge(output, out_IDs)
+  output$.UID <- NULL
+  
+  if (requireNamespace("dplyr", quietly = TRUE)) {
+    output <- dplyr::as_tibble(output)
+  }
+  
+  return(output)
   
 }
