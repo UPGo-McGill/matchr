@@ -29,7 +29,7 @@
 #' it return status updates throughout the function (default)?
 #' @return Invisibly, a data frame summarizing the results of the downloads.
 #' @examples
-#' #' \dontrun{
+#' \dontrun{
 #' # Setup
 #' df <- data.frame(id = 1:15, photos = test_urls)
 #' dest <- tempdir()

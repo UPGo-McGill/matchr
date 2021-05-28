@@ -52,7 +52,7 @@ the files to a local folder, possibly with the use of an additional ID vector
 to rename the files and check for duplicates.
 }
 \examples{
-#' \dontrun{
+\dontrun{
 # Setup
 df <- data.frame(id = 1:15, photos = test_urls)
 dest <- tempdir()

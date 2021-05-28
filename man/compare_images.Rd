@@ -85,6 +85,6 @@ matches <- match_signatures(sigs)
 confirm <- identify_matches(matches)
 
 # Assign the output of compare_images to retrieve results
-output <- compare_images(confirm)
+change_table <- compare_images(confirm)
 }
 }
