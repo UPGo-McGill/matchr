@@ -11,7 +11,7 @@ y_paths <- shiny::getShinyOption("y_paths")
 x_dirs <- shiny::getShinyOption("x_dirs")
 y_dirs <- shiny::getShinyOption("y_dirs")
 batch_size <- shiny::getShinyOption("batch_size")
-show_names <- shiny::getShinyOption("show_names")
+show_paths <- shiny::getShinyOption("show_paths")
 if (length(x_dirs) > 0) mapply(shiny::addResourcePath, x_paths, x_dirs)
 if (length(y_dirs) > 0) mapply(shiny::addResourcePath, y_paths, y_dirs)
 
@@ -279,7 +279,7 @@ server <- function(input, output, session) {
 
     lines <- lapply(seq_along(active_index()), function(x) shiny::hr())
     
-    if (show_names) {
+    if (show_paths) {
       text <- lapply(active_index(), function(x) shiny::h5(
         paste(x, df$.UID[x], sep = ": "), align = "center"))
       together <- c(rbind(text, match_buttons, no_match_buttons, lines))
@@ -295,7 +295,7 @@ server <- function(input, output, session) {
     images <- lapply(df$x_name[active_index()], function(x) {
       shiny::img(src = x, width = "250px", height = "250px")})
     lines <- lapply(df$x_name[active_index()], function(x) shiny::hr())
-    if (show_names) {
+    if (show_paths) {
       text <- lapply(df$x_name[active_index()], shiny::h5, align = "center")
       together <- c(rbind(text, images, lines))
     } else together <- c(rbind(images, lines))
@@ -306,7 +306,7 @@ server <- function(input, output, session) {
     images <- lapply(df$y_name[active_index()], function(x) {
       shiny::img(src = x, width = "250px", height = "250px")})
     lines <- lapply(df$y_name[active_index()], function(x) shiny::hr())
-    if (show_names) {
+    if (show_paths) {
       text <- lapply(df$y_name[active_index()], shiny::h5, align = "center")
       together <- c(rbind(text, images, lines))
     } else together <- c(rbind(images, lines))

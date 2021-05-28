@@ -65,14 +65,15 @@ image is rescaled or compressed, and thus serves as a reliable indicator of
 whether two images are the same.
 }
 \examples{
+\dontrun{
 # Import image with load_image then create signature
-img <- load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png")
+img <- load_image(test_urls)
 create_signature(img)
 
 # Or create signature directly from path/URL
-create_signature("https://upgo.lab.mcgill.ca/img/UPGo_logo.png")
+create_signature(test_urls)
 
-# By default top and bottom black bars are removed, but leave them with
-# rm_black_bars = FALSE
+# By default top/bottom black bars are removed, but leave them with rm_black_bars = FALSE
 create_signature(img, rm_black_bars = FALSE)
+}
 }

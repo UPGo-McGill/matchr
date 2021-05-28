@@ -6,6 +6,10 @@
 #' discount a match. The default implementation assumes that image signatures
 #' were compared using the greyscale components, and so it performs an
 #' additional correlation using the colour components.
+#' 
+#' By default, \code{confirm_matches} is called with default parameters by
+#' \code{\link{identify_matches}}. It is therefore usually only necessary to
+#' run \code{confirm_matches} on its own in order to change the parameters.
 #'
 #' @param data A data frame produced from \code{\link{identify_matches}}.
 #' @param check_threshold A numeric scalar. Matches with correlations higher
@@ -34,6 +38,16 @@
 #' - "no match": the original correlation coefficient was less than
 #' `check_threshold` and the new coefficient was less than 
 #' `confirm_thresholds[1]`.
+#' @examples
+#' \dontrun{
+#' # Setup
+#' sigs <- create_signature(test_urls)
+#' matches <- match_signatures(sigs)
+#' 
+#' # compare_images is only necessary to run if identify_matches was run with `confirm = FALSE`
+#' matches <- identify_matches(matches, confirm = FALSE)
+#' confirm <- confirm_matches(matches, check_threshold = 0.995)
+#' }
 #' @export
 
 confirm_matches <- function(data, check_threshold = 0.99,

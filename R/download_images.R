@@ -5,10 +5,9 @@
 #' to rename the files and check for duplicates.
 #'
 #' @param x A data frame with a column containing URLs to be downloaded and
-#' (optionally) IDs to be linked to the downloads for file naming and duplicate
-#' detection. If x is supplied, the `path` and `id` arguments will be 
-#' interpreted as field names. If x is NULL, they will be interpreted as the
-#' names of lists or character vectors.
+#' IDs to be linked to the downloads for file naming and duplicate detection. 
+#' If x is supplied, the `path` and `id` arguments will be interpreted as field 
+#' names. If x is NULL, they will be interpreted as lists or character vectors.
 #' @param destination A character scalar indicating a local folder where images
 #' should be downloaded to.
 #' @param path If x is supplied, the name of a list or character field in x with 
@@ -29,6 +28,13 @@
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
 #' @return Invisibly, a data frame summarizing the results of the downloads.
+#' @examples
+#' #' \dontrun{
+#' # Setup
+#' df <- data.frame(id = 1:15, photos = test_urls)
+#' dest <- tempdir()
+#' download_images(df, dest)
+#' }
 #' @export
 
 

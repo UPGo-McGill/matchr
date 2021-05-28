@@ -3,7 +3,8 @@
 #' \code{identify_matches} analyzes a `matchr_matrix` vector of image signature
 #' correlations to identify possible matches. By default it sets a low
 #' threshold for identifying matches, with the assumption that the results will
-#' subsequently be refined using \code{\link{confirm_matches}}.
+#'be refined using \code{\link{confirm_matches}}, either within the function if
+#'`confirm = TRUE`, or subsequently with a separate function call.
 #'
 #' @param x A vector of class `matchr_sig`, containing image signatures produced
 #' by \code{\link{create_signature}}, or `matchr_matrix`, containing image 
@@ -34,6 +35,18 @@
 #' image signatures.
 #' - `match` (if `confirm = TRUE`): A character vector indicating match status.
 #' (See \code{\link{confirm_matches}} for details.)
+#' @examples
+#' \dontrun{
+#' # Setup
+#' sigs <- create_signature(test_urls)
+#' matches <- match_signatures(sigs)
+#' 
+#' # By default, confirm_matches will be called inside identify_matches
+#' confirm <- identify_matches(matches)
+#' 
+#' # Skip this step with confirm = FALSE
+#' identify <- identify_matches(matches, confirm = FALSE)
+#' }
 #' @export
 
 identify_matches <- function(x, y = NULL, threshold = 0.975, confirm = TRUE, 

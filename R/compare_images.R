@@ -1,21 +1,47 @@
 #' Compare image matches in a Shiny app
 #'
-#' \code{compare_images} TKTK
-#'
-#' TKTK
+#' \code{compare_images} takes the image matches produced by 
+#' \code{\link{identify_matches}} and \code{\link{confirm_matches}} and displays
+#' them in an interactive Shiny app for visual inspection and confirmation. 
+#' Image matches with extremely high correlation can be optionally excluded, and
+#' pairwise duplicates can be detected and excluded as well.
+#' 
+#' The interface presents pairs of images alongside a best guess as to the match
+#' status ("Match" or "No match"). For matches which are correctly identified,
+#' no further action is necessary, while incorrect identifications can be
+#' corrected by clicking "Match" or "No match" next to the image pair. Images
+#' are presented in batches, and at any point the user can click the "Save and
+#' exit" button to close the comparison app and retrieve the results up through
+#' the last batch which was viewed. This means that even extremely large sets of
+#' potential matches can be manually verified over the course of several
+#' sessions.
 #'
 #' @param result A data frame produced by \code{\link{identify_matches}} (with
 #' confirm = TRUE or with \code{\link{confirm_matches}} subsequently run on the
-#' results).
+#' results). Any additional fields added to the data frame will be preserved in
+#' the output.
 #' @param remove_duplicates A logical scalar. Should x-y pairs which are
 #' identical to other x-y pairs be reduced to a single x-y pair? This step can
 #' be computationally expensive for large datasets, but can dramatically reduce 
 #' the number of matches to be verified.
 #' @param batch_size An integer scalar. The number of images to display at a 
 #' time in the Shiny app (default 100).
-#' @param show_names TKTK
-#' @param corr_thresh TKTK
-#' @param previous TKTK
+#' @param show_paths A logical scalar. Should image paths be displayed above
+#' images? A future update will incorporate this option directly into the
+#' comparison interface, at which point this argument will be removed.
+#' @param corr_thresh A numeric scalar between 0 and 1. Matches with signature 
+#' correlations above this value (default 0.9995) will be pre-emptively marked 
+#' as "match". If `remove_duplicates` is TRUE, this same value will be used to
+#' identify duplicated images. (I.e. if the correlation between two x or two y
+#' images is >= `corr_thresh`, the images will be considered duplicates.) If
+#' `corr_thresh` is set to 1, all image matches will be presented for manual 
+#' verification unless they are bit-for-bit identical.
+#' @param previous A logical scalar. Should the results of previous runs of
+#' `compare_images` be incorporated into the new results (default TRUE), or 
+#' should previously compared matches be compared again? If this argument is
+#' TRUE, then any rows in `result` with a `confirmed` value of TRUE will be
+#' removed from the data frame before processing (and so will not be present
+#' in the comparison interface) and then re-added unchanged to the output.
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
 #' @return A data frame with the same fields as the input `result`, except that 
@@ -25,10 +51,20 @@
 #' determined by how many pages into the Shiny app the user proceeded, and thus 
 #' how many pairings were viewed. If all pages are viewed, then the output will 
 #' have the same number of rows as the input.
+#' @examples
+#' \dontrun{
+#' # Setup
+#' sigs <- create_signature(test_urls)
+#' matches <- match_signatures(sigs)
+#' confirm <- identify_matches(matches)
+#' 
+#' # Assign the output of compare_images to retrieve results
+#' change_table <- compare_images(confirm)
+#' }
 #' @export
 
 compare_images <- function(result, remove_duplicates = TRUE, 
-                           batch_size = 100L, show_names = FALSE, 
+                           batch_size = 100L, show_paths = FALSE, 
                            corr_thresh = 0.9995, previous = TRUE, 
                            quiet = FALSE) {
   
@@ -45,7 +81,7 @@ compare_images <- function(result, remove_duplicates = TRUE,
     
   # Error checking and object initialization
   stopifnot(is.data.frame(result), is.numeric(c(batch_size, corr_thresh)),
-            is.logical(c(remove_duplicates, show_names, previous)))
+            is.logical(c(remove_duplicates, show_paths, previous)))
   batch_size <- floor(batch_size)
   x_id <- y_id <- .UID <- NULL
   
@@ -239,7 +275,7 @@ compare_images <- function(result, remove_duplicates = TRUE,
   shiny::shinyOptions(df = df, table_n = table_n, summary_table = summary_table,
                       x_paths = x_paths, y_paths = y_paths, x_dirs = x_dirs, 
                       y_dirs = y_dirs, batch_size = batch_size, 
-                      show_names = show_names)
+                      show_paths = show_paths)
   
   out <- shiny::runApp(system.file("compare_images", package = "matchr"))
   

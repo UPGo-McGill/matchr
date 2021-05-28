@@ -84,5 +84,19 @@ image signatures.
 \code{identify_matches} analyzes a \code{matchr_matrix} vector of image signature
 correlations to identify possible matches. By default it sets a low
 threshold for identifying matches, with the assumption that the results will
-subsequently be refined using \code{\link{confirm_matches}}.
+be refined using \code{\link{confirm_matches}}, either within the function if
+\code{confirm = TRUE}, or subsequently with a separate function call.
+}
+\examples{
+\dontrun{
+# Setup
+sigs <- create_signature(test_urls)
+matches <- match_signatures(sigs)
+
+# By default, confirm_matches will be called inside identify_matches
+confirm <- identify_matches(matches)
+
+# Skip this step with confirm = FALSE
+identify <- identify_matches(matches, confirm = FALSE)
+}
 }

@@ -57,3 +57,19 @@ discount a match. The default implementation assumes that image signatures
 were compared using the greyscale components, and so it performs an
 additional correlation using the colour components.
 }
+\details{
+By default, \code{confirm_matches} is called with default parameters by
+\code{\link{identify_matches}}. It is therefore usually only necessary to
+run \code{confirm_matches} on its own in order to change the parameters.
+}
+\examples{
+\dontrun{
+# Setup
+sigs <- create_signature(test_urls)
+matches <- match_signatures(sigs)
+
+# compare_images is only necessary to run if identify_matches was run with `confirm = FALSE`
+matches <- identify_matches(matches, confirm = FALSE)
+confirm <- confirm_matches(matches, check_threshold = 0.995)
+}
+}

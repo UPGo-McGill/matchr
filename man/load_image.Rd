@@ -32,5 +32,7 @@ this will read images with \code{load_image} 100 at a time before
 generating the unique colour signatures used for image matching.
 }
 \examples{
-load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png")
+\dontrun{
+load_image(test_urls)
+}
 }

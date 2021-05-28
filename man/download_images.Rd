@@ -15,10 +15,9 @@ download_images(
 }
 \arguments{
 \item{x}{A data frame with a column containing URLs to be downloaded and
-(optionally) IDs to be linked to the downloads for file naming and duplicate
-detection. If x is supplied, the \code{path} and \code{id} arguments will be
-interpreted as field names. If x is NULL, they will be interpreted as the
-names of lists or character vectors.}
+IDs to be linked to the downloads for file naming and duplicate detection.
+If x is supplied, the \code{path} and \code{id} arguments will be interpreted as field
+names. If x is NULL, they will be interpreted as lists or character vectors.}
 
 \item{destination}{A character scalar indicating a local folder where images
 should be downloaded to.}
@@ -51,4 +50,12 @@ Invisibly, a data frame summarizing the results of the downloads.
 \code{download_images} takes a data frame or a vector of URLs and downloads
 the files to a local folder, possibly with the use of an additional ID vector
 to rename the files and check for duplicates.
+}
+\examples{
+#' \dontrun{
+# Setup
+df <- data.frame(id = 1:15, photos = test_urls)
+dest <- tempdir()
+download_images(df, dest)
+}
 }
