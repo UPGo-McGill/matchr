@@ -19,7 +19,9 @@
 #' it return status updates throughout the function (default)?
 #' @return A `matchr_image` vector of the same length as the input vector.
 #' @examples
-#' load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png")
+#' \dontrun{
+#' load_image(test_urls)
+#' }
 #' @export
 
 load_image <- function(file, quiet = FALSE) {
@@ -71,10 +73,12 @@ load_image_internal <- function(x) {
     
     # Import image from temp file
     img <-
-      tryCatch(readbitmap::read.bitmap(dst), error = function(e) {
-        warning("Input '", x, "' is invalid; output is NA.", call. = FALSE)
-        NA
-      })
+      tryCatch(suppressMessages(suppressWarnings(readbitmap::read.bitmap(dst))), 
+               error = function(e) {
+                 warning("Input '", x, "' is invalid; output is NA.", 
+                         call. = FALSE)
+                 NA
+                 })
     
     unlink(dst)
     
@@ -82,7 +86,7 @@ load_image_internal <- function(x) {
     
     # Or import image directly from file path
     img <- 
-      tryCatch(suppressMessages(readbitmap::read.bitmap(x)), 
+      tryCatch(suppressMessages(suppressWarnings(readbitmap::read.bitmap(x))), 
                error = function(e) {
                  warning("Input '", x, "' is invalid; output is NA.", 
                          call. = FALSE)
