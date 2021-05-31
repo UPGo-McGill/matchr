@@ -8,7 +8,6 @@ compare_images(
   result,
   remove_duplicates = TRUE,
   batch_size = 100L,
-  show_paths = FALSE,
   corr_thresh = 0.9995,
   previous = TRUE,
   quiet = FALSE
@@ -27,10 +26,6 @@ the number of matches to be verified.}
 
 \item{batch_size}{An integer scalar. The number of images to display at a
 time in the Shiny app (default 100).}
-
-\item{show_paths}{A logical scalar. Should image paths be displayed above
-images? A future update will incorporate this option directly into the
-comparison interface, at which point this argument will be removed.}
 
 \item{corr_thresh}{A numeric scalar between 0 and 1. Matches with signature
 correlations above this value (default 0.9995) will be pre-emptively marked
@@ -51,13 +46,14 @@ in the comparison interface) and then re-added unchanged to the output.}
 it return status updates throughout the function (default)?}
 }
 \value{
-A data frame with the same fields as the input \code{result}, except that
+A data frame with the same fields as the input \code{result}, except 1)
 the field \code{match} will be replaced with \code{new_match_status}, which is a
-character vector with possible entries "match" and "no match". The output
-will have one row for each image pairing that was confirmed, which is
-determined by how many pages into the Shiny app the user proceeded, and thus
-how many pairings were viewed. If all pages are viewed, then the output will
-have the same number of rows as the input.
+character vector with possible entries "match" and "no match"; and 2) a
+logical field \code{highlight} will be added if any matches were highlighted using
+the in-app interface. The output will have one row for each image pairing
+that was confirmed, which is determined by how many pages into the Shiny app
+the user proceeded, and thus how many pairings were viewed. If all pages are
+viewed, then the output will have the same number of rows as the input.
 }
 \description{
 \code{compare_images} takes the image matches produced by
@@ -76,6 +72,9 @@ exit" button to close the comparison app and retrieve the results up through
 the last batch which was viewed. This means that even extremely large sets of
 potential matches can be manually verified over the course of several
 sessions.
+
+Through the "Enable highlighting" button, specific matches can be highlighted
+for further follow-up after image comparison is finished.
 }
 \examples{
 \dontrun{

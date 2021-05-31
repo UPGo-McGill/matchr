@@ -15,6 +15,9 @@
 #' the last batch which was viewed. This means that even extremely large sets of
 #' potential matches can be manually verified over the course of several
 #' sessions.
+#' 
+#' Through the "Enable highlighting" button, specific matches can be highlighted
+#' for further follow-up after image comparison is finished.
 #'
 #' @param result A data frame produced by \code{\link{identify_matches}} (with
 #' confirm = TRUE or with \code{\link{confirm_matches}} subsequently run on the
@@ -26,9 +29,6 @@
 #' the number of matches to be verified.
 #' @param batch_size An integer scalar. The number of images to display at a 
 #' time in the Shiny app (default 100).
-#' @param show_paths A logical scalar. Should image paths be displayed above
-#' images? A future update will incorporate this option directly into the
-#' comparison interface, at which point this argument will be removed.
 #' @param corr_thresh A numeric scalar between 0 and 1. Matches with signature 
 #' correlations above this value (default 0.9995) will be pre-emptively marked 
 #' as "match". If `remove_duplicates` is TRUE, this same value will be used to
@@ -44,13 +44,14 @@
 #' in the comparison interface) and then re-added unchanged to the output.
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
-#' @return A data frame with the same fields as the input `result`, except that 
+#' @return A data frame with the same fields as the input `result`, except 1) 
 #' the field `match` will be replaced with `new_match_status`, which is a 
-#' character vector with possible entries "match" and "no match". The output 
-#' will have one row for each image pairing that was confirmed, which is 
-#' determined by how many pages into the Shiny app the user proceeded, and thus 
-#' how many pairings were viewed. If all pages are viewed, then the output will 
-#' have the same number of rows as the input.
+#' character vector with possible entries "match" and "no match"; and 2) a 
+#' logical field `highlight` will be added if any matches were highlighted using
+#' the in-app interface. The output will have one row for each image pairing 
+#' that was confirmed, which is determined by how many pages into the Shiny app 
+#' the user proceeded, and thus how many pairings were viewed. If all pages are 
+#' viewed, then the output will have the same number of rows as the input.
 #' @examples
 #' \dontrun{
 #' # Setup
@@ -64,9 +65,8 @@
 #' @export
 
 compare_images <- function(result, remove_duplicates = TRUE, 
-                           batch_size = 100L, show_paths = FALSE, 
-                           corr_thresh = 0.9995, previous = TRUE, 
-                           quiet = FALSE) {
+                           batch_size = 100L, corr_thresh = 0.9995, 
+                           previous = TRUE, quiet = FALSE) {
   
   ## Setup ---------------------------------------------------------------------
   
@@ -81,7 +81,7 @@ compare_images <- function(result, remove_duplicates = TRUE,
     
   # Error checking and object initialization
   stopifnot(is.data.frame(result), is.numeric(c(batch_size, corr_thresh)),
-            is.logical(c(remove_duplicates, show_paths, previous)))
+            is.logical(c(remove_duplicates, previous)))
   batch_size <- floor(batch_size)
   x_id <- y_id <- .UID <- NULL
   
@@ -274,10 +274,11 @@ compare_images <- function(result, remove_duplicates = TRUE,
   # Launch Shiny app then return results
   shiny::shinyOptions(df = df, table_n = table_n, summary_table = summary_table,
                       x_paths = x_paths, y_paths = y_paths, x_dirs = x_dirs, 
-                      y_dirs = y_dirs, batch_size = batch_size, 
-                      show_paths = show_paths)
+                      y_dirs = y_dirs, batch_size = batch_size)
   
   out <- shiny::runApp(system.file("compare_images", package = "matchr"))
+  highlight <- out[[2]]
+  out <- out[[1]]
   
   if (remove_duplicates) {
     
@@ -305,8 +306,15 @@ compare_images <- function(result, remove_duplicates = TRUE,
   out_IDs <- rbind(out_a, out_b, out_prev, out_cor)
   output <- df_all[setdiff(names(df_all), "match")]
   output <- merge(output, out_IDs)
-  output$.UID <- NULL
   
+  # Add highlights
+  if (sum(highlight) > 0) {
+    highlight <- data.frame(.UID = names(highlight), highlight = highlight)
+    output <- merge(output, highlight)
+  }
+  
+  # Return output
+  output$.UID <- NULL
   if (requireNamespace("dplyr", quietly = TRUE)) {
     output <- dplyr::as_tibble(output)
   }
