@@ -45,12 +45,13 @@
 #' it return status updates throughout the function (default)?
 #' @return A data frame with the following fields: `matrix`, `x_index` and
 #' `y_index` from the original `result` data frame; `new_match_status`, which is 
-#' a character vector with possible entries "match" and "no match"; and, if any 
-#' matches were highlighted using the in-app interface, a logical vector 
-#' `highlight`. The output will have one row for each image pairing that was 
-#' confirmed, which is determined by how many pages into the Shiny app the user 
-#' proceeded, and thus how many pairings were viewed. If all pages are viewed, 
-#' then the output will have the same number of rows as the input.
+#' a character vector with possible entries "match" and "no match"; and a 
+#' logical vector `new_highlight` which is TRUE for any matches which were 
+#' highlighted using the in-app interface. The output will have one row for each 
+#' image pairing that was confirmed, which is determined by how many pages into 
+#' the Shiny app the user proceeded, and thus how many pairings were viewed. If 
+#' all pages are viewed, then the output will have the same number of rows as 
+#' the input.
 #' @examples
 #' \dontrun{
 #' # Setup
@@ -320,11 +321,10 @@ compare_images <- function(result, remove_duplicates = TRUE,
   
   # Add highlights
   if (sum(highlight) > 0) {
-    highlight <- data.frame(.UID = names(highlight), highlight = highlight,
+    highlight <- data.frame(.UID = names(highlight), new_highlight = highlight,
                             row.names = NULL)
     output <- merge(output, highlight, all.x = TRUE, all.y = FALSE)
-    output$highlight <- ifelse(is.na(output$highlight), FALSE, output$highlight)
-  }
+  } else output$new_highlight <- NA
   
   # Return output
   output$.UID <- NULL

@@ -47,12 +47,13 @@ it return status updates throughout the function (default)?}
 \value{
 A data frame with the following fields: \code{matrix}, \code{x_index} and
 \code{y_index} from the original \code{result} data frame; \code{new_match_status}, which is
-a character vector with possible entries "match" and "no match"; and, if any
-matches were highlighted using the in-app interface, a logical vector
-\code{highlight}. The output will have one row for each image pairing that was
-confirmed, which is determined by how many pages into the Shiny app the user
-proceeded, and thus how many pairings were viewed. If all pages are viewed,
-then the output will have the same number of rows as the input.
+a character vector with possible entries "match" and "no match"; and a
+logical vector \code{new_highlight} which is TRUE for any matches which were
+highlighted using the in-app interface. The output will have one row for each
+image pairing that was confirmed, which is determined by how many pages into
+the Shiny app the user proceeded, and thus how many pairings were viewed. If
+all pages are viewed, then the output will have the same number of rows as
+the input.
 }
 \description{
 \code{compare_images} takes the image matches produced by

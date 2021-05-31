@@ -94,9 +94,9 @@ sigs <- create_signature(test_urls)
 matches <- match_signatures(sigs)
 
 # By default, confirm_matches will be called inside identify_matches
-confirm <- identify_matches(matches)
+result <- identify_matches(matches)
 
 # Skip this step with confirm = FALSE
-identify <- identify_matches(matches, confirm = FALSE)
+result_no_confirm <- identify_matches(matches, confirm = FALSE)
 }
 }

@@ -46,7 +46,8 @@ test_confirm <- confirm_matches(test_identify)
 test_changes <- test_confirm
 test_changes[6,]$match <- "no match"
 test_changes$new_match_status <- test_changes$match
-test_changes$match <- NULL
+test_changes$match <- test_changes$x_sig <- test_changes$y_sig <- NULL
+test_changes$new_highlight <- FALSE
 test_integrate <- integrate_changes(test_confirm, test_changes)
 test_confirm_2 <- test_confirm
 test_confirm_2$confirmed <- c(TRUE, FALSE, FALSE, FALSE, FALSE, FALSE)
