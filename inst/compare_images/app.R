@@ -4,6 +4,7 @@
 
 # Load objects
 df <- shiny::getShinyOption("df")
+change_table <- shiny::getShinyOption("change_table")
 table_n <- shiny::getShinyOption("table_n")
 summary_table <- shiny::getShinyOption("summary_table")
 x_paths <- shiny::getShinyOption("x_paths")
@@ -45,7 +46,7 @@ ui <- shiny::fluidPage(
     shiny::column(width = 8, shiny::uiOutput("subtitle")),
     shiny::column(width = 4, shiny::br(), shiny::actionLink(
       inputId = "highlight", label = "Enable highlighting"), shiny::HTML(" | "),
-      shiny::actionLink(inputId = "paths", label = "Show file paths"), 
+      shiny::actionLink(inputId = "paths", label = "Show details"), 
       align = "right"),
     style = "background-color:white; color:black"),
   
@@ -163,11 +164,9 @@ server <- function(input, output, session) {
   })
 
   # Make match_vector to track match status changes
-  match_vector <-
-    do.call(
-      shiny::reactiveValues,
-      as.list(setNames(change_table$new_match_status, change_table$.UID))
-    )
+  match_vector <- do.call(
+    shiny::reactiveValues,
+    as.list(setNames(change_table$new_match_status, change_table$.UID)))
   
   # Make highlight_vector to track highlighted matches
   highlight_vector <- do.call(
@@ -270,7 +269,7 @@ server <- function(input, output, session) {
   shiny::observeEvent(input$paths, {
     shiny::updateActionLink(
       session, "paths", label = 
-        if (input$paths %% 2 == 1) "Hide file paths" else "Show file paths")
+        if (input$paths %% 2 == 1) "Hide details" else "Show details")
   })
   
   
@@ -342,7 +341,9 @@ server <- function(input, output, session) {
     
     if (input$paths %% 2 == 1) {
       text <- lapply(active_index(), function(x) shiny::h5(
-        paste(x, df$.UID[x], sep = ": "), align = "center"))
+        paste(round(df$correlation[x], 4), "correlation;", df$duplicates[x], 
+              if (df$duplicates[x] == 1) "duplicate" else "duplicates"), 
+        align = "center"))
       } 
     
     together <- c(rbind(if (input$paths %% 2 == 1) text,
@@ -361,7 +362,9 @@ server <- function(input, output, session) {
       shiny::img(src = x, width = "250px", height = "250px")})
     lines <- lapply(df$x_name[active_index()], function(x) shiny::hr())
     if (input$paths %% 2 == 1) {
-      text <- lapply(df$x_name[active_index()], shiny::h5, align = "center")
+      reduce_fun <- function(x, y) sub(paste0(y, "/"), "", x)
+      text_list <- Reduce(reduce_fun, x_paths, df$x_name[active_index()])
+      text <- lapply(text_list, shiny::h5, align = "center")
       together <- c(rbind(text, images, lines))
     } else together <- c(rbind(images, lines))
     do.call(shiny::tagList, together)
@@ -372,7 +375,9 @@ server <- function(input, output, session) {
       shiny::img(src = x, width = "250px", height = "250px")})
     lines <- lapply(df$y_name[active_index()], function(x) shiny::hr())
     if (input$paths %% 2 == 1) {
-      text <- lapply(df$y_name[active_index()], shiny::h5, align = "center")
+      reduce_fun <- function(x, y) sub(paste0(y, "/"), "", x)
+      text_list <- Reduce(reduce_fun, y_paths, df$y_name[active_index()])
+      text <- lapply(text_list, shiny::h5, align = "center")
       together <- c(rbind(text, images, lines))
     } else together <- c(rbind(images, lines))
     do.call(shiny::tagList, together)

@@ -15,9 +15,8 @@ compare_images(
 }
 \arguments{
 \item{result}{A data frame produced by \code{\link{identify_matches}} (with
-confirm = TRUE or with \code{\link{confirm_matches}} subsequently run on the
-results). Any additional fields added to the data frame will be preserved in
-the output.}
+\code{confirm = TRUE} or with \code{\link{confirm_matches}} subsequently run on
+the results).}
 
 \item{remove_duplicates}{A logical scalar. Should x-y pairs which are
 identical to other x-y pairs be reduced to a single x-y pair? This step can
@@ -46,14 +45,14 @@ in the comparison interface) and then re-added unchanged to the output.}
 it return status updates throughout the function (default)?}
 }
 \value{
-A data frame with the same fields as the input \code{result}, except 1)
-the field \code{match} will be replaced with \code{new_match_status}, which is a
-character vector with possible entries "match" and "no match"; and 2) a
-logical field \code{highlight} will be added if any matches were highlighted using
-the in-app interface. The output will have one row for each image pairing
-that was confirmed, which is determined by how many pages into the Shiny app
-the user proceeded, and thus how many pairings were viewed. If all pages are
-viewed, then the output will have the same number of rows as the input.
+A data frame with the following fields: \code{matrix}, \code{x_index} and
+\code{y_index} from the original \code{result} data frame; \code{new_match_status}, which is
+a character vector with possible entries "match" and "no match"; and, if any
+matches were highlighted using the in-app interface, a logical vector
+\code{highlight}. The output will have one row for each image pairing that was
+confirmed, which is determined by how many pages into the Shiny app the user
+proceeded, and thus how many pairings were viewed. If all pages are viewed,
+then the output will have the same number of rows as the input.
 }
 \description{
 \code{compare_images} takes the image matches produced by
@@ -81,9 +80,9 @@ for further follow-up after image comparison is finished.
 # Setup
 sigs <- create_signature(test_urls)
 matches <- match_signatures(sigs)
-confirm <- identify_matches(matches)
+result <- identify_matches(matches)
 
 # Assign the output of compare_images to retrieve results
-change_table <- compare_images(confirm)
+change_table <- compare_images(result)
 }
 }

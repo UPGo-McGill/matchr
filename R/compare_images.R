@@ -20,9 +20,8 @@
 #' for further follow-up after image comparison is finished.
 #'
 #' @param result A data frame produced by \code{\link{identify_matches}} (with
-#' confirm = TRUE or with \code{\link{confirm_matches}} subsequently run on the
-#' results). Any additional fields added to the data frame will be preserved in
-#' the output.
+#' `confirm = TRUE` or with \code{\link{confirm_matches}} subsequently run on 
+#' the results).
 #' @param remove_duplicates A logical scalar. Should x-y pairs which are
 #' identical to other x-y pairs be reduced to a single x-y pair? This step can
 #' be computationally expensive for large datasets, but can dramatically reduce 
@@ -44,23 +43,23 @@
 #' in the comparison interface) and then re-added unchanged to the output.
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
-#' @return A data frame with the same fields as the input `result`, except 1) 
-#' the field `match` will be replaced with `new_match_status`, which is a 
-#' character vector with possible entries "match" and "no match"; and 2) a 
-#' logical field `highlight` will be added if any matches were highlighted using
-#' the in-app interface. The output will have one row for each image pairing 
-#' that was confirmed, which is determined by how many pages into the Shiny app 
-#' the user proceeded, and thus how many pairings were viewed. If all pages are 
-#' viewed, then the output will have the same number of rows as the input.
+#' @return A data frame with the following fields: `matrix`, `x_index` and
+#' `y_index` from the original `result` data frame; `new_match_status`, which is 
+#' a character vector with possible entries "match" and "no match"; and, if any 
+#' matches were highlighted using the in-app interface, a logical vector 
+#' `highlight`. The output will have one row for each image pairing that was 
+#' confirmed, which is determined by how many pages into the Shiny app the user 
+#' proceeded, and thus how many pairings were viewed. If all pages are viewed, 
+#' then the output will have the same number of rows as the input.
 #' @examples
 #' \dontrun{
 #' # Setup
 #' sigs <- create_signature(test_urls)
 #' matches <- match_signatures(sigs)
-#' confirm <- identify_matches(matches)
+#' result <- identify_matches(matches)
 #' 
 #' # Assign the output of compare_images to retrieve results
-#' change_table <- compare_images(confirm)
+#' change_table <- compare_images(result)
 #' }
 #' @export
 
@@ -215,6 +214,16 @@ compare_images <- function(result, remove_duplicates = TRUE,
     df <- rbind(df_b[!names(df_b) %in% c("x_sig", "y_sig")], 
                 df_unique[!names(df_unique) %in% c("x_sig", "y_sig")])
     df <- df[order(df$.UID),]
+    
+    # Add duplicate counts
+    dup_list <- stats::aggregate(df_full, by = list(df_full$x_id, df_full$y_id), 
+                                 length)
+    dup_list <- dup_list[c("Group.1", "Group.2", "y_name")]
+    names(dup_list) <- c("x_id", "y_id", "duplicates")
+    dup_list <- dup_list[dup_list$duplicates >= 2,]
+    dup_list$duplicates <- dup_list$duplicates - 1L
+    df <- merge(df, dup_list, all = TRUE)
+    df$duplicates <- ifelse(is.na(df$duplicates), 0L, df$duplicates)
     if (requireNamespace("dplyr", quietly = TRUE)) df <- dplyr::as_tibble(df)
     
   } else {
@@ -222,6 +231,7 @@ compare_images <- function(result, remove_duplicates = TRUE,
     df$x_name <- get_path(df$x_sig)
     df$y_name <- get_path(df$y_sig)
     df_full <- df
+    df$duplicates <- 0L
   }
   
   # Update paths
@@ -272,9 +282,10 @@ compare_images <- function(result, remove_duplicates = TRUE,
           max(table_n[table_n$name == "no match",]$i_2)), big.mark = ","))
   
   # Launch Shiny app then return results
-  shiny::shinyOptions(df = df, table_n = table_n, summary_table = summary_table,
-                      x_paths = x_paths, y_paths = y_paths, x_dirs = x_dirs, 
-                      y_dirs = y_dirs, batch_size = batch_size)
+  shiny::shinyOptions(df = df, change_table = change_table, table_n = table_n, 
+                      summary_table = summary_table, x_paths = x_paths, 
+                      y_paths = y_paths, x_dirs = x_dirs, y_dirs = y_dirs, 
+                      batch_size = batch_size)
   
   out <- shiny::runApp(system.file("compare_images", package = "matchr"))
   highlight <- out[[2]]
@@ -304,13 +315,15 @@ compare_images <- function(result, remove_duplicates = TRUE,
   
   # Combine results
   out_IDs <- rbind(out_a, out_b, out_prev, out_cor)
-  output <- df_all[setdiff(names(df_all), "match")]
+  output <- df_all[c("matrix", "x_index", "y_index", ".UID")]
   output <- merge(output, out_IDs)
   
   # Add highlights
   if (sum(highlight) > 0) {
-    highlight <- data.frame(.UID = names(highlight), highlight = highlight)
-    output <- merge(output, highlight)
+    highlight <- data.frame(.UID = names(highlight), highlight = highlight,
+                            row.names = NULL)
+    output <- merge(output, highlight, all.x = TRUE, all.y = FALSE)
+    output$highlight <- ifelse(is.na(output$highlight), FALSE, output$highlight)
   }
   
   # Return output
