@@ -17,3 +17,15 @@ and FALSE otherwise.
 This function returns TRUE for \code{matchr_signature} objects and FALSE for all
 other objects.
 }
+\examples{
+\dontrun{
+# Setup
+sigs <- create_signature(test_urls)
+
+# TRUE
+is_signature(sigs)
+
+# FALSE
+is_signature("text")
+}
+}

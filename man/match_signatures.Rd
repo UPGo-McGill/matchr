@@ -83,3 +83,18 @@ with very similar aspect ratios will be compared. This can remove potential
 false positives and possibly speed up function execution, if images are
 relatively evenly split between aspect ratios.
 }
+\examples{
+\dontrun{
+# Setup
+sigs <- create_signature(test_urls)
+
+# Find matches within a single matchr_signature vector
+match_signatures(sigs)
+
+# Find matches between two matchr_signature vectors
+match_signatures(sigs[1:8], sigs[9:15])
+
+# To look for matches between images with very different aspect ratios, set `compare_ar = FALSE`
+match_signatures(sigs, compare_ar = FALSE)
+}
+}

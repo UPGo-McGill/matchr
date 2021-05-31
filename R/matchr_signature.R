@@ -26,6 +26,17 @@ new_signature <- function(x = list(), path = character(),
 #' @param x An object to test
 #' @return A logical scalar, TRUE if `x` inherits from class "matchr_signature" 
 #' and FALSE otherwise.
+#' @examples
+#' \dontrun{
+#' # Setup
+#' sigs <- create_signature(test_urls)
+#' 
+#' # TRUE
+#' is_signature(sigs)
+#' 
+#' # FALSE
+#' is_signature("text")
+#' }
 #' @export
 
 is_signature <- function(x) {

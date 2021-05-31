@@ -1,10 +1,13 @@
+# Private environment for tracking state and backups
 .matchr_env <- new.env()
 
+# Global variables to satisfy R-CMD check
 if (getRversion() >= "2.15.1") {
   utils::globalVariables(c("sig_backup", "sig_hash", "match_backup",
                            "match_hash", "photos"))
 }
 
+# Vector of URLs for examples
 test_urls <- 
   c("http://upgo.lab.mcgill.ca/resources/img_1.jpg",
     "http://upgo.lab.mcgill.ca/resources/img_1_compressed.jpg",

@@ -6,6 +6,13 @@
 #' @param x Pixel array or length-1 vector of class `matchr_image`.
 #' @return An array if the input was an array, and a length-1 vector of class 
 #' `matchr_image` if the input was a `matchr_image` vector.
+#' @examples
+#' \dontrun{
+#' # Setup
+#' img <- load_image(test_urls[13])
+#' 
+#' remove_black_bars(img)
+#' }
 #' @export
 
 remove_black_bars <- function(x) {

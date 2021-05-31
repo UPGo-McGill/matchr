@@ -56,6 +56,20 @@
 #' `Q[i, j]` will be the Pearson correlation coefficient between images `x[[i]]` 
 #' and `y[[j]]`. If `y` is not present, each matrix will be square, and the cell 
 #' `Q[i, j]` will be the correlation between images `x[[i]]` and `x[[j]]`.
+#' @examples
+#' \dontrun{
+#' # Setup
+#' sigs <- create_signature(test_urls)
+#' 
+#' # Find matches within a single matchr_signature vector
+#' match_signatures(sigs)
+#' 
+#' # Find matches between two matchr_signature vectors
+#' match_signatures(sigs[1:8], sigs[9:15])
+#' 
+#' # To look for matches between images with very different aspect ratios, set `compare_ar = FALSE`
+#' match_signatures(sigs, compare_ar = FALSE)
+#' }
 #' @export
 
 match_signatures <- function(x, y = NULL, method = "grey", compare_ar = TRUE, 

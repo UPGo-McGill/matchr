@@ -6,12 +6,17 @@
 #' @section matchr options:
 #'
 #' \describe{
-#'  \item{\option{matchr.blas}:}{A logical scalar. TKTK. (Default: `TRUE`)}
+#'  \item{\option{matchr.blas}:}{A logical scalar. Does the system have a
+#'  high-performance BLAS library installed? If not, 
+#'  \code{\link{match_signatures}} will use a different method which does not
+#'  rely on fast BLAS calculations. (Default: `TRUE`)}
 #'  }
 #'  
 #' \describe{
-#'  \item{\option{matchr.force_parallel}:}{A logical scalar. TKTK (Default: 
-#'  `FALSE`)}
+#'  \item{\option{matchr.force_parallel}:}{A logical scalar. Should matchr
+#'  functions always use multithreaded {future} plans, even if previous
+#'  testing suggests that single-threaded (sequential) plans will be faster for
+#'  the workload? (Default: `FALSE`)}
 #'  }
 #'
 #' @aliases

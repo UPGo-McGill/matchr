@@ -17,3 +17,11 @@ An array if the input was an array, and a length-1 vector of class
 \code{remove_black_bars} takes a single \code{matchr_image} or raw pixel array and
 removes black bars at the top and bottom of the image, if any are identified.
 }
+\examples{
+\dontrun{
+# Setup
+img <- load_image(test_urls[13])
+
+remove_black_bars(img)
+}
+}

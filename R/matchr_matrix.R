@@ -45,6 +45,18 @@ new_matrix <- function(array = list(), x_ratios = list(), y_ratios = list(),
 #' @param x An object to test
 #' @return A logical scalar, TRUE if `x` inherits from class "matchr_matrix" and 
 #' FALSE otherwise.
+#' @examples
+#' \dontrun{
+#' # Setup
+#' sigs <- create_signature(test_urls)
+#' matches <- match_signatures(sigs)
+#' 
+#' # TRUE
+#' is_matrix(matches)
+#' 
+#' # FALSE
+#' is_matrix("text")
+#' }
 #' @export
 
 is_matrix <- function(x) inherits(x, "matchr_matrix")

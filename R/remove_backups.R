@@ -1,9 +1,9 @@
 #' Remove matchr function backups
 #'
-#' \code{remove_backups} manually removes the incremental backups which several
+#' \code{remove_backups} manually removes the incremental backups which some
 #' matchr functions keep in case of errors.
 #'
-#' The \code{\link{create_signature}} functions can create incremental backups 
+#' The \code{\link{create_signature}} function can create incremental backups 
 #' of its progress in case it fails to complete. These backups are automatically 
 #' removed once the function completes, but \code{remove_backups} can be used to 
 #' remove them manually when necessary.

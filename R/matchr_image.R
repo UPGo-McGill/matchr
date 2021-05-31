@@ -21,6 +21,17 @@ new_image <- function(x = list(), path = character()) {
 #' @param x An object to test
 #' @return A logical scalar, TRUE if `x` inherits from class "matchr_image" and 
 #' FALSE otherwise.
+#' @examples
+#' \dontrun{
+#' # Setup
+#' img <- load_image(test_urls)
+#' 
+#' # TRUE
+#' is_image(img)
+#' 
+#' # FALSE
+#' is_image("text")
+#' }
 #' @export
 
 is_image <- function(x) {

@@ -17,3 +17,16 @@ FALSE otherwise.
 This function returns TRUE for \code{matchr_matrix} objects and FALSE for all
 other objects.
 }
+\examples{
+\dontrun{
+# Setup
+sigs <- create_signature(test_urls)
+matches <- match_signatures(sigs)
+
+# TRUE
+is_matrix(matches)
+
+# FALSE
+is_matrix("text")
+}
+}

@@ -17,3 +17,15 @@ FALSE otherwise.
 This function returns TRUE for \code{matchr_image} objects and FALSE for all other
 objects.
 }
+\examples{
+\dontrun{
+# Setup
+img <- load_image(test_urls)
+
+# TRUE
+is_image(img)
+
+# FALSE
+is_image("text")
+}
+}
