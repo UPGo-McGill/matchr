@@ -112,8 +112,8 @@ match_signatures <- function(x, y = NULL, method = "grey", compare_ar = TRUE,
   # Return result
   new_matrix(
     array = result,
-    x_ratios = lapply(x_list, get_ratios),
-    y_ratios = lapply(y_list, get_ratios),
+    x_ar = lapply(x_list, get_ratios),
+    y_ar = lapply(y_list, get_ratios),
     x_sig = x_sig,
     y_sig = y_sig,
     x_total = length(unique(c(get_path(x), get_path(x_na)))),
@@ -128,25 +128,25 @@ match_signatures <- function(x, y = NULL, method = "grey", compare_ar = TRUE,
 
 get_clusters <- function(x, y, stretch = 1.2, max_clust = 10) {
   
-  x_ratios <- get_ar(x)
-  y_ratios <- get_ar(y)
+  x_ar <- get_ar(x)
+  y_ar <- get_ar(y)
   
   # Set number of groups to evaluate
-  unique_points <- unique(stats::na.omit(c(x_ratios, y_ratios)))
+  unique_points <- unique(stats::na.omit(c(x_ar, y_ar)))
   if (length(unique_points) < 4) return(list(list(x), list(y)))
   sum_fun <- function(x, y) {
-    x_length <- as.numeric(length(x_ratios[x_ratios >= x & x_ratios <= y]))
-    y_length <- as.numeric(length(y_ratios[y_ratios >= (x / stretch) & 
-                                             y_ratios <= (y * stretch)]))
+    x_length <- as.numeric(length(x_ar[x_ar >= x & x_ar <= y]))
+    y_length <- as.numeric(length(y_ar[y_ar >= (x / stretch) & 
+                                             y_ar <= (y * stretch)]))
     x_length * y_length
   }
   set.seed(1)
   groups <- lapply(3:min(length(unique_points) - 1, max_clust), function(n) {
-    cl <- stats::kmeans(x_ratios, n)
-    mins <- sort(sapply(seq_len(n), function(n) min(x_ratios[cl$cluster == n])))
-    mins[1] <- min(c(x_ratios, y_ratios))
-    maxs <- sort(sapply(seq_len(n), function(n) max(x_ratios[cl$cluster == n])))
-    maxs[n] <- max(c(x_ratios, y_ratios))
+    cl <- stats::kmeans(x_ar, n)
+    mins <- sort(sapply(seq_len(n), function(n) min(x_ar[cl$cluster == n])))
+    mins[1] <- min(c(x_ar, y_ar))
+    maxs <- sort(sapply(seq_len(n), function(n) max(x_ar[cl$cluster == n])))
+    maxs[n] <- max(c(x_ar, y_ar))
     calcs <- mapply(sum_fun, mins, maxs)
     list(max(calcs), mins, maxs)
   })
@@ -159,8 +159,8 @@ get_clusters <- function(x, y, stretch = 1.2, max_clust = 10) {
   
   # Collapse lists if any are empty
   zero_fun <- 
-    function(x, y) c(sum(x_ratios >= x & x_ratios <= y), 
-                     sum(y_ratios >= (x / stretch) & y_ratios <= (y * stretch)))
+    function(x, y) c(sum(x_ar >= x & x_ar <= y), 
+                     sum(y_ar >= (x / stretch) & y_ar <= (y * stretch)))
   vec_lens <- t(mapply(zero_fun, cut_min, cut_max, SIMPLIFY = "matrix"))
   
   while (prod(vec_lens) == 0) {
@@ -178,9 +178,9 @@ get_clusters <- function(x, y, stretch = 1.2, max_clust = 10) {
   # Process and return lists
   cut_fun <- function(x, y, vec_1, vec_2) vec_1[vec_2 >= x & vec_2 <= y]
   x_list <- mapply(cut_fun, cut_min, cut_max, 
-                   MoreArgs = list(vec_1 = x, vec_2 = x_ratios))
+                   MoreArgs = list(vec_1 = x, vec_2 = x_ar))
   y_list <- mapply(cut_fun, cut_min / 1.2, cut_max * 1.2, 
-                   MoreArgs = list(vec_1 = y, vec_2 = y_ratios))
+                   MoreArgs = list(vec_1 = y, vec_2 = y_ar))
   return(list(x_list, y_list))
 }
 
@@ -236,7 +236,7 @@ match_signatures_pairwise <- function(x, y, method = "colour", par_check = TRUE,
     y <- trim_signature(y, (sig_length(y) / 4 + 1):sig_length(y)) 
   }
   
-  par_mapply(stats::cor, get_raw_sig(x), get_raw_sig(y), SIMPLIFY = TRUE)
+  par_mapply(stats::cor, get_signature(x), get_signature(y), SIMPLIFY = TRUE)
 }
 
 # ------------------------------------------------------------------------------
@@ -308,15 +308,15 @@ match_signatures_prep <- function(x, y, method, compare_ar, stretch,
 match_signatures_internal <- function(x, y, blas) {
 
   if (blas) {
-    x_matrix <- matrix(unlist(get_raw_sig(x)), ncol = vec_size(x))
-    y_matrix <- matrix(unlist(get_raw_sig(y)), ncol = vec_size(y))
+    x_matrix <- matrix(unlist(get_signature(x)), ncol = vec_size(x))
+    y_matrix <- matrix(unlist(get_signature(y)), ncol = vec_size(y))
     fast_cor(x_matrix, y_matrix)
   } else {
     par_check <- TRUE
     x_matrix <- chunk(x, number_of_threads() * 10)
     x_matrix <- lapply(x_matrix, function(x) {
-      matrix(unlist(get_raw_sig(x)), ncol = vec_size(x))})
-    y_matrix <- matrix(unlist(get_raw_sig(y)), ncol = vec_size(y))
+      matrix(unlist(get_signature(x)), ncol = vec_size(x))})
+    y_matrix <- matrix(unlist(get_signature(y)), ncol = vec_size(y))
     out <- suppressWarnings(par_lapply(x_matrix, stats::cor, y_matrix))
     out <- do.call(rbind, out)
     out

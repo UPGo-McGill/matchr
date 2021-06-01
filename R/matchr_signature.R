@@ -3,16 +3,15 @@
 #' @param x A list of numeric vectors.
 #' @param path A character string, corresponding to the path or URL of the files
 #' from which the signatures have been generated.
-#' @param aspect_ratio A numeric vector, giving the aspect ratio of the images.
+#' @param ar A numeric vector, giving the aspect ratio of the images.
 #' @return An object of class `matchr_signature`.
 
 new_signature <- function(x = list(), path = character(), 
-                          aspect_ratio = numeric()) {
+                          ar = numeric()) {
   vec_assert(x, list())
   vec_assert(path, character())
-  vec_assert(aspect_ratio, numeric())
-  new_rcrd(fields = list(signature = x, path = path, 
-                         aspect_ratio = aspect_ratio), 
+  vec_assert(ar, numeric())
+  new_rcrd(fields = list(signature = x, path = path, ar = ar), 
            class = "matchr_signature")
 }
 
@@ -49,9 +48,9 @@ is_signature <- function(x) {
 
 format.matchr_signature <- function(x, formatter = num_format, ...) {
 
-  x_empty <- which(lengths(get_raw_sig(x)) == 0)
+  x_empty <- which(lengths(get_signature(x)) == 0)
   x_valid <- setdiff(which(!is.na(x)), x_empty)
-  values <- formatter(get_raw_sig(x[x_valid]))
+  values <- formatter(get_signature(x[x_valid]))
     
   out <- rep(NA_character_, vec_size(x))
   out[x_empty] <- rep("<Empty>", vec_size(x_empty))
@@ -119,7 +118,7 @@ vec_ptype_abbr.matchr_signature <- function(x, ...) "sig"
 
 is.na.matchr_signature <- function(x, ...) {
 
-  as.logical(sapply(lapply(get_raw_sig(x), is.na), sum))
+  as.logical(sapply(lapply(get_signature(x), is.na), sum))
 
 }
 
@@ -228,13 +227,18 @@ obj_print_data.matchr_signature <- function(x, width = getOption("width"), ...) 
 
 obj_print_header.matchr_signature <- function(x, ...) {
   
-  if (vec_size(x) == 1) plural <- " signature\n" else plural <- " signatures\n"
-  header <- pillar::style_subtle(paste0('# An image signature vector: ', 
-                                        prettyNum(length(x), ","), plural))
+  if (vec_size(x) == 1) plural <- " signature" else plural <- " signatures"
+  first_part <- paste0('# An image signature vector: ', 
+                       prettyNum(length(x), ","), plural)
+  if (nchar(first_part) + 11 < getOption("width")) {
+    bands <- sig_length(x) / 8
+    bands <- paste0(" (", bands, " bands)\n")  
+  } else bands <- "\n"
+  
+  header <- pillar::style_subtle(paste0(first_part, bands))
   cat(header)
   
 }
-
 
 # ------------------------------------------------------------------------------
 
@@ -266,7 +270,7 @@ pillar_shaft.matchr_signature <- function(x, ...) {
 
 format.pillar_shaft_signature <- function(x, width, ...) {
   
-  data <- get_raw_sig(x)
+  data <- get_signature(x)
   x_valid <- which(!is.na(data))
   
   if (requireNamespace("crayon", quietly = TRUE) && crayon::has_color()) {
@@ -291,7 +295,7 @@ format.pillar_shaft_signature <- function(x, width, ...) {
 sum.matchr_signature <- function(..., na.rm = FALSE) {
   
   args <- list(...)
-  sums <- lapply(args, get_raw_sig)
+  sums <- lapply(args, get_signature)
   sums <- lapply(sums, sapply, sum)
   sums <- unlist(sums)
   sums <- sum(sums, na.rm = na.rm)

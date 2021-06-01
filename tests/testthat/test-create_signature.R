@@ -20,9 +20,9 @@ test_that("NA works", {
 })
 
 test_that("rm_black_bars works", {
-  expect_output(print(create_signature(urls[13], rm_black_bars = FALSE)),
+  expect_output(print(create_signature(test_urls[13], rm_black_bars = FALSE)),
                 "1.00")
-  expect_output(print(create_signature(urls[13])), "2.27")
+  expect_output(print(create_signature(test_urls[13])), "2.27")
   expect(is.na(create_signature(black_image)),
          "create_signature(black_image) did not return NA.")
   expect(ceiling(sum(create_signature(
@@ -36,8 +36,8 @@ test_that("rm_black_bars works", {
 })
 
 test_that("tiny images return NA", {
-  expect(is.na(create_signature(urls[14])), 
-         "create_signature(urls[14]) did not return NA.")
+  expect(is.na(create_signature(test_urls[14])), 
+         "create_signature(test_urls[14]) did not return NA.")
 })
 
 test_that("backups work", {

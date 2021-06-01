@@ -4,7 +4,7 @@
 \alias{new_signature}
 \title{Create a new matchr_signature object}
 \usage{
-new_signature(x = list(), path = character(), aspect_ratio = numeric())
+new_signature(x = list(), path = character(), ar = numeric())
 }
 \arguments{
 \item{x}{A list of numeric vectors.}
@@ -12,7 +12,7 @@ new_signature(x = list(), path = character(), aspect_ratio = numeric())
 \item{path}{A character string, corresponding to the path or URL of the files
 from which the signatures have been generated.}
 
-\item{aspect_ratio}{A numeric vector, giving the aspect ratio of the images.}
+\item{ar}{A numeric vector, giving the aspect ratio of the images.}
 }
 \value{
 An object of class \code{matchr_signature}.

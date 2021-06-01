@@ -7,14 +7,14 @@
 sig_length(x)
 }
 \arguments{
-\item{x}{TKTK}
+\item{x}{A matchr_signature vector.}
 }
 \value{
-TKTK
+An integer scalar.
 }
 \description{
-TKTK
-}
-\details{
-TKTK
+By default the raw image signatures in a matchr_signature vector have a
+length of 160 (20 horizontal and vertical bands of greyscale, red, green, and
+blue). But since the length can take any arbitrary value, \code{sig_length}
+offers a convenient way to access this value on a per-vector basis.
 }

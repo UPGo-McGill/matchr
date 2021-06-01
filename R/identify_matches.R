@@ -131,8 +131,8 @@ identify_matches.matchr_signature <- function(
     
     result[[i]] <- new_matrix(
       array = result[i],
-      x_ratios = list(get_ratios(x_list[[i]])),
-      y_ratios = list(get_ratios(y_list[[i]])),
+      x_ar = list(get_ratios(x_list[[i]])),
+      y_ar = list(get_ratios(y_list[[i]])),
       x_sig = x_sig[i],
       y_sig = y_sig[i],
       x_total = vec_size(x_list[[i]]),

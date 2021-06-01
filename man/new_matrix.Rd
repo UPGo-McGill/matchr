@@ -6,8 +6,8 @@
 \usage{
 new_matrix(
   array = list(),
-  x_ratios = list(),
-  y_ratios = list(),
+  x_ar = list(),
+  y_ar = list(),
   x_sig = list(),
   y_sig = list(),
   x_total = integer(length = 1L),
@@ -19,11 +19,11 @@ new_matrix(
 \arguments{
 \item{array}{A list of correlation matrices.}
 
-\item{x_ratios}{A list of numeric vectors: the highest and lowest aspect
-ratio in the x vector.}
+\item{x_ar}{A list of numeric vectors: the highest and lowest aspect ratio in
+the x vector.}
 
-\item{y_ratios}{A list of numeric vectors: the highest and lowest aspect
-ratio in the y vector.}
+\item{y_ar}{A list of numeric vectors: the highest and lowest aspect ratio in
+the y vector.}
 
 \item{x_sig}{A list of \code{matchr_signature} vectors: the signatures of the
 files in the x vector.}
