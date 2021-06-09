@@ -14,6 +14,7 @@ test_that("garbage strings produce NA", {
 })
 
 test_that("a directory path works", {
+  skip_on_os("windows")
   td <- tempdir()
   td_test <- paste0(td, "/matchr_test")
   dir.create(td_test)
