@@ -2,6 +2,7 @@
 
 test_that("the function works", {
   expect_equal(vec_size(test_identify), 6)
+  expect_equal(vec_size(identify_matches(test_long_sig)), 6)
 })
 
 test_that("tibble integration works", {
