@@ -17,9 +17,10 @@ test_that("a directory path works", {
   td <- tempdir()
   td_test <- paste0(td, "/matchr_test")
   dir.create(td_test)
-  test_paths <- paste0(td_test, "/", seq_along(test_urls), ".jpg")
-  mapply(download.file, test_urls, test_paths, MoreArgs = list(quiet = TRUE))
-  expect_equal(sum(!is.na(suppressWarnings(load_image(td_test)))), 14)
+  test_paths <- paste0(td_test, "/", seq_along(test_urls[1:5]), ".jpg")
+  mapply(download.file, test_urls[1:5], test_paths, 
+         MoreArgs = list(quiet = TRUE))
+  expect_equal(sum(!is.na(suppressWarnings(load_image(td_test)))), 4)
   unlink(td_test, recursive = TRUE)
 })
 
