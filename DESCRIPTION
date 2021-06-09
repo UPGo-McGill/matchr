@@ -1,6 +1,6 @@
 Package: matchr
 Title: Fast and Reliable Matching of Images
-Version: 0.2
+Version: 0.2.1
 Authors@R: 
     person(given = "David",
            family = "Wachsmuth",

@@ -27,11 +27,10 @@
 #' @return A tibble if {dplyr} is installed or a data frame if not, with one
 #' row per identified match, and the following columns:
 #' - `matrix`: The match's index position in the input `matchr_matrix` vector.
-#' - `list_index`, `x_index` and `y_index`: The match's list, row and column 
-#' index positions in the `matchr_matrix` vector element (which is represented
-#' as a matrix but is actually a list of matrices).
-#' - `x_file` and `y_file`: The file paths for the images which were matched.
-#' -  `correlation`: The Pearson correlation coefficient of the two files'
+#' - `x_index` and `y_index`: The match's row and column index positions in the 
+#' `matchr_matrix` vector element.
+#' - `x_path` and `y_path`: The file paths for the images which were matched.
+#' - `correlation`: The Pearson correlation coefficient of the two files'
 #' image signatures.
 #' - `match` (if `confirm = TRUE`): A character vector indicating match status.
 #' (See \code{\link{confirm_matches}} for details.)

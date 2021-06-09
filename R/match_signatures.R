@@ -103,6 +103,7 @@ match_signatures <- function(x, y = NULL, method = "grey", compare_ar = TRUE,
   
   # Calculate correlation matrices
   blas <- getOption("matchr.blas", as.logical(Sys.getenv("MATCHR_BLAS", TRUE)))
+  if (!blas && !quiet) message("Function operating in forced parallel mode.")
   result <- vector("list", length(x_list))
   for (i in seq_along(x_list)) {
     result[[i]] <- match_signatures_internal(x_list[[i]], y_list[[i]], blas)
@@ -192,8 +193,6 @@ get_mem_limit <- function(x_list, y_list, mem_scale, mem_override) {
   max_mem <- as.numeric(sys_mem$totalram * mem_scale) / 1e6
   out <- mapply(function(x, y) ceiling(7.89e-06 * x * y),
                 as.numeric(lengths(x_list)), as.numeric(lengths(y_list)))
-  
-  as.numeric(sys_mem$totalram) / 1e6
   
   if (sum(out) > as.numeric(sys_mem$totalram) / 1.5e6) {
     total_mem <- as.character(sys_mem$totalram)

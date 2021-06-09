@@ -70,6 +70,7 @@ par_mapply <- function(...) {
 
 #' @param message The message to be displayed
 #' @return A progressr handler.
+#' @noRd
 
 handler_matchr <- function(message) {
   
@@ -104,6 +105,7 @@ handler_matchr <- function(message) {
 #' @param max_chunk_size The maximum size of each chunk (default NULL)
 #' @param workers A number to make max_chunk_size a multiple of (default NULL)
 #' @return A list with n_chunks elements.
+#' @noRd
 
 chunk <- function(x, n_chunks, max_chunk_size = NULL, workers = NULL) {
   
@@ -140,6 +142,7 @@ chunk <- function(x, n_chunks, max_chunk_size = NULL, workers = NULL) {
 #' Helper function to detect URL
 #' @param x A string to check
 #' @return A logical scalar.
+#' @noRd
 
 is_url <- function(x) grepl("^(http|ftp)s?://", x)
 
@@ -149,6 +152,7 @@ is_url <- function(x) grepl("^(http|ftp)s?://", x)
 #' @param fun A character string indicating the parent function
 #' @param ... Additional named arguments
 #' @return A logical scalar.
+#' @noRd
 
 set_par <- function(fun, ...) {
   
