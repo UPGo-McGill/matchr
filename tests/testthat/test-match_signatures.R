@@ -31,7 +31,7 @@ test_that("multisession futures work", {
   old_opt <- options(matchr.blas = FALSE)
   old_plan <- future::plan(future::multisession, workers = 2)
   suppressWarnings(rm(par_1, envir = .matchr_env))
-  expect_equal(match_signatures(test_long_sig), test_match)
+  expect_equal(match_signatures(test_long_sig, quiet = TRUE), test_match)
   future::plan(old_plan)
   options(old_opt)
 })

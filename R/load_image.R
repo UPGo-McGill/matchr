@@ -62,38 +62,22 @@ load_image_internal <- function(x) {
   
   # Download to tempfile if path is URL
   if (is_url(x)) {
-    
     ext <- regmatches(x, regexpr("\\.([A-Za-z0-9]+$)", x))
+    if (length(ext) > 0) d <- tempfile(fileext = ext) else
+      d <- tempfile(fileext = ".jpg")
+    downloader::download(x, d, mode = "wb", quiet = TRUE)
+  } else d <- x 
+  
+  # Import image
+  img <- tryCatch({
+    utils::capture.output(img <- readbitmap::read.bitmap(d), type = "message")
+    img
+    }, error = function(e) {
+      warning("Input '", x, "' is invalid; output is NA.", call. = FALSE)
+      NA
+      })
     
-    if (length(ext) > 0) dst <- tempfile(fileext = ext) else {
-      dst <- tempfile(fileext = ".jpg")
-    }
-    
-    downloader::download(x, dst, mode = "wb", quiet = TRUE)
-    
-    # Import image from temp file
-    img <-
-      tryCatch(suppressMessages(suppressWarnings(readbitmap::read.bitmap(dst))), 
-               error = function(e) {
-                 warning("Input '", x, "' is invalid; output is NA.", 
-                         call. = FALSE)
-                 NA
-                 })
-    
-    unlink(dst)
-    
-  } else {
-    
-    # Or import image directly from file path
-    img <- 
-      tryCatch(suppressMessages(suppressWarnings(readbitmap::read.bitmap(x))), 
-               error = function(e) {
-                 warning("Input '", x, "' is invalid; output is NA.", 
-                         call. = FALSE)
-                 NA
-                 })
-    
-  }
+  if (is_url(x)) unlink(d)
   
   return(img)
   
