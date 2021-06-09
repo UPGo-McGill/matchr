@@ -56,7 +56,7 @@ test_that("a single NA is printed correctly", {
   expect_output(print(test_long_sig[4], width = 40), "[^...ab]")
   expect_output(print(test_long_sig[4], width = 45), "[^...ab]")
   expect_output(print(test_long_sig[4], width = 50), "...ab")
-  expect_output(print(test_long_sig[4], width = 60), "\\(http")
+  expect_output(print(test_long_sig[4], width = 61), "\\(http")
 })
 
 test_that("empty signatures print correctly", {

@@ -31,6 +31,10 @@ load_image <- function(file, quiet = FALSE) {
   stopifnot(is.character(file), is.logical(quiet))
   par_check <- set_par("load_image")
   
+  # If `file` is a directory, convert it to a vector of file paths
+  if (length(file) == 1 && dir.exists(file)) 
+    file <- list.files(file, full.names = TRUE)
+  
   
   ## Import images -------------------------------------------------------------
   

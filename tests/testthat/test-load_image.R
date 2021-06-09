@@ -13,6 +13,16 @@ test_that("garbage strings produce NA", {
   expect_true(is.na(test_na))
 })
 
+test_that("a directory path works", {
+  td <- tempdir()
+  td_test <- paste0(td, "/matchr_test")
+  dir.create(td_test)
+  test_paths <- paste0(td_test, "/", seq_along(test_urls), ".jpg")
+  mapply(download.file, test_urls, test_paths, MoreArgs = list(quiet = TRUE))
+  expect_equal(sum(!is.na(suppressWarnings(load_image(td_test)))), 14)
+  unlink(td_test, recursive = TRUE)
+})
+
 test_that("multisession futures work", {
   old_plan <- future::plan(future::multisession, workers = 2)
   expect_message(load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png"),
