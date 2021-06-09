@@ -9,18 +9,18 @@ if (getRversion() >= "2.15.1") {
 
 # Vector of URLs for examples
 test_urls <- 
-  c("http://upgo.lab.mcgill.ca/resources/img_1.jpg",
-    "http://upgo.lab.mcgill.ca/resources/img_1_compressed.jpg",
-    "http://upgo.lab.mcgill.ca/resources/img_1_small.jpg",
-    "http://upgo.lab.mcgill.ca/resources/img_2_corrupt.jpg",
-    "http://upgo.lab.mcgill.ca/resources/img_3.jpg",
-    "http://upgo.lab.mcgill.ca/resources/img_4.jpg",
-    "http://upgo.lab.mcgill.ca/resources/img_4_large.jpg",
-    "http://upgo.lab.mcgill.ca/resources/img_5.jpg",
-    "http://upgo.lab.mcgill.ca/resources/img_5_grey.jpg",
-    "http://upgo.lab.mcgill.ca/resources/img_6.jpg",
-    "http://upgo.lab.mcgill.ca/resources/img_6_duplicate.jpg",
-    "http://upgo.lab.mcgill.ca/resources/img_7.jpg",
-    "http://upgo.lab.mcgill.ca/resources/img_8.jpg",
-    "http://upgo.lab.mcgill.ca/resources/img_9.jpg",
-    "http://upgo.lab.mcgill.ca/resources/img_10_grey.jpg")
+  c("https://upgo.lab.mcgill.ca/resources/img_1.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_1_compressed.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_1_small.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_2_corrupt.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_3.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_4.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_4_large.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_5.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_5_grey.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_6.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_6_duplicate.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_7.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_8.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_9.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_10_grey.jpg")

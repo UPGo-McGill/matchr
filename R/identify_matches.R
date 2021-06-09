@@ -124,9 +124,11 @@ identify_matches.matchr_signature <- function(
   pb <- progressr::progressor(steps = vec_size(x), enable = prog_bar)
   
   # Calculate correlation matrices
+  blas <- getOption("matchr.blas", as.logical(Sys.getenv("MATCHR_BLAS", TRUE)))
+  if (!blas && !quiet) message("Function operating in forced parallel mode.")
   result <- vector("list", length(x_list))
   for (i in seq_along(x_list)) {
-    result[[i]] <- match_signatures_internal(x_list[[i]], y_list[[i]])
+    result[[i]] <- match_signatures_internal(x_list[[i]], y_list[[i]], blas)
     
     result[[i]] <- new_matrix(
       array = result[i],
@@ -140,8 +142,8 @@ identify_matches.matchr_signature <- function(
       y_na = character()
     )
     
-    result[[i]] <- identify_matches_internal(i, result[[i]], function() NULL, 
-                                             threshold)
+    result[[i]] <- 
+      identify_matches_internal(i, result, function() NULL, threshold)
     
     pb(amount = sum(sapply(x_list[[i]], vec_size)))
   }
