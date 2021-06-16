@@ -83,7 +83,6 @@ compare_images <- function(result, remove_duplicates = TRUE,
   stopifnot(is.data.frame(result), is.numeric(c(batch_size, corr_thresh)),
             is.logical(c(remove_duplicates, previous)))
   batch_size <- floor(batch_size)
-  x_id <- y_id <- .UID <- NULL
   
   # Exit early for zero-row input
   if (nrow(result) == 0) {
@@ -366,6 +365,7 @@ compare_remove_duplicates <- function(df, corr_thresh, quiet = FALSE) {
 compare_finish <- function(out, remove_duplicates, df_full, df_prev, df_cor,
                            df_all) {
   
+  x_id <- y_id <- .UID <- NULL
   highlight <- out[[2]]
   out <- out[[1]]
   
