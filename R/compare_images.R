@@ -111,7 +111,7 @@ compare_images <- function(result, remove_duplicates = TRUE,
   ## Remove duplicates ---------------------------------------------------------
   
   if (remove_duplicates) {
-    output <- compare_remove_duplicates(df, corr_thresh)
+    output <- compare_remove_duplicates(df, corr_thresh, quiet)
     df <- output[[1]]
     df_dups <- output[[2]]
     df_full <- output[[3]]
@@ -243,7 +243,7 @@ compare_prepare_table <- function(result, previous, corr_thresh) {
 
 # ------------------------------------------------------------------------------
 
-compare_remove_duplicates <- function(df, corr_thresh) {
+compare_remove_duplicates <- function(df, corr_thresh, quiet = FALSE) {
   
   # Identify x images with correlation ~= 1
   x_matches <- 
@@ -260,8 +260,7 @@ compare_remove_duplicates <- function(df, corr_thresh) {
     df_full <- df
     df$duplicates <- 0L
     # Change value of remove_duplicates for subsequent steps
-    remove_duplicates <- FALSE
-    return(list(df, df_dups, df_full, remove_duplicates))
+    return(list(df, df_dups, df_full, FALSE))
   }
   
   # Group x images together by correlation
@@ -359,7 +358,7 @@ compare_remove_duplicates <- function(df, corr_thresh) {
   df$duplicates <- ifelse(is.na(df$duplicates), 0L, df$duplicates)
   if (requireNamespace("dplyr", quietly = TRUE)) df <- dplyr::as_tibble(df)
   
-  return(list(df, df_dups, df_full, remove_duplicates))
+  return(list(df, df_dups, df_full, TRUE))
 }
 
 # ------------------------------------------------------------------------------
