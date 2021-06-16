@@ -85,148 +85,37 @@ compare_images <- function(result, remove_duplicates = TRUE,
   batch_size <- floor(batch_size)
   x_id <- y_id <- .UID <- NULL
   
+  # Exit early for zero-row input
+  if (nrow(result) == 0) {
+    output <- data.frame(matrix = integer(), x_index = integer(), 
+                         y_index = integer(), new_match_status = character(),
+                         new_highlight = logical())
+    if (requireNamespace("dplyr", quietly = TRUE)) {
+      output <- dplyr::as_tibble(output)
+    }
+    return(output)
+  }
   # Get list of files, paths and folders
-  x_paths <- get_path(result$x_sig)
-  x_dirs <- x_paths[!is_url(x_paths)]
-  x_dirs <- sub("[^/]+$", "", x_dirs)
-  x_dirs <- sort(unique(x_dirs))
-  x_dirs <- sub("/$", "", x_dirs)
-  x_paths <- paste("x", seq_along(x_dirs), sep = "_")
-
-  y_paths <- get_path(result$y_sig)
-  y_dirs <- y_paths[!is_url(y_paths)]
-  y_dirs <- sub("[^/]+$", "", y_dirs)
-  y_dirs <- sort(unique(y_dirs))
-  y_dirs <- sub("/$", "", y_dirs)
-  y_paths <- paste("y", seq_along(y_dirs), sep = "_")
-
+  paths <- compare_get_paths(result)
+  
   
   ## Initialize df -------------------------------------------------------------
   
-  # Prepare result table for processing
-  df <- result
-  df$.UID <- paste0("id-", formatC(seq_len(nrow(df)), width = floor(log10(
-    nrow(df))) + 1, flag = "0"))
-  df_all <- df
-  
-  # Subset table if previous is TRUE
-  if (previous && suppressWarnings(!is.null(df$confirmed))) {
-    df_prev <- df[df$confirmed == TRUE,]
-    df <- df[df$confirmed == FALSE,]
-    df$confirmed <- NULL
-  } else df_prev <- df[0,]
-  
-  # Remove results with perfect correlation
-  df_cor <- df[df$correlation >= corr_thresh,]
-  df <- df[df$correlation < corr_thresh,]
+  output <- compare_prepare_table(result, previous, corr_thresh)
+  df <- output[[1]]
+  df_all <- output[[2]]
+  df_prev <- output[[3]]
+  df_cor <- output[[4]]
   
   
   ## Remove duplicates ---------------------------------------------------------
   
   if (remove_duplicates) {
-    
-    # Identify x images with correlation ~= 1
-    x_matches <- 
-      df$x_sig[!duplicated(get_path(df$x_sig))] |> 
-      match_signatures() |> 
-      identify_matches(quiet = TRUE)
-    x_matches <- x_matches[x_matches$correlation >= corr_thresh,]
-    
-    # Group x images together by correlation
-    x_matches <- mapply(function(x, y) c(x, y), get_path(x_matches$x_sig),
-                        get_path(x_matches$y_sig), SIMPLIFY = FALSE, 
-                        USE.NAMES = FALSE)
-    
-    # Add duplicates
-    dup_x <- table(get_path(df$x_sig))
-    dup_x <- dup_x[dup_x >= 2]
-    dup_x <- lapply(names(dup_x), function(x) x)
-    x_matches <- c(x_matches, dup_x)
-    
-    # Reduce x_matches
-    x_reduced <- reduce(x_matches, "Identifying x duplicate", quiet)
-
-    # Create x table
-    if (requireNamespace("dplyr", quietly = TRUE)) {
-      x_table <- lapply(seq_along(x_reduced), function(n) 
-        dplyr::tibble(x_id = n, x_name = x_reduced[[n]]))
-      x_table <- dplyr::bind_rows(x_table)
-    } else {
-      x_table <- lapply(seq_along(x_reduced), function(n) 
-        data.frame(x_id = n, x_name = x_reduced[[n]]))
-      x_table <- do.call(rbind, x_table)
-    }
-    x_table <- x_table[!duplicated(x_table),]
-    
-    # Join IDs to df table
-    df$x_name <- get_path(df$x_sig)
-    df <- merge(df, x_table, all = TRUE)
-    
-    # Identify y images with correlation ~= 1 with counterparts in x_table
-    y_sig <- df[!is.na(df$x_id),]$y_sig
-    y_sig <- y_sig[!duplicated(get_path(y_sig))]
-    y_matches <- 
-      y_sig |> 
-      match_signatures() |> 
-      identify_matches(quiet = TRUE)
-    y_matches <- y_matches[y_matches$correlation >= corr_thresh,]
-    
-    # Group y images together by correlation
-    y_matches <- mapply(function(x, y) c(x, y), get_path(y_matches$x_sig),
-                        get_path(y_matches$y_sig), SIMPLIFY = FALSE, 
-                        USE.NAMES = FALSE)
-    
-    # Add duplicates
-    dup_y <- df[!is.na(df$x_id),]$y_sig
-    dup_y <- table(get_path(dup_y))
-    dup_y <- dup_y[dup_y >= 2]
-    dup_y <- lapply(names(dup_y), function(x) x)
-    y_matches <- c(y_matches, dup_y)
-    
-    # Reduce y_matches
-    y_reduced <- reduce(y_matches, "Identifying y match", quiet)
-    
-    # Create y table
-    if (requireNamespace("dplyr", quietly = TRUE)) {
-      y_table <- lapply(seq_along(y_reduced), function(n) 
-        dplyr::tibble(y_id = n, y_name = y_reduced[[n]]))
-      y_table <- dplyr::bind_rows(y_table)
-    } else {
-      y_table <- lapply(seq_along(y_reduced), function(n) 
-        data.frame(y_id = n, y_name = y_reduced[[n]]))
-      y_table <- do.call(rbind, y_table)
-    }
-    y_table <- y_table[!duplicated(y_table),]
-    
-    # Join IDs to df table
-    df$y_name <- get_path(df$y_sig)
-    df <- merge(df, y_table, all = TRUE)
-    
-    # Get full df for later
-    df_full <- df
-    
-    # Create trimmed df table
-    df_b <- df[!is.na(df$x_id) & !is.na(df$y_id),]
-    df_b <- df_b[order(df_b$x_id, df_b$y_id, -1 * df_b$correlation),]
-    df_dups <- df_b[duplicated(df_b[c("x_id", "y_id")]),]
-    df_b <- df_b[!duplicated(df_b[c("x_id", "y_id")]),]
-    df_unique <- df[is.na(df$x_id) | is.na(df$y_id),]
-    
-    df <- rbind(df_b[!names(df_b) %in% c("x_sig", "y_sig")], 
-                df_unique[!names(df_unique) %in% c("x_sig", "y_sig")])
-    df <- df[order(df$.UID),]
-    
-    # Add duplicate counts
-    dup_list <- stats::aggregate(df_full, by = list(df_full$x_id, df_full$y_id), 
-                                 length)
-    dup_list <- dup_list[c("Group.1", "Group.2", "y_name")]
-    names(dup_list) <- c("x_id", "y_id", "duplicates")
-    dup_list <- dup_list[dup_list$duplicates >= 2,]
-    dup_list$duplicates <- dup_list$duplicates - 1L
-    df <- merge(df, dup_list, all = TRUE)
-    df$duplicates <- ifelse(is.na(df$duplicates), 0L, df$duplicates)
-    if (requireNamespace("dplyr", quietly = TRUE)) df <- dplyr::as_tibble(df)
-    
+    output <- compare_remove_duplicates(df, corr_thresh)
+    df <- output[[1]]
+    df_dups <- output[[2]]
+    df_full <- output[[3]]
+    remove_duplicates <- output[[4]]
   } else {
     df_dups <- df[0,]
     df$x_name <- get_path(df$x_sig)
@@ -236,10 +125,10 @@ compare_images <- function(result, remove_duplicates = TRUE,
   }
   
   # Update paths
-  if (length(x_dirs) > 0) df$x_name <- as.vector(mapply(
-    sub, x_dirs, x_paths, MoreArgs = list(df$x_name), USE.NAMES = FALSE))
-  if (length(y_dirs) > 0) df$y_name <- as.vector(mapply(
-    sub, y_dirs, y_paths, MoreArgs = list(df$y_name), USE.NAMES = FALSE))
+  if (length(paths[[2]]) > 0) df$x_name <- as.vector(mapply(
+    sub, paths[[2]], paths[[1]], MoreArgs = list(df$x_name), USE.NAMES = FALSE))
+  if (length(paths[[4]]) > 0) df$y_name <- as.vector(mapply(
+    sub, paths[[4]], paths[[3]], MoreArgs = list(df$y_name), USE.NAMES = FALSE))
   
   # Make change table
   if (remove_duplicates) {
@@ -277,18 +166,207 @@ compare_images <- function(result, remove_duplicates = TRUE,
       value = prettyNum(
         c(nrow(result), nrow(df_prev), nrow(df_cor), nrow(df_dups),  
           nrow(result) - nrow(df_prev) - nrow(df_dups) - nrow(df_cor),
-          max(table_n[table_n$name == "match",]$i_2),
-          max(table_n[table_n$name == "likely match",]$i_2),
-          max(table_n[table_n$name == "possible match",]$i_2),
-          max(table_n[table_n$name == "no match",]$i_2)), big.mark = ","))
+          max(c(table_n[table_n$name == "match",]$i_2, 0)),
+          max(c(table_n[table_n$name == "likely match",]$i_2, 0)),
+          max(c(table_n[table_n$name == "possible match",]$i_2, 0)),
+          max(c(table_n[table_n$name == "no match",]$i_2, 0))), big.mark = ","))
+  
+  # Set Shiny options
+  shiny::shinyOptions(df = df, change_table = change_table, table_n = table_n, 
+                      summary_table = summary_table, x_paths = paths[[1]], 
+                      y_paths = paths[[3]], x_dirs = paths[[2]], 
+                      y_dirs = paths[[4]], batch_size = batch_size)
+  
+  # Return early if not interactive
+  if (!interactive()) {
+    warning("The `compare_images` tool only runs in interactive mode.")
+    output <- data.frame(matrix = integer(), x_index = integer(), 
+                         y_index = integer(), new_match_status = character(),
+                         new_highlight = logical())
+    if (requireNamespace("dplyr", quietly = TRUE)) {
+      output <- dplyr::as_tibble(output)
+    }
+    return(output)
+  }
   
   # Launch Shiny app then return results
-  shiny::shinyOptions(df = df, change_table = change_table, table_n = table_n, 
-                      summary_table = summary_table, x_paths = x_paths, 
-                      y_paths = y_paths, x_dirs = x_dirs, y_dirs = y_dirs, 
-                      batch_size = batch_size)
-  
   out <- shiny::runApp(system.file("compare_images", package = "matchr"))
+  output <- compare_finish(out, remove_duplicates, df_full, df_prev, df_cor,
+                           df_all)
+  return(output)
+  
+}
+
+# ------------------------------------------------------------------------------
+
+compare_get_paths <- function(result) {
+  x_paths <- get_path(result$x_sig)
+  x_dirs <- x_paths[!is_url(x_paths)]
+  x_dirs <- sub("[^/]+$", "", x_dirs)
+  x_dirs <- sort(unique(x_dirs))
+  x_dirs <- sub("/$", "", x_dirs)
+  x_paths <- paste("x", seq_along(x_dirs), sep = "_")
+  
+  y_paths <- get_path(result$y_sig)
+  y_dirs <- y_paths[!is_url(y_paths)]
+  y_dirs <- sub("[^/]+$", "", y_dirs)
+  y_dirs <- sort(unique(y_dirs))
+  y_dirs <- sub("/$", "", y_dirs)
+  y_paths <- paste("y", seq_along(y_dirs), sep = "_")
+  
+  return(list(x_paths, x_dirs, y_paths, y_dirs))
+}
+
+# ------------------------------------------------------------------------------
+
+compare_prepare_table <- function(result, previous, corr_thresh) {
+  
+  # Prepare result table for processing
+  df <- result
+  df$.UID <- paste0("id-", formatC(seq_len(nrow(df)), width = floor(log10(
+    nrow(df))) + 1, flag = "0"))
+  df_all <- df
+  
+  # Subset table if previous is TRUE
+  if (previous && suppressWarnings(!is.null(df$confirmed))) {
+    df_prev <- df[df$confirmed == TRUE,]
+    df <- df[df$confirmed == FALSE,]
+    df$confirmed <- NULL
+  } else df_prev <- df[0,]
+  
+  # Remove results with perfect correlation
+  df_cor <- df[df$correlation >= corr_thresh,]
+  df <- df[df$correlation < corr_thresh,]
+  
+  return(list(df, df_all, df_prev, df_cor))
+}
+
+# ------------------------------------------------------------------------------
+
+compare_remove_duplicates <- function(df, corr_thresh) {
+  
+  # Identify x images with correlation ~= 1
+  x_matches <- 
+    df$x_sig[!duplicated(get_path(df$x_sig))] |> 
+    match_signatures() |> 
+    identify_matches(quiet = TRUE)
+  x_matches <- x_matches[x_matches$correlation >= corr_thresh,]
+  
+  # Exit early if no matches
+  if (nrow(x_matches) == 0) {
+    df_dups <- df[0,]
+    df$x_name <- get_path(df$x_sig)
+    df$y_name <- get_path(df$y_sig)
+    df_full <- df
+    df$duplicates <- 0L
+    # Change value of remove_duplicates for subsequent steps
+    remove_duplicates <- FALSE
+    return(list(df, df_dups, df_full, remove_duplicates))
+  }
+  
+  # Group x images together by correlation
+  x_matches <- mapply(function(x, y) c(x, y), get_path(x_matches$x_sig),
+                      get_path(x_matches$y_sig), SIMPLIFY = FALSE, 
+                      USE.NAMES = FALSE)
+  
+  # Add duplicates
+  dup_x <- table(get_path(df$x_sig))
+  dup_x <- dup_x[dup_x >= 2]
+  dup_x <- lapply(names(dup_x), function(x) x)
+  x_matches <- c(x_matches, dup_x)
+  
+  # Reduce x_matches
+  x_reduced <- reduce(x_matches, "Identifying x duplicate", quiet)
+  
+  # Create x table
+  if (requireNamespace("dplyr", quietly = TRUE)) {
+    x_table <- lapply(seq_along(x_reduced), function(n) 
+      dplyr::tibble(x_id = n, x_name = x_reduced[[n]]))
+    x_table <- dplyr::bind_rows(x_table)
+  } else {
+    x_table <- lapply(seq_along(x_reduced), function(n) 
+      data.frame(x_id = n, x_name = x_reduced[[n]]))
+    x_table <- do.call(rbind, x_table)
+  }
+  x_table <- x_table[!duplicated(x_table),]
+  
+  # Join IDs to df table
+  df$x_name <- get_path(df$x_sig)
+  df <- merge(df, x_table, all = TRUE)
+  
+  # Identify y images with correlation ~= 1 with counterparts in x_table
+  y_sig <- df[!is.na(df$x_id),]$y_sig
+  y_sig <- y_sig[!duplicated(get_path(y_sig))]
+  y_matches <- 
+    y_sig |> 
+    match_signatures() |> 
+    identify_matches(quiet = TRUE)
+  y_matches <- y_matches[y_matches$correlation >= corr_thresh,]
+  
+  # Group y images together by correlation
+  y_matches <- mapply(function(x, y) c(x, y), get_path(y_matches$x_sig),
+                      get_path(y_matches$y_sig), SIMPLIFY = FALSE, 
+                      USE.NAMES = FALSE)
+  
+  # Add duplicates
+  dup_y <- df[!is.na(df$x_id),]$y_sig
+  dup_y <- table(get_path(dup_y))
+  dup_y <- dup_y[dup_y >= 2]
+  dup_y <- lapply(names(dup_y), function(x) x)
+  y_matches <- c(y_matches, dup_y)
+  
+  # Reduce y_matches
+  y_reduced <- reduce(y_matches, "Identifying y match", quiet)
+  
+  # Create y table
+  if (requireNamespace("dplyr", quietly = TRUE)) {
+    y_table <- lapply(seq_along(y_reduced), function(n) 
+      dplyr::tibble(y_id = n, y_name = y_reduced[[n]]))
+    y_table <- dplyr::bind_rows(y_table)
+  } else {
+    y_table <- lapply(seq_along(y_reduced), function(n) 
+      data.frame(y_id = n, y_name = y_reduced[[n]]))
+    y_table <- do.call(rbind, y_table)
+  }
+  y_table <- y_table[!duplicated(y_table),]
+  
+  # Join IDs to df table
+  df$y_name <- get_path(df$y_sig)
+  df <- merge(df, y_table, all = TRUE)
+  
+  # Get full df for later
+  df_full <- df
+  
+  # Create trimmed df table
+  df_b <- df[!is.na(df$x_id) & !is.na(df$y_id),]
+  df_b <- df_b[order(df_b$x_id, df_b$y_id, -1 * df_b$correlation),]
+  df_dups <- df_b[duplicated(df_b[c("x_id", "y_id")]),]
+  df_b <- df_b[!duplicated(df_b[c("x_id", "y_id")]),]
+  df_unique <- df[is.na(df$x_id) | is.na(df$y_id),]
+  
+  df <- rbind(df_b[!names(df_b) %in% c("x_sig", "y_sig")], 
+              df_unique[!names(df_unique) %in% c("x_sig", "y_sig")])
+  df <- df[order(df$.UID),]
+  
+  # Add duplicate counts
+  dup_list <- stats::aggregate(df_full, by = list(df_full$x_id, df_full$y_id), 
+                               length)
+  dup_list <- dup_list[c("Group.1", "Group.2", "y_name")]
+  names(dup_list) <- c("x_id", "y_id", "duplicates")
+  dup_list <- dup_list[dup_list$duplicates >= 2,]
+  dup_list$duplicates <- dup_list$duplicates - 1L
+  df <- merge(df, dup_list, all = TRUE)
+  df$duplicates <- ifelse(is.na(df$duplicates), 0L, df$duplicates)
+  if (requireNamespace("dplyr", quietly = TRUE)) df <- dplyr::as_tibble(df)
+  
+  return(list(df, df_dups, df_full, remove_duplicates))
+}
+
+# ------------------------------------------------------------------------------
+
+compare_finish <- function(out, remove_duplicates, df_full, df_prev, df_cor,
+                           df_all) {
+  
   highlight <- out[[2]]
   out <- out[[1]]
   
