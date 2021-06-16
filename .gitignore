@@ -43,3 +43,5 @@ vignettes/*.pdf
 *.Rproj
 inst/doc
 docs
+/doc/
+/Meta/

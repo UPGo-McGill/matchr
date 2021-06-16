@@ -1,7 +1,9 @@
 ---
 title: "An introduction to matchr"
 author: "David Wachsmuth"
-output: rmarkdown::html_vignette
+output: 
+  rmarkdown::html_vignette:
+    toc: true
 vignette: >
   %\VignetteIndexEntry{An introduction to matchr}
   %\VignetteEngine{knitr::rmarkdown}
@@ -15,8 +17,47 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
+The goal of matchr is to facilitate fast and reliable comparison of large sets of images to identify identical or nearly-identical pairs. It works by generating distinctive image signatures from pixel data then correlating these signatures between sets of images. This introductory vignette demonstrates the standard matchr workflow, from importing images and generating signatures to identifying and refining matches.
+
+```{r setup, include = FALSE}
 library(matchr)
 ```
 
+```
+library(matchr)
+```
+
+## Loading images
+
+The first step in a matchr workflow is importing images, either directly as `matchr_image` vectors which contain arrays of pixel values, or indirectly en route to generating the `matchr_signature` image signature vectors used for subsequent steps. Images can be identified in two ways:
+- As a character vector of URLs or local file paths
+- As a length-one character vector containing the path to a local directory containing images
+
+Here we demonstrate importing files from the internet, using the `test_urls` data object included in matchr:
+
+```{r paths}
+test_urls
+```
+
+
+## Creating signatures
+
 TKTK
+
+## Matching signatures
+
+TKTK
+
+
+## Identifying matches
+
+TKTK
+
+## Manually verifying matches
+
+TKTK
+
+
+## Further reading
+
+- \code{vignette("benchmarking")}

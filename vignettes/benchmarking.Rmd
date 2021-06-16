@@ -1,7 +1,9 @@
 ---
 title: "Performance benchmarking: BLAS, parallel processing, and memory use"
 author: "David Wachsmuth"
-output: rmarkdown::html_vignette
+output: 
+  rmarkdown::html_vignette:
+    toc: true
 vignette: >
   %\VignetteIndexEntry{Performance benchmarking: BLAS, parallel processing, and memory use}
   %\VignetteEngine{knitr::rmarkdown}
