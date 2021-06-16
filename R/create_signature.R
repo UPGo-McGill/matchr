@@ -172,6 +172,7 @@ create_signature.character <- function(image, bands = 20, rm_black_bars = TRUE,
                                       NA_real_))
   
   result <- new_signature(lapply(result, `[[`, 1), image, aspect_ratio)
+  stopifnot(sig_length(result) == bands * 8 || sig_length(result) == 1)
   if (backup) rm(sig_backup, sig_hash, envir = .matchr_env)
   return(result)
   

@@ -308,3 +308,23 @@ sum.matchr_signature <- function(..., na.rm = FALSE) {
 #' @export
 
 length.matchr_signature <- function(x) vctrs::vec_size(x)
+
+
+# ------------------------------------------------------------------------------
+
+#' @export
+
+c.matchr_signature <- function(..., recursive = FALSE, use.names = TRUE) {
+  if (recursive) {
+    stop("`recursive` must be `FALSE` when concatenating matchr classes.")
+  }
+  if (!use.names) {
+    stop("`use.names` must be `TRUE` when concatenating matchr classes.")
+  }
+  args <- list(...)
+  sig_lengths <- sapply(args, sig_length)
+  if(length(unique(sig_lengths)) != 1) {
+    stop("Signatures must have the same number of bands to be concatenated.")
+  }
+  vctrs::vec_c(...)
+}

@@ -62,3 +62,10 @@ test_that("a single NA is printed correctly", {
 test_that("empty signatures print correctly", {
   expect_output(print(trim_signature(test_long_sig, 0)), "Empty")
 })
+
+test_that("concatenation works", {
+  test_small_bands <- suppressWarnings(create_signature(test_urls, bands = 10))
+  expect_error(c(test_long_sig, test_long_sig, recursive = TRUE), "recursive")
+  expect_error(c(test_long_sig, test_long_sig, use.names = FALSE), "use.names")
+  expect_error(c(test_long_sig, test_small_bands), "concatenated")
+})
