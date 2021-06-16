@@ -7,7 +7,21 @@ if (getRversion() >= "2.15.1") {
                            "match_hash", "photos"))
 }
 
-# Vector of URLs for examples
+
+#' Vector of URLs for examples
+#' 
+#' \code{test_urls} contains 15 URLs pointing at a set of images well suited to
+#' exploring the functionality of the matchr package. Elements 1-3 are the same
+#' image at different resolutions and compression levels. Element 4 is a corrupt
+#' image. Element 5 is a unique image. Elements 6-7 are the same image at
+#' different resolutions. Elements 8-9 are the same image in colour and 
+#' greyscale. Elements 10-11 are byte-for-byte identical images. Element 12 is a
+#' portrait-orientation image. Element 13 is an image with large horizontal
+#' black bars. Element 14 is a completely grey image. Element 15 is a
+#' non-photographic, black-and-white image.
+#' 
+#' @export
+
 test_urls <- 
   c("https://upgo.lab.mcgill.ca/resources/img_1.jpg",
     "https://upgo.lab.mcgill.ca/resources/img_1_compressed.jpg",
