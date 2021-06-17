@@ -69,9 +69,9 @@ it return status updates throughout the function (default)?}
 A tibble if {dplyr} is installed or a data frame if not, with one
 row per identified match, and the following columns:
 \itemize{
-\item \code{matrix}: The match's index position in the input \code{matchr_matrix} vector.
-\item \code{x_index} and \code{y_index}: The match's row and column index positions in the
-\code{matchr_matrix} vector element.
+\item \code{index}: The match's index position in the input \code{matchr_matrix} vector.
+Each element is a length-three integer vector giving, respectively, the
+matrix, row index position, and column index position of the match.
 \item \code{x_path} and \code{y_path}: The file paths for the images which were matched.
 \item \code{correlation}: The Pearson correlation coefficient of the two files'
 image signatures.

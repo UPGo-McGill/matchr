@@ -42,6 +42,14 @@ integrate_changes <- function(result, change_table) {
 
   stopifnot(is.data.frame(result), is.data.frame(change_table))
   
+  # Expand index list column
+  result[c("matrix", "x_index", "y_index")] <- 
+    t(matrix(unlist(result$index), nrow = 3))
+  result$index <- NULL
+  change_table[c("matrix", "x_index", "y_index")] <- 
+    t(matrix(unlist(change_table$index), nrow = 3))
+  change_table$index <- NULL
+  
   # Merge results
   output <- merge(result, change_table, all.x = TRUE)
   stopifnot(sum(!is.na(output$new_match_status), na.rm = TRUE) ==
@@ -68,8 +76,15 @@ integrate_changes <- function(result, change_table) {
     output$new_highlight <- NULL
   }
   
+  # Re-merge index fields
+  output$index <- mapply(c, output$matrix, output$x_index, output$y_index, 
+                          SIMPLIFY = FALSE)
+  output <- output[c("index", "x_sig", "y_sig", "correlation", setdiff(
+    names(output), c("index", "matrix", "x_index", "y_index", "x_sig",
+                     "y_sig", "correlation")))]
+  
+  # Return output
   if (requireNamespace("dplyr", quietly = TRUE)) output <- dplyr::as_tibble(
     output)
-  
   return(output)
 }

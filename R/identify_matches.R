@@ -26,9 +26,9 @@
 #' @param ... Additional arguments passed to methods.
 #' @return A tibble if {dplyr} is installed or a data frame if not, with one
 #' row per identified match, and the following columns:
-#' - `matrix`: The match's index position in the input `matchr_matrix` vector.
-#' - `x_index` and `y_index`: The match's row and column index positions in the 
-#' `matchr_matrix` vector element.
+#' - `index`: The match's index position in the input `matchr_matrix` vector.
+#' Each element is a length-three integer vector giving, respectively, the
+#' matrix, row index position, and column index position of the match.
 #' - `x_path` and `y_path`: The file paths for the images which were matched.
 #' - `correlation`: The Pearson correlation coefficient of the two files'
 #' image signatures.
@@ -206,5 +206,11 @@ identify_matches_finish <- function(match_list) {
   matches <- matches[!duplicated(matches$hash),]
   matches$hash <- NULL
   
+  # Merge index fields
+  matches$index <- mapply(c, matches$matrix, matches$x_index, matches$y_index, 
+                          SIMPLIFY = FALSE)
+  matches <- matches[c("index", "x_sig", "y_sig", "correlation")]
+  
+  # Return output
   matches
 }
