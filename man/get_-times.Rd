@@ -58,6 +58,8 @@ vector; for \code{get_array} a \code{matchr_image} or \code{matchr_matrix}
 vector; for \code{get_signature} and \code{get_ar} a \code{matchr_signature}
 vector; for \code{get_x_sig}, \code{get_y_sig}, \code{get_x_ar} and
 \code{get_y_ar} a \code{matchr_matrix} vector.}
+
+\item{value}{A new vector of the same type as the field it is replacing.}
 }
 \value{
 A list, with the same length as the input vector \code{x}, containing the

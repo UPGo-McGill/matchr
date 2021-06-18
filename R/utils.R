@@ -25,6 +25,7 @@
 #' vector; for \code{get_signature} and \code{get_ar} a \code{matchr_signature} 
 #' vector; for \code{get_x_sig}, \code{get_y_sig}, \code{get_x_ar} and 
 #' \code{get_y_ar} a \code{matchr_matrix} vector.
+#' @param value A new vector of the same type as the field it is replacing.
 #' @return A list, with the same length as the input vector `x`, containing the
 #' field `*` of the input vector corresponding to the `get_*` function which was
 #' called.
