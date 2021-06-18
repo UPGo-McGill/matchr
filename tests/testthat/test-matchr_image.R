@@ -24,11 +24,12 @@ test_that("other methods works", {
 })
 
 test_that("plots work", {
-  expect_warning(plot(load_image(test_urls[8:9])), "Only the first image")
-  expect_warning(plot(load_image(test_urls[15:14])), "Only the first image")
+  expect_message(plot(test_long_img[4:5]), "Only the first")
+  expect_message(plot(test_long_img[c(1:4, 6:15)]), "Only the first")
+  expect_warning(plot(test_na), "No non-NA")
   skip_on_ci()
-  plot_1 <- save_png(plot(load_image(test_urls[8])))
-  plot_2 <- save_png(plot(load_image(test_urls[15])))
+  plot_1 <- save_png(plot(test_long_img[8]))
+  plot_2 <- save_png(plot(test_long_img[15]))
   expect_snapshot_file(plot_1, "plot_1.png")
   expect_snapshot_file(plot_2, "plot_2.png")
 })

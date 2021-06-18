@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
 
 The goal of matchr is to facilitate fast and reliable comparison of large sets of images to identify identical or nearly-identical pairs. It works by generating distinctive image signatures from pixel data then correlating these signatures between sets of images.
 
-Image are decomposed into horizontal bands, and for each band an average greyscale or colour value is calculated. The vector of these averages becomes a distinctive signature that can identify a given image even if the image is rescaled or compressed, and thus serves as a reliable indicator of whether two images are the same.
+Image are decomposed into horizontal and vertical bands, and for each band an average greyscale or colour value is calculated. The vector of these averages becomes a distinctive signature that can identify a given image even if the image is rescaled or compressed, and thus serves as a reliable indicator of whether two images are the same.
 
 Using matrix algebra, matchr can compare multiple sets of images and identify likely matches. The method is robust to changes in tint, compression or aspect ratio, and to other minor differences such as small overlays added to one of a pair of matching images.
 

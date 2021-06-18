@@ -94,33 +94,43 @@ dim.matchr_image <- function(x, ...) {
 
 plot.matchr_image <- function(x, ...) {
   
-  # Temporarily trim to just the first image
-  if (vec_size(x) > 1) {
-    warning("Only the first image will be plotted.", call. = FALSE)
-    x <- x[1]
+  # Exit early if there's nothing to plot
+  if (sum(is.na(x)) == vctrs::vec_size(x)) {
+    warning("No non-NA images to plot")
+    return(invisible(x))
   }
   
-  # Plot greyscale
-  if (is.na(dim(x)[,3])) {
-    
-    r <- grDevices::gray(t(get_array(x)[[1]]))
-    dim(r) <- dim(get_array(x)[[1]])[1:2]
-    class(r) <- "raster"
-    plot(r)
-    invisible(x)
-    
-    # Plot colour
-  } else {
-    
-    r <- grDevices::rgb(t(get_array(x)[[1]][,,1]),
-                        t(get_array(x)[[1]][,,2]),
-                        t(get_array(x)[[1]][,,3]))
-    dim(r) <- dim(get_array(x)[[1]])[1:2]
-    class(r) <- "raster"
-    plot(r)
-    invisible(x)
-    
+  # Trim to the first 12 valid images
+  y <- x[!is.na(x)]
+  if (sum(is.na(x)) > 0 || length(y) > 12) {
+    message("Only the first 12 valid images will be plotted.")
+    y <- y[seq_len(min(12, length(y)))]
   }
+  
+  # Plot function
+  img_plot <- function(x) {
+    if (is.na(dim(x)[,3])) {
+      r <- grDevices::gray(t(get_array(x)[[1]]))
+    } else r <- grDevices::rgb(t(get_array(x)[[1]][,,1]),
+                               t(get_array(x)[[1]][,,2]),
+                               t(get_array(x)[[1]][,,3]))
+    dim(r) <- dim(get_array(x)[[1]])[1:2]
+    class(r) <- "raster"
+    plot(r)
+    t <- sub("^.*/", "", get_path(x))
+    graphics::title(t)
+  }
+  
+  # Magic formula for grid cells
+  n <- length(y)
+  dims <- c(ceiling(n / 3) + n %in% c(2, 3, 5, 6), min(ceiling((n + 2) / 4), 3))
+  
+  # Plot images
+  old_par <- graphics::par(mfrow = dims, mai = c(0.25, 0.1, 0.25, 0.1))
+  lapply(y, img_plot)
+  graphics::par(old_par)
+  invisible(x)
+    
 }
   
 # ------------------------------------------------------------------------------
