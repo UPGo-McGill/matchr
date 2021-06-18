@@ -4,10 +4,11 @@
 #' (using \code{vctrs::new_rcrd}), which store their data and metadata as a set 
 #' of lists of equal length, called "fields". Usually these fields do not need 
 #' to be accessed independently of the vectors they comprise. But, for the cases
-#' when they do, matchr has a series of `get_*` functions which allow
+#' when they do, matchr has a series of \code{get_*} functions which allow
 #' convenient access to fields, and which are all straightforward wrappers of
-#' \code{vctrs::field}. In each case, `get_*(x)` is equivalent to 
-#' \code{vctrs::field(x, "*")}.
+#' \code{vctrs::field}. In each case, \code{get_*(x)} is equivalent to 
+#' \code{vctrs::field(x, "*")}. New values can be assigned to these fields in
+#' the same manner, e.g. \code{get_path(x) <- "new_path"}.
 #' 
 #' @aliases
 #' get_path
@@ -56,11 +57,29 @@ get_path <- function(x) {
 
 #' @name get_*
 #' @export
+`get_path<-` <- function(x, value) {
+  stopifnot("x must be a matchr_image or matchr_signature vector" = 
+              "path" %in% vctrs::fields(x))
+  vctrs::field(x, "path") <- value
+  x
+}
+
+#' @name get_*
+#' @export
 get_array <- function(x) {
   stopifnot("x must be a matchr_image or matchr_matrix vector" = 
               "array" %in% vctrs::fields(x))
   field(x, "array")
   }
+
+#' @name get_*
+#' @export
+`get_array<-` <- function(x, value) {
+  stopifnot("x must be a matchr_image or matchr_matrix vector" = 
+              "array" %in% vctrs::fields(x))
+  field(x, "array") <- value
+  x
+}
 
 #' @name get_*
 #' @export
@@ -72,6 +91,15 @@ get_signature <- function(x) {
 
 #' @name get_*
 #' @export
+`get_signature<-` <- function(x, value) {
+  stopifnot("x must be a matchr_signature vector" = 
+              "signature" %in% vctrs::fields(x))
+  field(x, "signature") <- value
+  x
+}
+
+#' @name get_*
+#' @export
 get_x_sig <- function(x) {
   stopifnot("x must be a matchr_matrix vector" = "x_sig" %in% vctrs::fields(x))
   field(x, "x_sig")
@@ -79,9 +107,25 @@ get_x_sig <- function(x) {
 
 #' @name get_*
 #' @export
+`get_x_sig<-` <- function(x, value) {
+  stopifnot("x must be a matchr_matrix vector" = "x_sig" %in% vctrs::fields(x))
+  field(x, "x_sig") <- value
+  x
+}
+
+#' @name get_*
+#' @export
 get_y_sig <- function(x) {
   stopifnot("x must be a matchr_matrix vector" = "y_sig" %in% vctrs::fields(x))
   field(x, "y_sig")
+}
+
+#' @name get_*
+#' @export
+`get_y_sig<-` <- function(x, value) {
+  stopifnot("x must be a matchr_matrix vector" = "y_sig" %in% vctrs::fields(x))
+  field(x, "y_sig") <- value
+  x
 }
 
 #' @name get_*
@@ -93,6 +137,14 @@ get_ar <- function(x) {
 
 #' @name get_*
 #' @export
+`get_ar<-` <- function(x, value) {
+  stopifnot("x must be a matchr_signature vector" = "ar" %in% vctrs::fields(x))
+  field(x, "ar") <- value
+  x
+}
+
+#' @name get_*
+#' @export
 get_x_ar <- function(x) {
   stopifnot("x must be a matchr_matrix vector" = "x_ar" %in% vctrs::fields(x))
   field(x, "x_ar")
@@ -100,10 +152,26 @@ get_x_ar <- function(x) {
 
 #' @name get_*
 #' @export
+`get_x_ar<-` <- function(x, value) {
+  stopifnot("x must be a matchr_matrix vector" = "x_ar" %in% vctrs::fields(x))
+  field(x, "x_ar") <- value
+  x
+}
+
+#' @name get_*
+#' @export
 get_y_ar <- function(x) {
   stopifnot("x must be a matchr_matrix vector" = "y_ar" %in% vctrs::fields(x))
   field(x, "y_ar")
   }
+
+#' @name get_*
+#' @export
+`get_y_ar<-` <- function(x, value) {
+  stopifnot("x must be a matchr_matrix vector" = "y_ar" %in% vctrs::fields(x))
+  field(x, "y_ar") <- value
+  x
+}
 
 
 #' Get the signature length from a matchr_signature vector

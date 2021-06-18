@@ -10,23 +10,47 @@
 \alias{get_ar}
 \alias{get_x_ar}
 \alias{get_y_ar}
+\alias{get_path<-}
+\alias{get_array<-}
+\alias{get_signature<-}
+\alias{get_x_sig<-}
+\alias{get_y_sig<-}
+\alias{get_ar<-}
+\alias{get_x_ar<-}
+\alias{get_y_ar<-}
 \title{Get internal fields from matchr vectors}
 \usage{
 get_path(x)
 
+get_path(x) <- value
+
 get_array(x)
+
+get_array(x) <- value
 
 get_signature(x)
 
+get_signature(x) <- value
+
 get_x_sig(x)
+
+get_x_sig(x) <- value
 
 get_y_sig(x)
 
+get_y_sig(x) <- value
+
 get_ar(x)
+
+get_ar(x) <- value
 
 get_x_ar(x)
 
+get_x_ar(x) <- value
+
 get_y_ar(x)
+
+get_y_ar(x) <- value
 }
 \arguments{
 \item{x}{For \code{get_path} a \code{matchr_image} or \code{matchr_signature}
@@ -45,10 +69,11 @@ matchr vectors are implemented as "record"-style classes
 (using \code{vctrs::new_rcrd}), which store their data and metadata as a set
 of lists of equal length, called "fields". Usually these fields do not need
 to be accessed independently of the vectors they comprise. But, for the cases
-when they do, matchr has a series of \verb{get_*} functions which allow
+when they do, matchr has a series of \code{get_*} functions which allow
 convenient access to fields, and which are all straightforward wrappers of
 \code{vctrs::field}. In each case, \code{get_*(x)} is equivalent to
-\code{vctrs::field(x, "*")}.
+\code{vctrs::field(x, "*")}. New values can be assigned to these fields in
+the same manner, e.g. \code{get_path(x) <- "new_path"}.
 }
 \examples{
 \dontrun{
