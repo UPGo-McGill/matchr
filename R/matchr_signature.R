@@ -328,3 +328,141 @@ c.matchr_signature <- function(..., recursive = FALSE, use.names = TRUE) {
   }
   vctrs::vec_c(...)
 }
+
+# ------------------------------------------------------------------------------
+
+#' Plot a matchr_signature vector
+#' 
+#' @param x Vector of class `matchr_signature`
+#' @param max_plot Positive integer. The maximum number of signatures to plot at 
+#' once. 
+#' @param with_image Logical scalar. Should the underlying image be plotted
+#' alongside its signature (default TRUE)? If TRUE, \code{\link{load_image}} 
+#' will be called on the paths in `x`.
+#' @param ... Not used.
+#' @export
+
+plot.matchr_signature <- function(x, max_plot = 4, with_image = TRUE, ...) {
+ 
+  # Check arguments
+  stopifnot(is.numeric(max_plot), is.logical(with_image))
+  
+  # Exit early if there's nothing to plot
+  if (sum(is.na(x)) == vctrs::vec_size(x)) {
+    warning("No non-NA signatures to plot")
+    return(invisible(x))
+  }
+  
+  # Trim to the first {max_plot} valid images
+  y <- x[!is.na(x)]
+  if (sum(is.na(x)) > 0 || length(y) > max_plot) {
+    message("Only the first ", max_plot, " valid signatures will be plotted.")
+    y <- y[seq_len(min(max_plot, length(y)))]
+  }
+  
+  # Load images if with_image = TRUE
+  if (with_image) {
+    img <- suppressWarnings(load_image(get_path(y)))
+    # Replace NAs with white 10x10 squares
+    NAs <- which(is.na(img))
+    if (length(NAs) > 0) {
+      warning(length(NAs), " image", if (length(NAs) > 1) "s", 
+              " could not be loaded.")
+      get_array(img[is.na(img)]) <- rep(list(array(
+        rep(1, 300), dim = c(10, 10, 3))),  length(img[is.na(img)]))
+      }
+    } else img <- NULL
+  
+  if (length(y) == 1) {
+    max_plot <- 9
+    n_rows <- 3
+    out <- sig_img(y, img, TRUE)
+  } else {
+    max_plot <- length(y) * 3
+    n_rows <- length(y)
+    out <- do.call(c, mapply(sig_img, y, img, MoreArgs = list(colour = FALSE), 
+                             SIMPLIFY = FALSE))
+  }
+  
+  plot(out, max_plot = max_plot, n_rows = n_rows)
+  return(invisible(x))
+  
+}
+  
+# ------------------------------------------------------------------------------
+
+sig_img <- function(x, img, colour) {
+  
+  bands <- sig_length(x) / 8
+  h_scale <- round(bands * get_ar(x))
+  v_scale <- round(bands / get_ar(x))
+  
+  # Process greyscale
+  grey_h <- get_signature(x)[[1]][seq_len(bands)]
+  grey_v <- get_signature(x)[[1]][(bands + 1):(bands * 2)]
+  grey_h_img <- new_image(
+    x = list(array(rep(grey_h, h_scale * 3), dim = c(bands, h_scale, 3))),
+    path = "grey horizontal")
+  grey_v_img <- new_image(
+    x = list(array(c(
+      do.call(rbind, rep(list(grey_v), v_scale)),
+      do.call(rbind, rep(list(grey_v), v_scale)),
+      do.call(rbind, rep(list(grey_v), v_scale))), dim = c(v_scale, bands, 3))),
+    path = "grey vertical")
+  out <- c(grey_h_img, grey_v_img)
+  
+  # Add img
+  if (is.null(img)) img <- new_image(x = rep(list(
+    array(rep(1, 300), dim = c(10, 10, 3))), length(img[is.na(img)])),
+    path = get_path(x))
+  out <- c(img, grey_h_img, grey_v_img)
+  
+  # Process colour
+  if (colour) {
+    # Red
+    r_h <- get_signature(x)[[1]][(bands * 2 + 1):(bands * 3)]
+    r_v <- get_signature(x)[[1]][(bands * 3 + 1):(bands * 4)]
+    r_h_img <- new_image(
+      x = list(array(c(do.call(cbind, rep(list(r_h), h_scale)), rep(
+        0, bands * h_scale * 2)), dim = c(bands, h_scale, 3))),
+      path = "red horizontal")
+    r_v_img <- new_image(
+      x = list(array(c(do.call(rbind, rep(list(r_v), v_scale)), rep(
+        0, bands * v_scale * 2)), dim = c(v_scale, bands, 3))),
+      path = "red vertical")
+    
+    # Green
+    g_h <- get_signature(x)[[1]][(bands * 4 + 1):(bands * 5)]
+    g_v <- get_signature(x)[[1]][(bands * 5 + 1):(bands * 6)]
+    g_h_img <- new_image(
+      x = list(array(c(rep(0, bands * h_scale), 
+                       do.call(cbind, rep(list(g_h), h_scale)), 
+                       rep(0, bands * h_scale)), dim = c(bands, h_scale, 3))),
+      path = "green horizontal")
+    g_v_img <- new_image(
+      x = list(array(c(rep(0, bands * v_scale), 
+                       do.call(rbind, rep(list(g_v), v_scale)), 
+                       rep(0, bands * v_scale)), dim = c(v_scale, bands, 3))),
+      path = "green vertical")
+    
+    # Blue
+    b_h <- get_signature(x)[[1]][(bands * 6 + 1):(bands * 7)]
+    b_v <- get_signature(x)[[1]][(bands * 7 + 1):(bands * 8)]
+    b_h_img <- new_image(
+      x = list(array(c(rep(0, bands * h_scale * 2), 
+                       do.call(cbind, rep(list(b_h), h_scale))),
+                     dim = c(bands, h_scale, 3))),
+      path = "blue horizontal")
+    b_v_img <- new_image(
+      x = list(array(c(rep(0, bands * v_scale * 2), 
+                       do.call(rbind, rep(list(b_v), v_scale))), 
+                     dim = c(v_scale, bands, 3))),
+      path = "blue vertical")
+    
+    out <- c(out, r_h_img, r_v_img, g_h_img, g_v_img, b_h_img, b_v_img)
+    
+  }
+  
+  out
+  
+}

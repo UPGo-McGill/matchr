@@ -7,9 +7,10 @@
 load_image(file, quiet = FALSE)
 }
 \arguments{
-\item{file}{A vector of file paths or URLs. If \code{file} is a vector of URLs,
-the URLs must begin with "http", "https", "ftp" or "ftps". If the URL has no
-extension, it will be given the extension ".jpg".}
+\item{file}{A vector of file paths or URLs which identify bitmapped images in
+the JPEG, PNG, TIFF, or BMP file formats. If \code{file} is length-one, it can be
+the path to a directory containing images. Elements of \code{file} which are URLs
+must begin with "http", "https", "ftp" or "ftps".}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}

@@ -64,8 +64,8 @@ and \code{y[[j]]}. If \code{y} is not present, each matrix will be square, and t
 \code{Q[i, j]} will be the correlation between images \code{x[[i]]} and \code{x[[j]]}.
 }
 \description{
-\code{match_signatures} takes one or two lists of images and produces a
-correlation matrix to identify matches.
+\code{match_signatures} takes one or two vectors of image signatures and
+produces a correlation matrix to identify matches.
 }
 \details{
 A function for identifying matching images. The function takes one or two

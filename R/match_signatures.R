@@ -1,7 +1,7 @@
 #' Match images based on colour signatures
 #'
-#' \code{match_signatures} takes one or two lists of images and produces a
-#' correlation matrix to identify matches.
+#' \code{match_signatures} takes one or two vectors of image signatures and 
+#' produces a correlation matrix to identify matches.
 #'
 #' A function for identifying matching images. The function takes one or two
 #' vectors of images signatures (class `matchr_signature`) and compares their

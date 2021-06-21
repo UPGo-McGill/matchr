@@ -90,9 +90,23 @@ dim.matchr_image <- function(x, ...) {
 
 # ------------------------------------------------------------------------------
 
+#' Plot a matchr_image vector
+#' 
+#' @param x Vector of class `matchr_image`
+#' @param max_plot Positive integer. The maximum number of images to plot at 
+#' once. 
+#' @param n_rows Either "auto" or a positive integer. The number of rows with 
+#' which to plot images. If "auto", six or fewer images will be arranged in an 
+#' adaptive layout which maximizes legibility, while seven or more images will 
+#' always be arranged in a three-column grid.
+#' @param ... Not used.
 #' @export
 
-plot.matchr_image <- function(x, ...) {
+plot.matchr_image <- function(x,  max_plot = 12, n_rows = "auto", ...) {
+  
+  # Check arguments
+  stopifnot(is.numeric(max_plot))
+  stopifnot(n_rows == "auto" || is.numeric(n_rows))
   
   # Exit early if there's nothing to plot
   if (sum(is.na(x)) == vctrs::vec_size(x)) {
@@ -100,11 +114,11 @@ plot.matchr_image <- function(x, ...) {
     return(invisible(x))
   }
   
-  # Trim to the first 12 valid images
+  # Trim to the first {max_plot} valid images
   y <- x[!is.na(x)]
-  if (sum(is.na(x)) > 0 || length(y) > 12) {
-    message("Only the first 12 valid images will be plotted.")
-    y <- y[seq_len(min(12, length(y)))]
+  if (sum(is.na(x)) > 0 || length(y) > max_plot) {
+    message("Only the first ", max_plot, " valid images will be plotted.")
+    y <- y[seq_len(min(max_plot, length(y)))]
   }
   
   # Plot function
@@ -123,7 +137,10 @@ plot.matchr_image <- function(x, ...) {
   
   # Magic formula for grid cells
   n <- length(y)
-  dims <- c(ceiling(n / 3) + n %in% c(2, 3, 5, 6), min(ceiling((n + 2) / 4), 3))
+  if (n_rows != "auto") {
+    dims <- c(n_rows, ceiling(n / n_rows))
+  } else dims <- c(ceiling(n / 3) + n %in% c(2, 3, 5, 6), 
+                   min(ceiling((n + 2) / 4), 3))
   
   # Plot images
   old_par <- graphics::par(mfrow = dims, mai = c(0.25, 0.1, 0.25, 0.1))

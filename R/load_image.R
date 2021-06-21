@@ -12,9 +12,10 @@
 #' this will read images with \code{load_image} 100 at a time before
 #' generating the unique colour signatures used for image matching.
 #'
-#' @param file A vector of file paths or URLs. If `file` is a vector of URLs, 
-#' the URLs must begin with "http", "https", "ftp" or "ftps". If the URL has no 
-#' extension, it will be given the extension ".jpg".
+#' @param file A vector of file paths or URLs which identify bitmapped images in
+#' the JPEG, PNG, TIFF, or BMP file formats. If `file` is length-one, it can be
+#' the path to a directory containing images. Elements of `file` which are URLs 
+#' must begin with "http", "https", "ftp" or "ftps".
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
 #' @return A `matchr_image` vector of the same length as the input vector.
