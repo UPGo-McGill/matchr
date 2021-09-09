@@ -34,11 +34,16 @@ will be named according to the IDs, as \code{id_n.jpg}, where \code{id} is an el
 of the \code{id} argument, \code{n} is an integer sequence of the same length as the
 \code{id} element, and \code{.jpg} is the same file extension as the URL. (So if there
 are three URLs which correspond to the \code{id} value of "XXXX", the files
-downloaded will be "XXXX_1.jpg", "XXXX_2.jpg" and "XXXX_3.jpg".)}
+downloaded will be "XXXX-1.jpg", "XXXX-2.jpg" and "XXXX-3.jpg".) If \code{id} has
+repeating values, the numbering will be cumulatively sequential to avoid
+overwriting earlier files, with, e.g., the second instance of "XXXX"
+beginning with "XXXX-4.jpg".}
 
 \item{check_duplicates}{A logical scalar (default TRUE) indicating whether to
 skip downloads for files whose IDs match files already present in the
-download folder. This argument is ignored if \code{id} is NULL.}
+download folder. This check is done per ID rather than per file, which means
+that if any files with an ID of \code{x} are found in the download folder, no new
+files with an ID of \code{x} will be downloaded.}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}

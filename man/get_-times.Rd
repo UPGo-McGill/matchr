@@ -4,6 +4,8 @@
 \alias{get_*}
 \alias{get_path}
 \alias{get_array}
+\alias{get_hash}
+\alias{get_ahash}
 \alias{get_signature}
 \alias{get_x_sig}
 \alias{get_y_sig}
@@ -30,6 +32,10 @@ get_array(x) <- value
 
 get_signature(x)
 
+get_hash(x)
+
+get_ahash(x)
+
 get_signature(x) <- value
 
 get_x_sig(x)
@@ -55,9 +61,9 @@ get_y_ar(x) <- value
 \arguments{
 \item{x}{For \code{get_path} a \code{matchr_image} or \code{matchr_signature}
 vector; for \code{get_array} a \code{matchr_image} or \code{matchr_matrix}
-vector; for \code{get_signature} and \code{get_ar} a \code{matchr_signature}
-vector; for \code{get_x_sig}, \code{get_y_sig}, \code{get_x_ar} and
-\code{get_y_ar} a \code{matchr_matrix} vector.}
+vector; for \code{get_hash}, \code{get_ahash} and \code{get_ar} a
+\code{matchr_signature} vector; for \code{get_x_sig}, \code{get_y_sig},
+\code{get_x_ar} and \code{get_y_ar} a \code{matchr_matrix} vector.}
 
 \item{value}{A new vector of the same type as the field it is replacing.}
 }
@@ -88,7 +94,8 @@ get_path(img)
 get_path(sig)
 get_array(img)
 get_array(matches)
-get_signature(sig)
+get_hash(sig)
+get_ahash(sig)
 get_x_sig(matches)
 get_y_sig(matches)
 get_ar(sig)

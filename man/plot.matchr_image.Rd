@@ -4,10 +4,13 @@
 \alias{plot.matchr_image}
 \title{Plot a matchr_image vector}
 \usage{
-\method{plot}{matchr_image}(x, max_plot = 12, n_rows = "auto", ...)
+\method{plot}{matchr_image}(x, path = TRUE, max_plot = 12, n_rows = "auto", ...)
 }
 \arguments{
 \item{x}{Vector of class \code{matchr_image}}
+
+\item{path}{Logical scalar. Should the image's path be displayed above the
+plot (default TRUE)?}
 
 \item{max_plot}{Positive integer. The maximum number of images to plot at
 once.}

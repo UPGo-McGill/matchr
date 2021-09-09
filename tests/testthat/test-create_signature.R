@@ -10,7 +10,7 @@ test_that("a vector of matchr_img works", {
 })
 
 test_that("a vector of paths works", {
-  expect(ceiling(sum(test_long_sig, na.rm = TRUE)) %in% 1136:1138,
+  expect(ceiling(sum(test_long_sig, na.rm = TRUE)) %in% 1136:1150,
          "test_long_sig")
 })
 
@@ -22,15 +22,15 @@ test_that("NA works", {
 test_that("rm_black_bars works", {
   expect_output(print(create_signature(test_urls[13], rm_black_bars = FALSE)),
                 "1.00")
-  expect_output(print(create_signature(test_urls[13])), "2.27")
+  expect_output(print(create_signature(test_urls[13])), "2.44")
   expect(is.na(create_signature(black_image)),
          "create_signature(black_image) did not return NA.")
   expect(ceiling(sum(create_signature(
     c("http://upgo.lab.mcgill.ca/resources/img_8_top.jpg",
-      "http://upgo.lab.mcgill.ca/resources/img_8_bottom.jpg")))) %in% 
-      c(158, 162), "top and bottom black bars")
+      "http://upgo.lab.mcgill.ca/resources/img_8_bottom.jpg")))) %in% 168:175, 
+    "top and bottom black bars")
   expect_equal(sum(dim(remove_black_bars(load_image(
-    "http://upgo.lab.mcgill.ca/resources/img_8.jpg")))), 291)
+    "http://upgo.lab.mcgill.ca/resources/img_8.jpg")))), 285)
   expect(is.na(remove_black_bars(black_image)),
          "remove_black_bars(black_image) NA")
 })

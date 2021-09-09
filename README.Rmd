@@ -11,6 +11,8 @@ knitr::opts_chunk$set(
   fig.path = "man/figures/README-",
   out.width = "100%"
 )
+
+library(matchr)
 ```
 
 # matchr
@@ -22,7 +24,7 @@ knitr::opts_chunk$set(
 
 The goal of matchr is to facilitate fast and reliable comparison of large sets of images to identify identical or nearly-identical pairs. It works by generating distinctive image signatures from pixel data then correlating these signatures between sets of images.
 
-Image are decomposed into horizontal and vertical bands, and for each band an average greyscale or colour value is calculated. The vector of these averages becomes a distinctive signature that can identify a given image even if the image is rescaled or compressed, and thus serves as a reliable indicator of whether two images are the same.
+Image are decomposed into horizontal and vertical bands, and for each band an average greyscale, red, green and blue value is calculated. The vector of these averages becomes a distinctive signature that can identify a given image even if the image is rescaled or compressed, and thus serves as a reliable indicator of whether two images are the same.
 
 Using matrix algebra, matchr can compare multiple sets of images and identify likely matches. The method is robust to changes in tint, compression or aspect ratio, and to other minor differences such as small overlays added to one of a pair of matching images.
 
@@ -32,7 +34,7 @@ All time-consuming matchr functions can be parallelized through the [future](htt
 
 ## Installation
 
-(NOT YET WORKING) You can install the released version of matchr from [CRAN](https://CRAN.R-project.org) with:
+You can install the released version of matchr from [CRAN](https://CRAN.R-project.org) with:
 
 ``` r
 install.packages("matchr")
@@ -49,7 +51,80 @@ remotes::install_github("UPGo-McGill/matchr")
 
 The standard matchr workflow involves importing one or more sets of images with `load_image`, generating image signatures from the image sets (or the underlying file paths) using `create_signature`, matching image signatures using `match_signatures`, then refining and verifying the matches using `identify_matches`, `confirm_matches`, `compare_images`, and `integrate_changes`.
 
-Because each of these steps can be very time- or computation-intensive, it is usually the most convenient to run the functions separately. But in the case of relatively small comparison tasks, `match_images` provides an "all-in-one" function which performs each task sequentially and delivers the final results.
+matchr uses the average grey, red, blue and green values from horizontal and vertical bands of an image to create a distinctive signature which efficiently identifies an image and allows it to be compared to others:
+
+```{r col_img, echo = FALSE, fig.height = 6, fig.width = 7}
+library(matchr)
+col_img <- load_image(test_urls[5])
+col_sig <- create_signature(col_img)
+
+# Get signatures
+grey_h <- get_signature(col_sig)[[1]][1:20]
+grey_v <- get_signature(col_sig)[[1]][21:40]
+red_h <- get_signature(col_sig)[[1]][41:60]
+red_v <- get_signature(col_sig)[[1]][61:80]
+green_h <- get_signature(col_sig)[[1]][81:100]
+green_v <- get_signature(col_sig)[[1]][101:120]
+blue_h <- get_signature(col_sig)[[1]][121:140]
+blue_v <- get_signature(col_sig)[[1]][141:160]
+
+# Process greyscale
+grey_h_img <- col_img
+get_array(grey_h_img) <- list(array(rep(grey_h, 27 * 3), dim = c(20, 27, 3)))
+grey_v_img <- col_img
+get_array(grey_v_img) <- list(array(c(
+  do.call(rbind, rep(list(grey_v), 15)),
+  do.call(rbind, rep(list(grey_v), 15)),
+  do.call(rbind, rep(list(grey_v), 15))), dim = c(15, 20, 3)))
+
+
+# Process red -------------------------------------------------------------
+
+red_h_img <- col_img
+get_array(red_h_img) <- list(array(c(do.call(cbind, rep(list(red_h), 27)), 
+                                     rep(0, 1080)), dim = c(20, 27, 3)))
+red_v_img <- col_img
+get_array(red_v_img) <- list(array(c(do.call(rbind, rep(list(red_v), 15)),
+                                     rep(0, 600)), dim = c(15, 20, 3)))
+
+
+# Process green -----------------------------------------------------------
+
+green_h_img <- col_img
+get_array(green_h_img) <- list(array(c(rep(0, 540),
+                                       do.call(cbind, rep(list(green_h), 27)), 
+                                       rep(0, 540)), dim = c(20, 27, 3)))
+green_v_img <- col_img
+get_array(green_v_img) <- list(array(c(rep(0, 300),
+                                       do.call(rbind, rep(list(green_v), 15)),
+                                       rep(0, 300)), dim = c(15, 20, 3)))
+
+
+# Process blue ------------------------------------------------------------
+
+blue_h_img <- col_img
+get_array(blue_h_img) <- list(array(c(rep(0, 1080), 
+                                      do.call(cbind, rep(list(blue_h), 27))), 
+                                    dim = c(20, 27, 3)))
+blue_v_img <- col_img
+get_array(blue_v_img) <- list(array(c(rep(0, 600), 
+                                      do.call(rbind, rep(list(blue_v), 15))), 
+                                    dim = c(15, 20, 3)))
+
+
+# Plot --------------------------------------------------------------------
+
+col_img <- c(col_img, grey_h_img, grey_v_img, red_h_img, red_v_img, green_h_img,
+             green_v_img, blue_h_img, blue_v_img)
+get_path(col_img) <- c("img_3.jpg", "grey horizontal", "grey vertical",
+                       "red horizontal", "red vertical", "green horizontal",
+                       "green vertical", "blue horizontal", "blue vertical")
+plot(col_img)
+```
+
+TKTK
+
+Because each of the matchr functions can be very time- or computation-intensive, it is usually the most convenient to run the functions separately. But in the case of relatively small comparison tasks, `match_images` provides an "all-in-one" function which performs each task sequentially and delivers the final results.
 
 When the {shiny} package is installed, `compare_images` loads an interactive Shiny app for verifying the results of the comparison algorithm and for flagging individual matches for follow up.
 

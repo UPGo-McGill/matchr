@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-The goal of matchr is to facilitate fast and reliable comparison of large sets of images to identify identical or nearly-identical pairs. It works by generating distinctive image signatures from pixel data then correlating these signatures between sets of images. This introductory vignette demonstrates the standard matchr workflow, from importing images and generating signatures to identifying and refining matches.
+The goal of matchr is to facilitate fast and reliable comparison of large sets of images to identify identical or nearly-identical pairs. It works by generating distinctive image signatures from pixel data then correlating these signatures between sets of images. matchr's approach allows for image comparisons to be made on large sets of images (tens or hundreds of thousands of files) on even modest computer hardware. This introductory vignette demonstrates the standard matchr workflow, from importing images and generating signatures to identifying and refining matches.
 
 ```{r setup, include = FALSE}
 library(matchr)
@@ -27,37 +27,170 @@ library(matchr)
 library(matchr)
 ```
 
-## Loading images
+## How matchr's image matching works
 
-The first step in a matchr workflow is importing images, either directly as `matchr_image` vectors which contain arrays of pixel values, or indirectly en route to generating the `matchr_signature` image signature vectors used for subsequent steps. Images can be identified in two ways:
-- As a character vector of URLs or local file paths
-- As a length-one character vector containing the path to a local directory containing images
+If two image files are identical at the byte level, comparing them is trivial. The motivation for matchr's development, by contrast, was the need to compare images hosted by web services that compress and resize uploads differently. In other words, when the same exact file is uploaded to two services, the resulting files may be visually identical but completely different byte-to-byte. In addition, the same underlying image may be modified in slightly different ways before being uploaded to different services (e.g. with a small text overlay, or with a change to tint or contrast). A human could identify the images as the same, but again the byte-level data will be different. matchr is designed to solve these problems at large scale and efficiently, so that tens of thousands of images can be compared even on a laptop with minimal CPU power and RAM.
 
-Here we demonstrate importing files from the internet, using the `test_urls` data object included in matchr:
+The strategy matchr uses is to extract relatively small but expressive "signatures" from each image, and compare these signatures mathematically. Images are decomposed into horizontal and vertical bands, and for each band an average greyscale, red, green, and blue value is calculated. The vector of these averages becomes a distinctive signature that can identify a given image even if the image is rescaled, compressed or has a small overlay added to it, and thus serves as a reliable indicator of whether two images are the same.
+
+Once image signatures have been generated for a set of images, matchr uses matrix algebra to compare each signature against each other signature using the Pearson correlation coefficient to identify potential matches. matchr has two comparison modes. If you supply a single set of images to its functions, matchr will identify all potential pairwise matches within that set. E.g., for a input vector `x`, it may determine that `x[1]` and `x[4]` are potential matches, along with `x[2]` and `x[3]`. If you supply two sets of images, by contrast, matchr will identify all potential pairwise matches *between* the two sets. E.g., for input vectors `x` and `y`, it may identify `x[1]` and `y[2]` as matches, but it will *not* identify `x[1]` and `x[4]`.
+
+Since some true matches will inevitably have lower signature correlations than some non-matches (because, e.g., the same image was de-saturated then compressed in one image set and left untouched in the other set), there is no possible "magic" threshold which is guaranteed to identify all true positives and exclude all true negatives. The parameters matchr uses to identify potential matches can be modified at will, but the defaults are tuned to produce very few false negatives, at the cost of producing more false positives. In other words, the default use case is based on the assumption that every single match needs to be identified. For this reason, matchr provides an interactive Shiny app which can be used to manually verify the results of the automated matching process. A future vignette will discuss the image matching parameters in greater detail, and provide sensible defaults for different use cases.
+
+
+## Quick start
+
+The simplest way to compare image sets with matchr is to use `match_images`, which is a convenience wrapper around the main functions in a standard matchr workflow. It does not allow much customization of parameters and doesn't scale well to extremely large image sets, but is a good choice when you just want to quickly identify duplicate images.
+
+Here we demonstrate `match_images` being run on a single vector of internet images, using the `test_urls` data object included in matchr:
 
 ```{r paths}
 test_urls
 ```
 
+`match_images` takes a `compare` argument, which controls whether the interactive `compare_images` Shiny app should be run to manually verify match results. This can only be run in an interactive session, so for the vignette `compare` is set to `FALSE`.
+
+```{r match_images}
+matches <- match_images(test_urls, compare = FALSE)
+matches
+```
+
+The results are returned as a data frame in which each row is a pairwise match between two of the input images. The data frame has six rows, which correspond to six matches among the fifteen images in `test_urls`. The function also generated a warning that one of the imported images was invalid. ("img_2_corrupt.jpg" is a purposely corrupted image, included in the test set to demonstrate what happens when matchr encounters an image it can't read.)
+
+The "index" field refers to the position of the matches in the correlation matrices which are generated as part of the matching process, but since `match_images` skips a number of intermediate outputs which are normally created by the matchr functions which it wraps, this field isn't meaningful. The next two fields ("x_sig" and "y_sig") contain the `matchr_signature` image signature vectors for the images which were matched. (In an GUI environment such as RStudio, these are displayed as colour patterns, although in this vignette they are monochrome.) These vectors contain the image signatures used for matching, alongside other metadata from the images such as resolution, colour channels, and file path. The final two fields ("correlation" and "match") give, respectively, the Pearson correlation coefficient between the greyscale image signatures of the two matching images and an additional confirmation based on the colour image signatures (which can be "match", "likely match", "possible match" or "no match"). If `match_images` is run with its default `compare = TRUE` setting, using the interactive image comparison Shiny app to manually confirm the results of the matching process will add `confirmed` and `highlight` fields to the output data frame, which respectively identify image pairs whose status ("match" or "no match") were visually confirmed and image pairs flagged for further follow up.
+
+Image comparison in matchr (either in `match_images` or the component functions) can identify matches within a single image set (as demonstrated above) or can identify matches between two image sets. This latter mode simply requires passing two input vectors to the functions:
+
+```{r match_images_two_inputs}
+match_images(test_urls[1:7], test_urls[8:15], compare = FALSE)
+```
+
+In this case no matches were found, so the output data frame is empty.
+
+Because `match_images` provides a streamlined wrapper around the entire matchr workflow, it is convenient for quickly identifying matches from small image sets, but it does not scale well to more complicated image matching tasks. The remainder of this vignette provides a step-by-step guide to the functions which `match_images` calls internally, and which will generally be used directly on image sets in real-world tasks.
+
+## Loading images
+
+The first step in a matchr workflow is importing images, either directly as `matchr_image` vectors which contain arrays of pixel values, or indirectly en route to generating the `matchr_signature` image signature vectors used for subsequent steps. matchr can import bitmapped images in the JPEG, PNG, TIFF, and BMP file formats. Images can be identified in two ways:
+
+- As a character vector of URLs or local file paths
+- As a length-one character vector containing the path to a local directory containing images
+
+For small image sets such as the `test_urls` example, we can read the images directly into memory using `load_image`. 
+
+```{r load_image}
+img <- load_image(test_urls)
+```
+
+This will create a `matchr_image` vector, each element of which is an array of pixel values. Invalid file paths will produce `NA` values, which will be passed through subsequent matchr functions without "infecting" other results. (I.e., unlike `sum`, which will return `NA` if any inputs are `NA`, matchr functions will ignore `NA` inputs during processing while reporting on the presence of `NA` elements in a fashion appropriate for the given function.) The print method for `matchr_image` vectors displays the resolution, colour profile, and file path of each image.
+
+```{r img}
+img
+```
+
+One reason to load entire images into memory with `load_image` rather than to just generate image signatures directly from the file paths with `create_signature` is to be able to conveniently see the images themselves. By default, the `plot` method for `matchr_image` vectors will display the first 12 non-NA images in the vector in a grid, along with their file names. Here we set the `max_plot` argument to 15 to show all the non-NA images in the vector.
+
+```{r plot_img, fig.height = 7, fig.width = 7}
+plot(img, max_plot = 15)
+```
+
+Since the `matchr_image` vectors contain raw arrays of pixel values, it is also possible to apply linear transformations directly to the arrays:
+
+```{r transform_img, fig.height = 6, fig.width = 7}
+img_cube <- img[c(1, 5)]
+img_root <- img[c(1, 5)]
+# Get or set values "inside" matchr vectors with the get_* functions
+get_array(img_cube) <- lapply(get_array(img_cube), \(x) x ^ 3)
+get_path(img_cube) <- c("img_1 cube", "img_3 cube")
+get_array(img_root) <- lapply(get_array(img_root), sqrt)
+get_path(img_root) <- c("img_1 root", "img_3 root")
+plot(c(img[c(1, 5)], img_cube, img_root))
+```
+
+In standard matchr workflows which involve comparing large sets of images, it will rarely be feasible to use `load_image`, given the enormous size of the pixel arrays in memory. (See [the performance vignette](performance.html) for more information.) Instead, `create_signature` can process image sets in batches, reading a small number of images into memory at a time, identifying their distinctive image signatures, and then allowing them to be released from memory before beginning the next batch. This allows arbitrarily large sets of images to be processed by matchr on even relatively modest hardware.
 
 ## Creating signatures
 
-TKTK
+The workhorse data structure in matchr is the `matchr_signature` vector of distinctive image signatures calculated from a set of images. These signatures are created using the `create_signature` function, which has methods both for `matchr_image` vectors imported with `load_image` and for a character vector of file paths, which will be sent in batches through a `load_image`-`create_signature` process designed to keep total memory requirements low. Since we already imported a vector of images in the previous section, we can pass this vector as an input to `create_signature`:
+
+```{r create_signature_image}
+sig <- create_signature(img)
+sig
+```
+
+In a GUI such as RStudio, `matchr_signature` vectors print as a series of colour blocks to allow for easy visual inspection of the underlying data; in this vignette the class falls back on a simpler presentation of the average values for each of the greyscale, red, green and blue colour bands. This simple presentation abstracts away a more detailed internal data structure: by default, `create_signature` generates average values for 20 horizontal bands and 20 vertical bands in greyscale, red, green and blue. This yields a numeric vector of length 160:
+
+```{r get_signature}
+get_signature(sig[1])
+```
+
+While this is a drastic simplification of the data present in an image, it is sufficient to identify distinctive patterns which are highly unlikely to be exactly shared by other images. Using the `plot` method for `matchr_signature` vectors, the signature can be visualized as follows:
+
+```{r col_img, fig.height = 6, fig.width = 7}
+plot(sig[5])
+```
+
+The `bands` argument to `create_signature` controls how many horizontal and vertical bands will be used to generate an image signature. The default is 20, which was determined through testing to represent a good balance between accuracy and performance. In general, higher values will yield signatures which are less likely to be matched to other signatures, which will avoid false positives but also potentially introduce false negatives. Matching signatures with higher `bands` values will also take more computing resources, in a roughly linear relationship. (E.g. comparing signatures with `bands = 40` will take approximately twice as long as comparing signatures with `bands = 20`.)
+
+### Removing black bars
+
+A relatively common phenomenon with user-uploaded photographs is horizontal black bars above and below an image. These occur when users take a screenshot of a landscape-oriented photograph and upload the result. These images pose a difficulty for matchr's image signature strategy, because they lead to signatures dominated by black values:
+
+```{r rm_black_bars_1, fig.height = 6, fig.width = 7}
+bb_sig <- create_signature(img[13], rm_black_bars = FALSE)
+plot(bb_sig)
+```
+
+Because matchr was motivated by the need to compare large numbers of user-uploaded photographs across different web services, it has the ability to detect and remove horizontal black bars, using the `rm_black_bars` argument to `create_signature`, which is TRUE by default. When `rm_black_bars = TRUE`, the underlying image is not modified upon import, but its image signature is only generated from the portion of the image which does not have rows of entirely black pixels:
+
+```{r rm_black_bars_2, fig.height = 6, fig.width = 7}
+plot(c(bb_sig, sig[13]))
+```
+
 
 ## Matching signatures
 
 TKTK
 
 
+```{r match_scatterplot, fig.height = 4, fig.width = 7}
+library(ggplot2)
+
+sig_1 <- get_signature(sig)[[1]][1:40] 
+sig_2 <- get_signature(sig)[[2]][1:40]
+sig_5 <- get_signature(sig)[[5]][1:40]
+
+data.frame(
+  x = c(sig_1, sig_1),
+  y = c(sig_2, sig_5),
+  correlation = c(rep(cor(sig_1, sig_2), 40), rep(cor(sig_1, sig_5), 40))) |> 
+  ggplot(aes(x, y)) + 
+  geom_point() +
+  facet_wrap(vars(correlation)) +
+  theme_minimal()
+```
+
+
+By default, only the greyscale portion of the image signatures are compared, in order to allow for matches 
+
+
+
 ## Identifying matches
 
 TKTK
+
 
 ## Manually verifying matches
 
 TKTK
 
 
+## Helper functions
+
+- get_* functions
+- download_images
+
+
 ## Further reading
 
-- \code{vignette("benchmarking")}
+- [`vignette("performance")`](performance.html) discusses important performance considerations when using matchr functions on large image sets.

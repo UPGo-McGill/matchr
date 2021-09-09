@@ -1,6 +1,6 @@
 ### PACKAGE HELPERS ############################################################
 
-number_of_threads <- function() {
+n_threads <- function() {
 
   if (requireNamespace("future", quietly = TRUE) &&
       requireNamespace("future.apply", quietly = TRUE)) {
@@ -114,7 +114,7 @@ chunk <- function(x, n_chunks, max_chunk_size = NULL, workers = NULL) {
   if (missing(max_chunk_size) && !missing(workers)) {
     max_chunk_size <- ceiling(length(x) / n_chunks)
     max_chunk_size <- 
-      unname(floor(max_chunk_size / number_of_threads()) * number_of_threads())
+      unname(floor(max_chunk_size / n_threads()) * n_threads())
   }
   
   # Simple version which splits into n_chunks pieces
@@ -245,6 +245,12 @@ fast_cor <- function(x, y) {
   y <- t((t(y) - colMeans(y)) / apply(y, 2, stats::sd))
   crossprod(x, y) / (nrow(x) - 1)
 }
+
+
+# ------------------------------------------------------------------------------
+
+hamming <- function(x, y) t(1 - x) %*% y + t(x) %*% (1 - y)
+
 
 # ------------------------------------------------------------------------------
 

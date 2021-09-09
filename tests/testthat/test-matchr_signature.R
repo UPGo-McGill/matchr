@@ -1,5 +1,14 @@
 #### TESTS FOR matchr_signature ################################################
 
+save_png <- function(code, width = 400, height = 400) {
+  path <- tempfile(fileext = ".png")
+  png(path, width = width, height = height)
+  on.exit(dev.off())
+  code
+  
+  path
+}
+
 test_that("matchr_signature handles NA", {
   expect_true(suppressWarnings(is.na(create_signature("flkj"))))
 })
@@ -9,7 +18,7 @@ test_that("matchr_signature objects are printed properly", {
   expect_output(print(suppressWarnings(create_signature("fdlkj"))), "NA")
   # Disable colour
   col_var <- options(crayon.enabled = FALSE)
-  expect_output(print(test_sig[1]), "0.41, 0.44")
+  expect_output(print(test_sig[1]), "0.41, 0.48")
   options(col_var)
   # Enable colour
   col_var <- options(crayon.enabled = TRUE)
@@ -69,3 +78,15 @@ test_that("concatenation works", {
   expect_error(c(test_long_sig, test_long_sig, use.names = FALSE), "use.names")
   expect_error(c(test_long_sig, test_small_bands), "concatenated")
 })
+
+test_that("plots work", {
+  expect_message(plot(test_long_sig[4:5]), "Only the first")
+  expect_message(plot(test_long_sig[c(1:4, 6:15)]), "Only the first")
+  expect_warning(plot(test_na), "No non-NA")
+  skip_on_ci()
+  plot_1 <- save_png(plot(test_long_img[8]))
+  plot_2 <- save_png(plot(test_long_img[15]))
+  expect_snapshot_file(plot_1, "plot_1.png")
+  expect_snapshot_file(plot_2, "plot_2.png")
+})
+

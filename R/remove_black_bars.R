@@ -31,11 +31,13 @@ remove_black_bars <- function(x) {
     return(NA)
   }
   
-  if (sum(rm_total < 0.005) > 0) {
+  if (sum(rm_total < 0.02) > 0) {
     
-    black_strips <- which(rm_total < 0.005)
-    black_strips <- black_strips[apply(x[black_strips,,1:3, drop = FALSE], 1, 
-                                       function(x) sum(x > 0.02)) == 0]
+    black_strips <- which(rm_total < 0.02)
+    # If image is colour, remove any rows with reasonably high pixel values
+    if (length(dim(x)) == 3) black_strips <- 
+        black_strips[apply(x[black_strips,,1:3, drop = FALSE], 1, 
+                           function(x) sum(x > 0.1)) == 0]
     
     if (length(black_strips) == 0 || black_strips[1] != 1) top_bound <- 1 else {
       # Get largest index position which is in a continuous sequence with 1
@@ -56,7 +58,8 @@ remove_black_bars <- function(x) {
       bottom_bound <- black_strips[min(which(bottom_bound))] - 1L
     }
     
-    x <- x[top_bound:bottom_bound,,]
+    if (length(dim(x)) == 2) x <- x[top_bound:bottom_bound,] else 
+      x <- x[top_bound:bottom_bound,,]
     
   }
   

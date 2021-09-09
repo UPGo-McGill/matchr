@@ -15,11 +15,13 @@ large sets of images to identify identical or nearly-identical pairs. It
 works by generating distinctive image signatures from pixel data then
 correlating these signatures between sets of images.
 
-Image are decomposed into horizontal bands, and for each band an average
-greyscale or colour value is calculated. The vector of these averages
-becomes a distinctive signature that can identify a given image even if
-the image is rescaled or compressed, and thus serves as a reliable
-indicator of whether two images are the same.
+Image are decomposed into horizontal and vertical bands, and for each
+band an average greyscale, red, green and blue value is calculated. The
+vector of these averages becomes a distinctive signature that can
+identify a given image even if the image is rescaled or compressed, and
+thus serves as a reliable indicator of whether two images are the same:
+
+<img src="man/figures/README-col_img-1.png" width="100%" />
 
 Using matrix algebra, matchr can compare multiple sets of images and
 identify likely matches. The method is robust to changes in tint,
@@ -53,12 +55,12 @@ remotes::install_github("UPGo-McGill/matchr")
 
 ## Usage
 
-The standard matchr work flow involves importing one or more sets of
+The standard matchr workflow involves importing one or more sets of
 images with `load_image`, generating image signatures from the image
-sets using `create_signature`, matching image signatures using
-`match_signatures`, then refining and verifying the matches using
-`identify_matches`, `confirm_matches`, `compare_images`, and
-`integrate_changes`.
+sets (or the underlying file paths) using `create_signature`, matching
+image signatures using `match_signatures`, then refining and verifying
+the matches using `identify_matches`, `confirm_matches`,
+`compare_images`, and `integrate_changes`.
 
 Because each of these steps can be very time- or computation-intensive,
 it is usually the most convenient to run the functions separately. But
@@ -68,10 +70,8 @@ and delivers the final results.
 
 When the {shiny} package is installed, `compare_images` loads an
 interactive Shiny app for verifying the results of the comparison
-algorithm; otherwise, images are loaded statically in a viewer window
-for manual comparison.
+algorithm and for flagging individual matches for follow up.
 
 ## Learn more
 
-Use `vignette(package = "matchr")` to learn more about how matchr
-works\!
+Use `vignette(package = "matchr")` to learn more about how matchr works!

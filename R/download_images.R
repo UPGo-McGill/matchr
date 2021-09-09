@@ -21,10 +21,15 @@
 #' of the `id` argument, `n` is an integer sequence of the same length as the
 #' `id` element, and `.jpg` is the same file extension as the URL. (So if there 
 #' are three URLs which correspond to the `id` value of "XXXX", the files 
-#' downloaded will be "XXXX_1.jpg", "XXXX_2.jpg" and "XXXX_3.jpg".)
+#' downloaded will be "XXXX-1.jpg", "XXXX-2.jpg" and "XXXX-3.jpg".) If `id` has
+#' repeating values, the numbering will be cumulatively sequential to avoid
+#' overwriting earlier files, with, e.g., the second instance of "XXXX" 
+#' beginning with "XXXX-4.jpg".
 #' @param check_duplicates A logical scalar (default TRUE) indicating whether to
 #' skip downloads for files whose IDs match files already present in the
-#' download folder. This argument is ignored if `id` is NULL.
+#' download folder. This check is done per ID rather than per file, which means 
+#' that if any files with an ID of `x` are found in the download folder, no new 
+#' files with an ID of `x` will be downloaded.
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
 #' @return Invisibly, a data frame summarizing the results of the downloads.
@@ -36,7 +41,6 @@
 #' download_images(df, dest)
 #' }
 #' @export
-
 
 download_images <- function(x = NULL, destination, path = photos, id = id, 
                             check_duplicates = TRUE, quiet = FALSE) {
@@ -90,7 +94,7 @@ download_images <- function(x = NULL, destination, path = photos, id = id,
     dplyr::as_tibble(result)
   
   # Return output
-  if (!quiet) cat(n_success, "files successfully downloaded.\n")
+  if (!quiet) cat(n_success, "files successfully downloaded in TKTK time.\n")
   if (check_duplicates && !quiet) cat(n_duplicate, "duplicates detected.\n")
   if (!quiet) cat(n_error, "files failed to download.\n")
   

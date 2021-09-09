@@ -11,7 +11,7 @@ test_that("chunk splits vectors correctly", {
 #   assign("requireNamespace", requireNamespace1, "package:base")
 #   
 #   suppressMessages(expect_message(.onAttach(), "Install"))
-#   expect_equal(number_of_threads(), 1)
+#   expect_equal(n_threads(), 1)
 #   expect_true(
 #     inherits(load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png"),
 #              "matchr_image"))

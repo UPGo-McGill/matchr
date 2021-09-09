@@ -93,6 +93,8 @@ dim.matchr_image <- function(x, ...) {
 #' Plot a matchr_image vector
 #' 
 #' @param x Vector of class `matchr_image`
+#' @param path Logical scalar. Should the image's path be displayed above the
+#' plot (default TRUE)?
 #' @param max_plot Positive integer. The maximum number of images to plot at 
 #' once. 
 #' @param n_rows Either "auto" or a positive integer. The number of rows with 
@@ -102,10 +104,11 @@ dim.matchr_image <- function(x, ...) {
 #' @param ... Not used.
 #' @export
 
-plot.matchr_image <- function(x,  max_plot = 12, n_rows = "auto", ...) {
+plot.matchr_image <- function(x, path = TRUE, max_plot = 12, n_rows = "auto", 
+                              ...) {
   
   # Check arguments
-  stopifnot(is.numeric(max_plot))
+  stopifnot(is.logical(path), is.numeric(max_plot))
   stopifnot(n_rows == "auto" || is.numeric(n_rows))
   
   # Exit early if there's nothing to plot
@@ -131,8 +134,11 @@ plot.matchr_image <- function(x,  max_plot = 12, n_rows = "auto", ...) {
     dim(r) <- dim(get_array(x)[[1]])[1:2]
     class(r) <- "raster"
     plot(r)
-    t <- sub("^.*/", "", get_path(x))
-    graphics::title(t)
+    if (path) {
+      t <- sub("^.*/", "", get_path(x))
+      graphics::title(t)  
+    }
+    
   }
   
   # Magic formula for grid cells

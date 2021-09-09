@@ -13,6 +13,8 @@
 #' @aliases
 #' get_path
 #' get_array
+#' get_hash
+#' get_ahash
 #' get_signature
 #' get_x_sig
 #' get_y_sig
@@ -22,9 +24,9 @@
 #' 
 #' @param x For \code{get_path} a \code{matchr_image} or \code{matchr_signature} 
 #' vector; for \code{get_array} a \code{matchr_image} or \code{matchr_matrix}
-#' vector; for \code{get_signature} and \code{get_ar} a \code{matchr_signature} 
-#' vector; for \code{get_x_sig}, \code{get_y_sig}, \code{get_x_ar} and 
-#' \code{get_y_ar} a \code{matchr_matrix} vector.
+#' vector; for \code{get_hash}, \code{get_ahash} and \code{get_ar} a 
+#' \code{matchr_signature} vector; for \code{get_x_sig}, \code{get_y_sig}, 
+#' \code{get_x_ar} and \code{get_y_ar} a \code{matchr_matrix} vector.
 #' @param value A new vector of the same type as the field it is replacing.
 #' @return A list, with the same length as the input vector `x`, containing the
 #' field `*` of the input vector corresponding to the `get_*` function which was
@@ -40,7 +42,8 @@
 #' get_path(sig)
 #' get_array(img)
 #' get_array(matches)
-#' get_signature(sig)
+#' get_hash(sig)
+#' get_ahash(sig)
 #' get_x_sig(matches)
 #' get_y_sig(matches)
 #' get_ar(sig)
@@ -89,6 +92,22 @@ get_signature <- function(x) {
               "signature" %in% vctrs::fields(x))
   field(x, "signature")
   }
+
+#' @name get_*
+#' @export
+get_hash <- function(x) {
+  stopifnot("x must be a matchr_signature_2 vector" = 
+              "hash" %in% vctrs::fields(x))
+  field(x, "hash")
+}
+
+#' @name get_*
+#' @export
+get_ahash <- function(x) {
+  stopifnot("x must be a matchr_signature_2 vector" = 
+              "ahash" %in% vctrs::fields(x))
+  field(x, "ahash")
+}
 
 #' @name get_*
 #' @export
