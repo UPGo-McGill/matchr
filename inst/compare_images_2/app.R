@@ -194,8 +194,9 @@ server <- function(input, output, session) {
   output$subtitle <- shiny::renderUI({
     sub_text <- table_n[page_count() + 1,]$name
     shiny::fluidRow(shiny::column(width = 12, shiny::h3(paste0(
-      sub_text, " ", table_n[page_count() + 1,]$i_1, "-", 
-      table_n[page_count() + 1,]$i_2))), 
+      sub_text, " ", 
+      prettyNum(table_n[page_count() + 1,]$i_1, ","), "-", 
+      prettyNum(table_n[page_count() + 1,]$i_2, ",")))), 
       style = "background-color:#FFFFFF;color:#000000;")
   })
   
@@ -204,12 +205,12 @@ server <- function(input, output, session) {
     
     prev_text <- table_n[page_count(),]$name
     prev_text <- paste0("Previous (", prev_text, " ", 
-                        table_n[page_count(),]$i_1, "-", 
-                        table_n[page_count(),]$i_2, ")")
+                        prettyNum(table_n[page_count(),]$i_1, ","), "-", 
+                        prettyNum(table_n[page_count(),]$i_2, ","), ")")
     next_text <- table_n[page_count() + 2,]$name
     next_text <- paste0("Next (", next_text, " ", 
-                        table_n[page_count() + 2,]$i_1, "-", 
-                        table_n[page_count() + 2,]$i_2, ")")
+                        prettyNum(table_n[page_count() + 2,]$i_1, ","), "-", 
+                        prettyNum(table_n[page_count() + 2,]$i_2, ","), ")")
     
     shiny::updateActionButton(session, "next_t_1", label = next_text)
     shiny::updateActionButton(session, "next_t_2", label = next_text)
