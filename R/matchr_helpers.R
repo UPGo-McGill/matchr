@@ -163,7 +163,7 @@ set_par <- function(fun, ...) {
   if (fun == "load_image") par_check <- FALSE
   
   # Version for create_signature.character
-  if (fun == "create_signature_character") par_check <- TRUE
+  if (fun == "create_signature_character") par_check <- args$l >= 100
   
   # Version for create_signature.matchr_image
   if (fun == "create_signature_matchr_image") par_check <- FALSE
@@ -281,3 +281,7 @@ reduce <- function(x, handler_text, quiet) {
   stopifnot(length(unique(unlist(out))) == length(unlist(lapply(out, unique))))
   out
 }
+
+# ------------------------------------------------------------------------------
+
+check_env <- function() identical(parent.frame(), globalenv()) == FALSE

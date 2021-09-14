@@ -94,7 +94,7 @@ match_signatures_2 <- function(x, y = NULL, compare_ar = TRUE, stretch = 1.2,
   # Initialize progress reporting
   handler_matchr("Matching signature")
   prog_bar <- as.logical((vec_size(x) >= 5000) * as.numeric(!quiet) *
-                           progressr::handlers(global = NA))
+                           progressr::handlers(global = NA) * check_env())
   pb <- progressr::progressor(steps = vec_size(x), enable = prog_bar)
   
   # Calculate correlation matrices
@@ -270,16 +270,10 @@ match_signatures_2_prep <- function(x, y, compare_ar, stretch, mem_scale,
 
 # ------------------------------------------------------------------------------
 
-match_signatures_2_internal <- function(x, y, hash = "hash") {
-  if (hash == "hash") {
-    x_matrix <- matrix(unlist(get_hash(x)), ncol = vec_size(x))
-    y_matrix <- matrix(unlist(get_hash(y)), ncol = vec_size(y))  
-  }
-  
-  if (hash == "ahash") {
-    x_matrix <- matrix(unlist(get_ahash(x)), ncol = vec_size(x))
-    y_matrix <- matrix(unlist(get_ahash(y)), ncol = vec_size(y))
-  }
-  
-  hamming(x_matrix, y_matrix)
+match_signatures_2_internal <- function(x, y) {
+  x_matrix <- matrix(unlist(get_hash(x)), ncol = vec_size(x))
+  y_matrix <- matrix(unlist(get_hash(y)), ncol = vec_size(y))  
+  len <- nrow(x_matrix) / 2
+  hamming(x_matrix[seq_len(len),], y_matrix[seq_len(len),]) *
+    hamming(x_matrix[seq_len(len) + len,], y_matrix[seq_len(len) + len,])
 }

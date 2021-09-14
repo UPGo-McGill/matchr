@@ -65,18 +65,16 @@ create_signature_2.matchr_image <- function(image, rm_black_bars = TRUE,
   
   # Get hashes
   arrays <- get_array(image)
-  result <- par_lapply(seq_along(arrays), function(x) {
+  hash <- par_lapply(seq_along(arrays), function(x) {
     if (x %% iterator == 0) pb(amount = iterator)
     create_signature_2_internal(arrays[[x]], rm_black_bars = rm_black_bars)
   })
-  hash <- lapply(result, `[[`, 1)
-  ahash <- lapply(result, `[[`, 2)
   
   # Return output
   path <- get_path(image)
   ar <- lapply(arrays, dim)
   ar <- sapply(ar, \(x) ifelse(is.null(x), NA_real_, x[2] / x[1]))
-  result <- new_signature_2(hash, ahash, path, ar)
+  result <- new_signature_2(hash, path, ar)
   return(result)
   
 }
@@ -94,12 +92,11 @@ create_signature_2.matchr_image <- function(image, rm_black_bars = TRUE,
 #' @export
 
 create_signature_2.character <- function(image, rm_black_bars = TRUE,
-                                         resize = "nearest",
                                          backup = TRUE, quiet = FALSE, ...) {
   
   # Error checking and variable initialization
-  stopifnot(is.logical(rm_black_bars), is.logical(backup), is.logical(quiet))
-  par_check <- set_par("create_signature_character")
+  stopifnot(is.character(image), is.logical(c(rm_black_bars, backup, quiet)))
+  par_check <- set_par("create_signature_character", l = length(image))
   if (length(image) <= 1000) backup <- FALSE
   iterations <- 1
   input_list <- list(seq_along(image))
@@ -140,7 +137,7 @@ create_signature_2.character <- function(image, rm_black_bars = TRUE,
   # Initialize progress reporting
   handler_matchr("Creating signature")
   prog_bar <- as.logical((length(image) >= 10) * as.numeric(!quiet) * 
-                           progressr::handlers(global = NA))
+                           progressr::handlers(global = NA) * check_env())
   iterator <- get_iterator(image)
   pb <- progressr::progressor(steps = length(image), enable = prog_bar)
   pb(amount = sum(lengths(input_list[seq_len(resume_from - 1)])))
@@ -148,15 +145,12 @@ create_signature_2.character <- function(image, rm_black_bars = TRUE,
   # Loop
   for (i in resume_from:iterations) {
     # Load images and get hashes
-    result[[i]] <- par_lapply(input_list[[i]], \(x) {
-      if (x %% iterator == 0) pb(amount = iterator)
-      array <- load_image_internal(image[x])
-      out <- create_signature_2_internal(array, rm_black_bars = rm_black_bars,
-                                         resize = resize)
-      hash <- out[[1]]
-      ahash <- out[[2]]
+    result[[i]] <- par_lapply(input_list[[i]], \(j) {
+      if (j %% iterator == 0) pb(amount = iterator)
+      array <- load_image_internal(image[j])
+      hash <- create_signature_2_internal(array, rm_black_bars = rm_black_bars)
       dims <- dim(array)
-      return(list(hash, ahash, dims))
+      return(list(hash, dims))
       })
     # Update backup
     if (backup) assign("sig_backup", result, envir = .matchr_env)
@@ -165,10 +159,9 @@ create_signature_2.character <- function(image, rm_black_bars = TRUE,
   # Construct matchr_signature_2 object and return output
   result <- unlist(result, recursive = FALSE)
   hash <- lapply(result, `[[`, 1)
-  ahash <- lapply(result, `[[`, 2)
-  ar <- lapply(result, `[[`, 3)
+  ar <- lapply(result, `[[`, 2)
   ar <- sapply(ar, \(x) ifelse(is.null(x), NA_real_, x[2] / x[1]))
-  out <- new_signature_2(hash, ahash, image, ar)
+  out <- new_signature_2(hash, image, ar)
   if (backup) rm(sig_backup, sig_hash, envir = .matchr_env)
   return(out)
   
@@ -176,14 +169,13 @@ create_signature_2.character <- function(image, rm_black_bars = TRUE,
 
 # ------------------------------------------------------------------------------
 
-create_signature_2_internal <- function(x, rm_black_bars = TRUE, 
-                                        resize = "nearest", ...) {
+create_signature_2_internal <- function(x, rm_black_bars = TRUE, ...) {
   
   # Return NA if input is NA, has wrong dims, or doesn't have enough pixels
-  if (is.logical(x)) return(list(NA, NA))
-  if (!length(dim(x)) %in% c(2, 3)) return(list(NA, NA))
-  if (length(dim(x)) == 3 && !dim(x)[[3]] %in% c(1, 3)) return(list(NA, NA))
-  if (dim(x)[[1]] < 33 || dim(x)[[2]] < 33) return(list(NA, NA))
+  if (is.logical(x)) return(NA)
+  if (!length(dim(x)) %in% c(2, 3)) return(NA)
+  if (length(dim(x)) == 3 && !dim(x)[[3]] %in% c(1, 3)) return(NA)
+  if (dim(x)[[1]] < 33 || dim(x)[[2]] < 33) return(NA)
   
   # Convert to greyscale
   if (length(dim(x)) == 3 && dim(x)[[3]] == 1) dim(x) <- dim(x)[1:2]
@@ -191,18 +183,13 @@ create_signature_2_internal <- function(x, rm_black_bars = TRUE,
   
   # Check for black bars
   if (rm_black_bars) x_grey <- remove_black_bars(x_grey)
-  if (is.logical(x_grey)) return(list(NA, NA))
+  if (is.logical(x_grey)) return(NA)
   
-  # Calculate hash
-  out <- OpenImageR::phash(x_grey, MODE = "binary", resize = resize)
-  out <- as.vector(out)
-  
-  # Calculate ahash
-  out_2 <- OpenImageR::average_hash(x_grey, MODE = "binary", resize = resize)
-  out_2 <- as.vector(out_2)
-  # out_2 <- out_2[seq_len(56)]
+  # Calculate hashes
+  out_1 <- OpenImageR::phash(x_grey, MODE = "binary", resize = "nearest")
+  out_2 <- OpenImageR::phash(x_grey, MODE = "binary", resize = "bilinear")
   
   # Return result
-  return(list(out, out_2))
+  return(c(as.vector(out_1), as.vector(out_2)))
   
 }

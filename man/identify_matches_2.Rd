@@ -8,7 +8,7 @@
 \usage{
 identify_matches_2(x, y = NULL, threshold = 12, quiet = FALSE, ...)
 
-\method{identify_matches_2}{matchr_matrix_2}(x, y = NULL, threshold = 12, quiet = FALSE, ...)
+\method{identify_matches_2}{matchr_matrix_2}(x, y = NULL, threshold = 200, quiet = FALSE, ...)
 
 \method{identify_matches_2}{matchr_signature_2}(
   x,

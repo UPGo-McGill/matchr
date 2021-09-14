@@ -61,7 +61,7 @@ identify_matches_2 <- function(x, y = NULL, threshold = 12, quiet = FALSE,
 #' @method identify_matches_2 matchr_matrix_2
 #' @export
 
-identify_matches_2.matchr_matrix_2 <- function(x, y = NULL, threshold = 12, 
+identify_matches_2.matchr_matrix_2 <- function(x, y = NULL, threshold = 200, 
                                              quiet = FALSE, ...) {
   
   # Error handling
@@ -69,7 +69,8 @@ identify_matches_2.matchr_matrix_2 <- function(x, y = NULL, threshold = 12,
   
   # Initialize progress reporting
   handler_matchr("Identifying matches, batch")
-  prog_bar <- as.logical(as.numeric(!quiet) * progressr::handlers(global = NA))
+  prog_bar <- as.logical(
+    as.numeric(!quiet) * progressr::handlers(global = NA) * check_env())
   pb <- progressr::progressor(steps = sum(sapply(get_array(x), vec_size)), 
                               enable = prog_bar)
   
@@ -153,11 +154,7 @@ identify_matches_2.matchr_signature_2 <- function(
 
 identify_matches_2_internal <- function(n, x, pb, threshold) {
   
-  if (threshold <= 1) {
-    match_index <- which(get_array(x[[n]])[[1]] >= threshold, arr.ind = TRUE)  
-  } else {
-    match_index <- which(get_array(x[[n]])[[1]] <= threshold, arr.ind = TRUE)  
-  }
+  match_index <- which(get_array(x[[n]])[[1]] <= threshold, arr.ind = TRUE)
   
   dimnames(match_index)[[2]] <- c("x_index", "y_index")
   
@@ -204,15 +201,9 @@ identify_matches_2_finish <- function(match_list) {
   matches <- matches[!duplicated(matches$hash),]
   matches$hash <- NULL
   
-  # Merge index fields
+  # Merge index fields and return output
   matches$index <- mapply(c, matches$matrix, matches$x_index, matches$y_index, 
                           SIMPLIFY = FALSE)
   matches <- matches[c("index", "x_sig", "y_sig", "distance")]
-  
-  # Calculate dd values
-  matches$dd <- matches$distance *
-    match_signatures_2_pairwise(matches$x_sig, matches$y_sig, "ahash")
-  
-  # Return output
-  matches
+  return(matches)
 }

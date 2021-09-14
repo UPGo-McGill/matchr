@@ -4,12 +4,10 @@
 \alias{new_signature_2}
 \title{Create a new matchr_signature object}
 \usage{
-new_signature_2(x = list(), ahash = list(), path = character(), ar = numeric())
+new_signature_2(x = list(), path = character(), ar = numeric())
 }
 \arguments{
 \item{x}{A list of numeric vectors.}
-
-\item{ahash}{TKTK}
 
 \item{path}{A character string, corresponding to the path or URL of the files
 from which the signatures have been generated.}

@@ -1,19 +1,16 @@
 #' Create a new matchr_signature object
 #'
 #' @param x A list of numeric vectors.
-#' @param ahash TKTK
 #' @param path A character string, corresponding to the path or URL of the files
 #' from which the signatures have been generated.
 #' @param ar A numeric vector, giving the aspect ratio of the images.
 #' @return An object of class `matchr_signature_2`.
 
-new_signature_2 <- function(x = list(), ahash = list(), path = character(), 
-                          ar = numeric()) {
+new_signature_2 <- function(x = list(), path = character(), ar = numeric()) {
   vec_assert(x, list())
-  vec_assert(ahash, list())
   vec_assert(path, character())
   vec_assert(ar, numeric())
-  new_rcrd(fields = list(hash = x, ahash = ahash, path = path, ar = ar), 
+  new_rcrd(fields = list(hash = x, path = path, ar = ar), 
            class = "matchr_signature_2")
 }
 
@@ -62,8 +59,9 @@ format.matchr_signature_2 <- function(x, ...) {
   
   hashes <- field(x, "hash")
   hashes <- sapply(hashes, \(x) {
-    # Exit early with NA
+    # Exit early with NA or NULL
     if (is.logical(x)) return(NA_character_)
+    if (length(x) == 0) return("NULL            ")
     
     # Otherwise construct hex text string out of binary inputs
     string <- vector("character", 4)

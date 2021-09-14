@@ -13,7 +13,6 @@ create_signature_2(image, rm_black_bars = TRUE, ...)
 \method{create_signature_2}{character}(
   image,
   rm_black_bars = TRUE,
-  resize = "nearest",
   backup = TRUE,
   quiet = FALSE,
   ...

@@ -47,10 +47,10 @@ load_image <- function(file, quiet = FALSE) {
   iterator <- get_iterator(file)
   pb <- progressr::progressor(steps = length(file), enable = prog_bar)
   
-  imgs <- par_lapply(seq_along(file), function(x) {
+  imgs <- par_lapply(seq_along(file), \(i) {
     
-    if (x %% iterator == 0) pb(amount = iterator)
-    load_image_internal(file[x])
+    if (i %% iterator == 0) pb(amount = iterator)
+    load_image_internal(file[i])
     
   })
   
