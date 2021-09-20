@@ -7,6 +7,7 @@
 match_signatures_2(
   x,
   y = NULL,
+  distance = ~nearest * bilinear,
   compare_ar = TRUE,
   stretch = 1.2,
   mem_scale = 0.2,
@@ -19,6 +20,14 @@ match_signatures_2(
 missing (default), each object in \code{x} will be matched against each other
 object in \code{x.} If \code{y} is present, each object in \code{x} will be matched against
 each object in \code{y}.}
+
+\item{distance}{A one-sided formula (or character string which can be
+coerced to a formula) with one or both of the terms \code{nearest} and \code{bilinear},
+expressing how the Hamming distance between image signature vectors should be
+calculated. The default (\code{~ nearest * bilinear}) takes the Hamming distances
+of each of the two image signature components and multiplies them together.
+Any arithmetical combination of these distances is a valid argument to
+\code{distance}, e.g. \code{~ nearest + log(bilinear)}.}
 
 \item{compare_ar}{A logical scalar. Should signatures only be compared for
 images with similar aspect ratios (default)? If TRUE, k-means clustering is

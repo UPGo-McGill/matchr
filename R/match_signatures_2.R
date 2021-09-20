@@ -22,6 +22,13 @@
 #' missing (default), each object in `x` will be matched against each other 
 #' object in `x.` If `y` is present, each object in `x` will be matched against 
 #' each object in `y`.
+#' @param distance A one-sided formula (or character string which can be
+#' coerced to a formula) with one or both of the terms `nearest` and `bilinear`,
+#' expressing how the Hamming distance between image signature vectors should be
+#' calculated. The default (`~ nearest * bilinear`) takes the Hamming distances
+#' of each of the two image signature components and multiplies them together.
+#' Any arithmetical combination of these distances is a valid argument to
+#' `distance`, e.g. `~ nearest + log(bilinear)`.
 #' @param compare_ar A logical scalar. Should signatures only be compared for 
 #' images with similar aspect ratios (default)? If TRUE, k-means clustering is 
 #' used to identify breakpoints between aspect ratios that maximize 
@@ -69,14 +76,24 @@
 #' }
 #' @export
 
-match_signatures_2 <- function(x, y = NULL, compare_ar = TRUE, stretch = 1.2, 
+match_signatures_2 <- function(x, y = NULL, distance = ~ nearest * bilinear,
+                               compare_ar = TRUE, stretch = 1.2, 
                                mem_scale = 0.2, mem_override = FALSE, 
                                quiet = FALSE) {
   
   # Error handling and object initialization
-  stopifnot(is_signature_2(x), is.numeric(c(stretch, mem_scale)),
+  stopifnot(is_signature_2(x), (is.language(distance) | is.character(distance)), 
+            is.numeric(c(stretch, mem_scale)), 
             is.logical(c(compare_ar, quiet, mem_override)))
   if (missing(y)) y <- x else stopifnot(is_signature_2(y))
+  
+  # Process distance formula
+  dist <- as.formula(distance)
+  as.character(dist[[2]])
+  dist[[1]] <- quote(I)
+  stopifnot(
+    "`distance` must contain one or both of `nearest` and `bilinear" = 
+      sum(c("nearest", "bilinear") %in% as.character(dist[[2]])) > 0)
   
   # Prepare objects for processing
   output <- match_signatures_2_prep(x, y, compare_ar, stretch, mem_scale, 
@@ -100,7 +117,7 @@ match_signatures_2 <- function(x, y = NULL, compare_ar = TRUE, stretch = 1.2,
   # Calculate correlation matrices
   result <- vector("list", length(x_list))
   for (i in seq_along(x_list)) {
-    result[[i]] <- match_signatures_2_internal(x_list[[i]], y_list[[i]])
+    result[[i]] <- match_signatures_2_internal(x_list[[i]], y_list[[i]], dist)
     pb(amount = sum(sapply(x_list[[i]], vec_size)))
   }
   
@@ -215,8 +232,10 @@ get_mem_limit_2 <- function(x_list, y_list, mem_scale, mem_override) {
 
 # ------------------------------------------------------------------------------
 
-match_signatures_2_pairwise <- function(x, y, hash = "hash", quiet = FALSE) {
-  par_mapply(match_signatures_2_internal, x, y, MoreArgs = list(hash = hash), 
+match_signatures_2_pairwise <- function(x, y, distance = ~ nearest * bilinear, 
+                                        quiet = FALSE) {
+  par_mapply(match_signatures_2_internal, x, y, 
+             MoreArgs = list(distance = distance), 
              SIMPLIFY = TRUE)
 }
 
@@ -270,10 +289,17 @@ match_signatures_2_prep <- function(x, y, compare_ar, stretch, mem_scale,
 
 # ------------------------------------------------------------------------------
 
-match_signatures_2_internal <- function(x, y) {
+match_signatures_2_internal <- function(x, y, distance) {
   x_matrix <- matrix(unlist(get_hash(x)), ncol = vec_size(x))
   y_matrix <- matrix(unlist(get_hash(y)), ncol = vec_size(y))  
   len <- nrow(x_matrix) / 2
-  hamming(x_matrix[seq_len(len),], y_matrix[seq_len(len),]) *
-    hamming(x_matrix[seq_len(len) + len,], y_matrix[seq_len(len) + len,])
+  
+  if ("nearest" %in% as.character(distance[[2]])) nearest <- 
+    hamming(x_matrix[seq_len(len),], y_matrix[seq_len(len),])
+  
+  if ("bilinear" %in% as.character(distance[[2]])) bilinear <- 
+      hamming(x_matrix[seq_len(len) + len,], y_matrix[seq_len(len) + len,])
+  
+  eval(distance)
+    
 }
