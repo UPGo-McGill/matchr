@@ -8,16 +8,16 @@ confirm_matches_2(
   result,
   remove_duplicates = TRUE,
   batch_size = 100L,
-  thresholds = c(Identical = 4L, Match = 6L, `Likely match` = 8L, `Possible match` =
-    10L),
+  thresholds = c(Identical = 80L, Match = 100L, `Likely match` = 120L, `Possible match`
+    = 150L),
   previous = TRUE,
   quiet = FALSE
 )
 }
 \arguments{
-\item{result}{A data frame produced by \code{\link{identify_matches}} (with
-\code{confirm = TRUE} or with \code{\link{confirm_matches}} subsequently run on
-the results).}
+\item{result}{A data frame produced by \code{\link{identify_matches}}, which
+has fields \code{index} (list of integer vectors), \code{x_sig} (matchr_signature
+vector), \code{y_sig} (matchr_signature vector) and \code{distance} (numeric vector).}
 
 \item{remove_duplicates}{A logical scalar. Should x-y pairs which are
 identical to other x-y pairs be reduced to a single x-y pair? This step can

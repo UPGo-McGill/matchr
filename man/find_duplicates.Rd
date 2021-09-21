@@ -4,7 +4,7 @@
 \alias{find_duplicates}
 \title{Find and label duplicate image signatures}
 \usage{
-find_duplicates(x, thresholds, quiet = FALSE)
+find_duplicates(x, threshold = 80, find_all = FALSE, quiet = FALSE)
 }
 \arguments{
 \item{x}{A data frame with two columns containing matchr_signature vectors.
@@ -13,30 +13,24 @@ which will be analyzed. If not, the first two columns containing
 matchr_signature vectors will be used. If more than two such columns are
 present, a warning will be issued.}
 
-\item{thresholds}{A named integer vector. Which Hamming distances establish
-thresholds for an "Identical" match (default 2L), a "Match" (default 4L), a
-"Likely match" (default 12L), a "Possible match" (default 15L), and "No
-match" (remaining values)? Image pairs with a distance equal to or less than
-the "Identical" threshold will be considered exact duplicates and will not be
-shown for verification in the comparison app. (Set "Identical" to -1L to
-force manual verification of all image pairs). Remaining image pairs will be
-grouped in the comparison app by these thresholds. Image pairs with distances
-equal to or under the "Likely match" value will be given a default value of
-"match" in the comparison app, while others will be given a default value of
-"no match". If \code{remove_duplicates} is TRUE, the "Identical" threshold will be
-used to identify duplicated images. (I.e. if the distance between two \code{x} or
-two \code{y} images is <= the "Identical" threshold value, the images will be
-considered duplicates.) If \code{thresholds} elements are not named, their names
-will be inferred by ordering the values from smallest to largest. If
-\code{thresholds} elements are not integers, they will be silently converted to
-integers by truncating all digits to the right of the decimal point.}
+\item{threshold}{A length-one integer vector. Which Hamming distance should
+be used to consider images to be identical? If the distance between two \code{x}
+or two \code{y} images is <= \code{threshold}, the images will be considered
+duplicates.}
+
+\item{find_all}{A logical scalar. Should the function find all \code{y} duplicates
+even for rows which do not have \code{x} duplicates (default FALSE)? If FALSE,
+rows will be checked for \code{x} duplicates first, and any row without an \code{x}
+duplicate will be removed from the search for \code{y} duplicates. This can result
+in considerable speed gains if the goal is to find rows which have both \code{x}
+and \code{y} duplicates (e.g. for subsequent processing in \code{confirm_matches}).}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}
 }
 \value{
-The input data frame, with additional \code{x_id} and \code{y_id} fields
-identified duplicated image signatures.
+The input data frame, with additional \code{x_id} and \code{y_id} fields which
+identify duplicated image signatures.
 }
 \description{
 \code{find_duplicates} takes a data frame with two matchr_signature vectors

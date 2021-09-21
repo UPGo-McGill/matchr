@@ -49,14 +49,6 @@ format.matchr_signature_2 <- function(x, ...) {
   
   x_empty <- which(lengths(get_hash(x)) == 0)
   x_valid <- setdiff(which(!is.na(x)), x_empty)
-  # values <- formatter(get_signature(x[x_valid]))
-  # 
-  # out <- rep(NA_character_, vec_size(x))
-  # out[x_empty] <- rep("<Empty>", vec_size(x_empty))
-  # out[x_valid] <- values
-  # out
-
-  
   hashes <- field(x, "hash")
   hashes <- sapply(hashes, \(x) {
     # Exit early with NA or NULL
@@ -196,9 +188,11 @@ obj_print_data.matchr_signature_2 <- function(x, width = getOption("width"),
 
 obj_print_header.matchr_signature_2 <- function(x, ...) {
 
-  if (vec_size(x) == 1) plural <- " signature" else plural <- " signatures"
+  if (vec_size(x) == 0) plural <- " signatures" else
+    if (vec_size(x) == 1) plural <- " signature\n" else 
+      plural <- " signatures\n"
   header <- paste0('# An image signature vector: ', 
-                   prettyNum(length(x), ","), plural, "\n")
+                   prettyNum(length(x), ","), plural)
   header <- pillar::style_subtle(header)
   cat(header)
 
