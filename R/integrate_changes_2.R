@@ -54,8 +54,6 @@ integrate_changes_2 <- function(result, change_table) {
   
   # Merge results
   output <- merge(output, change, all.x = TRUE)
-  stopifnot(sum(!is.na(output$new_match_status), na.rm = TRUE) ==
-              nrow(change))
   if (suppressWarnings(is.null(output$match))) {
     output$match <- output$new_match_status
   } else output[!is.na(output$new_match_status),]$match <-

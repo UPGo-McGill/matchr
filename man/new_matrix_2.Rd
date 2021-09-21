@@ -13,7 +13,8 @@ new_matrix_2(
   x_total = integer(length = 1L),
   y_total = integer(length = 1L),
   x_na = character(),
-  y_na = character()
+  y_na = character(),
+  formula = list()
 )
 }
 \arguments{
@@ -38,6 +39,9 @@ files in the y vector.}
 \item{x_na}{A character vector: the paths of x signatures which are NA.}
 
 \item{y_na}{A character vector: the paths of y signatures which are NA.}
+
+\item{distance}{A one-sided formula: how the \code{nearest} and \code{bilinear} Hamming
+distances were combined to determine an overall distance.}
 }
 \value{
 An object of class \code{matchr_matrix_2}.

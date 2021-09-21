@@ -13,13 +13,16 @@
 #' @param y_total An integer scalar: the total number of y signatures analyzed.
 #' @param x_na A character vector: the paths of x signatures which are NA.
 #' @param y_na A character vector: the paths of y signatures which are NA.
+#' @param distance A one-sided formula: how the `nearest` and `bilinear` Hamming
+#' distances were combined to determine an overall distance.
 #' @return An object of class `matchr_matrix_2`.
 
 new_matrix_2 <- function(array = list(), x_ar = list(), y_ar = list(),
                        x_sig = list(), y_sig = list(), 
                        x_total = integer(length = 1L), 
                        y_total = integer(length = 1L),
-                       x_na = character(), y_na = character()) {
+                       x_na = character(), y_na = character(),
+                       formula = list()) {
   vec_assert(array, list())
   vec_assert(x_ar, list())
   vec_assert(y_ar, list())
@@ -29,10 +32,11 @@ new_matrix_2 <- function(array = list(), x_ar = list(), y_ar = list(),
   vec_assert(y_total, integer())
   vec_assert(x_na, character())
   vec_assert(y_na, character())
+  stopifnot(is.language(formula) || is.list(formula))
   new_rcrd(fields = list(array = array, x_ar = x_ar, y_ar = y_ar, x_sig = x_sig, 
                          y_sig = y_sig), 
            x_total = x_total, y_total = y_total, x_na = x_na, y_na = y_na,
-           class = "matchr_matrix_2")
+           formula = formula, class = "matchr_matrix_2")
 }
 
 # ------------------------------------------------------------------------------
@@ -67,8 +71,8 @@ is_matrix_2 <- function(x) inherits(x, "matchr_matrix_2")
 
 format.matchr_matrix_2 <- function(x, ...) {
   
-  paste(prettyNum(lengths(get_x_sig(x)), ","), "x", 
-        prettyNum(lengths(get_y_sig(x)), ","))
+  if (vec_size(x) > 0) paste(prettyNum(lengths(get_x_sig(x)), ","), "x", 
+                             prettyNum(lengths(get_y_sig(x)), ","))
   
 }
 
@@ -83,8 +87,8 @@ vec_ptype_abbr.matchr_matrix_2 <- function(x, ...) "matrix"
 #' @export
 
 obj_print_header.matchr_matrix_2 <- function(x, ...) {
-  
-  if (vec_size(x) > 1) plural <- " matrices\n" else plural <- " matrix\n"
+  if (vec_size(x) == 0) plural <- " matrices" else 
+    if (vec_size(x) == 1) plural <- " matrix\n" else plural <- " matrices\n"
   header <- paste0(
     '# An image matrix vector: ', 
     prettyNum(attr(x, "x_total"), ","), " x ",

@@ -59,7 +59,9 @@
 #' `length(x)` rows and `length(y)` columns, and for the matrix `Q` the cell 
 #' `Q[i, j]` will be the Hamming distance between images `x[[i]]` and `y[[j]]`. 
 #' If `y` is not present, each matrix will be square, and the cell `Q[i, j]` 
-#' will be the Hamming distance between images `x[[i]]` and `x[[j]]`.
+#' will be the Hamming distance between images `x[[i]]` and `x[[j]]`. The
+#' formula supplied to the `distance` argument will be present as an additional
+#' attribute to the return vector, named `formula`.
 #' @examples
 #' \dontrun{
 #' # Setup
@@ -131,7 +133,8 @@ match_signatures_2 <- function(x, y = NULL, distance = ~ nearest * bilinear,
     x_total = length(unique(c(get_path(x), get_path(x_na)))),
     y_total = length(unique(c(get_path(y), get_path(y_na)))),
     x_na = get_path(x_na),
-    y_na = get_path(y_na)
+    y_na = get_path(y_na),
+    formula = as.formula(distance)
   )
   
 }

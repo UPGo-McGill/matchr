@@ -65,7 +65,9 @@ ratio range. If \code{x} and \code{y} are both present, each matrix will have
 \code{length(x)} rows and \code{length(y)} columns, and for the matrix \code{Q} the cell
 \code{Q[i, j]} will be the Hamming distance between images \code{x[[i]]} and \code{y[[j]]}.
 If \code{y} is not present, each matrix will be square, and the cell \code{Q[i, j]}
-will be the Hamming distance between images \code{x[[i]]} and \code{x[[j]]}.
+will be the Hamming distance between images \code{x[[i]]} and \code{x[[j]]}. The
+formula supplied to the \code{distance} argument will be present as an additional
+attribute to the return vector, named \code{formula}.
 }
 \description{
 \code{match_signatures_2} takes one or two vectors of image signatures and
