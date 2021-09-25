@@ -237,7 +237,6 @@ trim_signature <- function(x, range) {
   
 }
 
-
 # ------------------------------------------------------------------------------
 
 fast_cor <- function(x, y) {
@@ -246,41 +245,9 @@ fast_cor <- function(x, y) {
   crossprod(x, y) / (nrow(x) - 1)
 }
 
-
 # ------------------------------------------------------------------------------
 
 hamming <- function(x, y) t(1 - x) %*% y + t(x) %*% (1 - y)
-
-
-# ------------------------------------------------------------------------------
-
-reduce <- function(x, handler_text, quiet) {
-
-  # Initialize progress reporting
-  handler_matchr(handler_text)
-  prog_bar <- as.logical((vec_size(x) >= 100) * as.numeric(!quiet) * 
-                           progressr::handlers(global = NA))
-  pb <- progressr::progressor(steps = vec_size(x), enable = prog_bar)
-  iterator <- get_iterator(x)
-  
-  out <- Reduce(function(a, n) {
-    if (n %% iterator == 0) pb(amount = iterator)
-    merge_index <- lapply(a, intersect, x[[n]])
-    
-    if (sum(lengths(merge_index)) > 0) {
-      merge_index <- which(lengths(merge_index) > 0)
-      merged <- a[merge_index]
-      merged <- unlist(merged)
-      merged <- union(merged, x[[n]])
-      merged <- list(sort(merged))
-      not_merged <- a[-merge_index]
-      out <- c(merged, not_merged)
-    } else out <- c(a, list(x[[n]]))
-  }, seq_along(x), init = list())
-  
-  stopifnot(length(unique(unlist(out))) == length(unlist(lapply(out, unique))))
-  out
-}
 
 # ------------------------------------------------------------------------------
 

@@ -72,7 +72,10 @@ find_duplicates <- function(x, threshold = 80, find_all = FALSE,
   x_matches <- c(x_matches, dup_x)
   
   # Reduce x_matches
-  x_reduced <- reduce(x_matches, "Identifying x duplicate", quiet)
+  unique_name <- unique(unlist(x_matches))
+  x_index <- lapply(x_matches, \(x) which(unique_name %in% x))
+  x_reduced <- reduce_int(x_index)
+  x_reduced <- lapply(x_reduced, \(x) unique_name[x])
   
   # Create x table and join IDs to x
   if (requireNamespace("dplyr", quietly = TRUE)) {
@@ -115,7 +118,10 @@ find_duplicates <- function(x, threshold = 80, find_all = FALSE,
   y_matches <- c(y_matches, dup_y)
   
   # Reduce y_matches
-  y_reduced <- reduce(y_matches, "Identifying y match", quiet)
+  unique_name <- unique(unlist(y_matches))
+  y_index <- lapply(y_matches, \(x) which(unique_name %in% x))
+  y_reduced <- reduce_int(y_index)
+  y_reduced <- lapply(y_reduced, \(x) unique_name[x])
   
   # Create y table and join IDs to x
   if (requireNamespace("dplyr", quietly = TRUE)) {

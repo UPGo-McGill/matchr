@@ -38,7 +38,7 @@ paths_low <- list.files("example_low", full.names = TRUE)
 paths_high <- list.files("example_high", full.names = TRUE)
 ```
 
-The benchmarks were taken on a 2019 Mac Pro with a 3.2 GHz 16-core Intel Xeon W and 512 GB of RAM, running R 4.1 in RStudio 1.4.1717, reading images from an SATA-3 SSD drive.
+The benchmarks were taken on a 2019 Mac Pro with a 3.2 GHz 16-core Intel Xeon W and 512 GB of RAM, running R 4.1 in RStudio 1.4.1717, reading images from a SATA-3 SSD drive.
 
 ## BLAS
 

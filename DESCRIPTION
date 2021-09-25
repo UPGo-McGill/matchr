@@ -28,6 +28,7 @@ Imports:
     memuse (>= 4.1),
     OpenImageR (>= 1.1.9),
     pillar (>= 1.6.1),
+    Rcpp (>= 1.0.7),
     progressr (>= 0.7.0),
     readbitmap (>= 0.1.5),
     vctrs (>= 0.3.8)
@@ -49,3 +50,5 @@ Suggests:
     tidyr (>= 1.1.2),
 BugReports: https://github.com/UPGo-McGill/matchr/issues
 VignetteBuilder: knitr
+LinkingTo: 
+    Rcpp
