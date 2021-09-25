@@ -11,7 +11,7 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // reduce_int
-std::vector<std::unordered_set<int>> reduce_int(List x);
+std::vector<std::set<int>> reduce_int(List x);
 RcppExport SEXP _matchr_reduce_int(SEXP xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
