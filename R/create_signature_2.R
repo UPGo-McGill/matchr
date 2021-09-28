@@ -179,7 +179,7 @@ create_signature_2_internal <- function(x, rm_black_bars = TRUE, ...) {
   
   # Convert to greyscale
   if (length(dim(x)) == 3 && dim(x)[[3]] == 1) dim(x) <- dim(x)[1:2]
-  if (length(dim(x)) == 3) x_grey <- rowMeans(x, dims = 2) else x_grey <- x
+  if (length(dim(x)) == 3) x_grey <- rgb_to_grey(x) else x_grey <- x
   
   # Check for black bars
   if (rm_black_bars) x_grey <- remove_black_bars(x_grey)

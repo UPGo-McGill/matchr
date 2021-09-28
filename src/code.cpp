@@ -1,6 +1,17 @@
 // [[Rcpp::plugins(cpp11)]]
-#include <Rcpp.h>
+// [[Rcpp::depends(RcppArmadillo)]]
+# include <RcppArmadillo.h>
 using namespace Rcpp;
+
+////////////////////////////////////////////////////////////////////////////////
+
+// [[Rcpp::export]]
+arma::mat hamming(arma::mat x, arma::mat y) {
+  arma::mat out = (1 - x).t() * y + x.t() * (1 - y);
+  return(out);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 bool any_in(std::set<int> s1, std::vector<int> x) {
   int n = x.size();
@@ -53,4 +64,12 @@ std::vector<std::set<int>> reduce_int(List x) {
   }  
   
   return output;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//[[Rcpp::export]]
+arma::mat rgb_to_grey(arma::cube x) {
+  arma::mat out = mean(x, 2);
+  return(out);
 }
