@@ -23,7 +23,10 @@
   }
 }
 
-.onUnload <- function(libname, pkgname) {
+.onUnload <- function(libname, pkgname, libpath) {
+  
+  library.dynam.unload("mypackage", libpath)
+  
   if (requireNamespace("future", quietly = TRUE)) {
     options(.matchr_env$globals_max_size)
   }
