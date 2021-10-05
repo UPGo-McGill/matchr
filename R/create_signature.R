@@ -14,11 +14,6 @@
 #' @param image Vector of class `matchr_image` (imported using 
 #' \code{\link{load_image}}), or character vector of file paths or URLs which 
 #' can be imported to `matchr_image` using \code{\link{load_image}}.
-#' @param bands Integer scalar. The number of horizontal and vertical bands the
-#' image should be split into for processing. Higher values will produce a more
-#' distinctive colour signature, potentially decreasing the rate of matching
-#' false positives, but at the cost of increased processing time and an
-#' increased rate of matching false negatives.
 #' @param rm_black_bars Logical scalar. Should horizontal black bars be
 #' detected and removed from the image signature? Because these bands lead to an
 #' image signature dominated by black values, leaving them in the signature can
@@ -40,7 +35,7 @@
 #' }
 #' @export
 
-create_signature <- function(image, bands = 20, rm_black_bars = TRUE, ...) {
+create_signature <- function(image, rm_black_bars = TRUE, ...) {
   
   UseMethod("create_signature")
   
@@ -54,34 +49,35 @@ create_signature <- function(image, bands = 20, rm_black_bars = TRUE, ...) {
 #' it return status updates throughout the function (default)?
 #' @export
 
-create_signature.matchr_image <- function(image, bands = 20, 
-                                          rm_black_bars = TRUE, quiet = FALSE,
-                                        ...) {
+create_signature.matchr_image <- function(image, rm_black_bars = TRUE, 
+                                          quiet = FALSE, ...) {
   
   # Error checking and variable initialization
-  stopifnot(is.numeric(bands), is.logical(rm_black_bars))
+  stopifnot(is.logical(rm_black_bars))
   par_check <- set_par("create_signature_matchr_image")
   
   # Initialize progress reporting
   handler_matchr("Creating signature")
   prog_bar <- as.logical((length(image) >= 10) * as.numeric(!quiet) * 
-                           progressr::handlers(global = NA))
+                           progressr::handlers(global = NA) * check_env())
   iterator <- get_iterator(image)
   pb <- progressr::progressor(steps = length(image), enable = prog_bar)
-
-  # Get signatures
-  sigs <- par_lapply(seq_along(image), function(x) {
+  
+  # Remove black bars
+  if (rm_black_bars) image <- remove_black_bars(image)
+  
+  # Get hashes
+  arrays <- get_array(image)
+  hash <- par_lapply(seq_along(arrays), function(x) {
     if (x %% iterator == 0) pb(amount = iterator)
-    create_signature_internal(image[x], bands = bands,
-                              rm_black_bars = rm_black_bars)
+    create_signature_internal(arrays[[x]])
   })
   
   # Return output
   path <- get_path(image)
-  aspect_ratio <- 
-    sapply(sigs, function(x) ifelse(length(x) == 2, x[[2]][2] / x[[2]][1], 
-                                    NA_real_))
-  result <- new_signature(lapply(sigs, `[[`, 1), path, aspect_ratio)
+  ar <- lapply(arrays, dim)
+  ar <- sapply(ar, \(x) ifelse(is.null(x), NA_real_, x[2] / x[1]))
+  result <- new_signature(hash, path, ar)
   return(result)
   
 }
@@ -90,7 +86,6 @@ create_signature.matchr_image <- function(image, bands = 20,
 
 #' @rdname create_signature
 #' @method create_signature character
-#' @param par_check TKTK
 #' @param backup A logical scalar. Should the function store an ongoing backup
 #' of progress in a hidden object `.matchr_env$sig_backup` in the package's
 #' environment (default)? If TRUE, the function will attempt to resume progress
@@ -99,15 +94,12 @@ create_signature.matchr_image <- function(image, bands = 20,
 #' \code{\link{remove_backups}}.
 #' @export
 
-create_signature.character <- function(image, bands = 20, rm_black_bars = TRUE,
-                                       par_check = FALSE,
-                                       backup = TRUE, quiet = FALSE, ...) {
+create_signature.character <- function(image, rm_black_bars = TRUE,
+                                         backup = TRUE, quiet = FALSE, ...) {
   
   # Error checking and variable initialization
-  stopifnot(is.numeric(bands), is.logical(rm_black_bars), 
-            is.logical(backup), is.logical(quiet))
-  # par_check <- set_par("create_signature_character")
-  par_check <- par_check
+  stopifnot(is.character(image), is.logical(c(rm_black_bars, backup, quiet)))
+  par_check <- set_par("create_signature_character", l = length(image))
   if (length(image) <= 1000) backup <- FALSE
   iterations <- 1
   input_list <- list(seq_along(image))
@@ -119,8 +111,7 @@ create_signature.character <- function(image, bands = 20, rm_black_bars = TRUE,
     
     # Set iterations
     iterations <- ceiling(length(image) / 1000)
-    input_list <- chunk(seq_along(image), iterations, 
-                        workers = n_threads())
+    input_list <- chunk(seq_along(image), iterations, workers = n_threads())
     iterations <- length(input_list)
     result <- vector("list", iterations)
     resume_from <- 1
@@ -134,7 +125,7 @@ create_signature.character <- function(image, bands = 20, rm_black_bars = TRUE,
         result <- .matchr_env$sig_backup
         resume_from <- length(result[!sapply(result, is.null)]) + 1
         if (!quiet) message("Backup detected. Resuming from position ",
-                            sum(sapply(.matchr_env$sig_backup, length)) + 1,
+                            sum(lengths(.matchr_env$sig_backup)) + 1,
                             ".\n", sep = "")
       } else {
         stop("The backup detected in .matchr_env$sig_backup does not match ",
@@ -149,80 +140,56 @@ create_signature.character <- function(image, bands = 20, rm_black_bars = TRUE,
   # Initialize progress reporting
   handler_matchr("Creating signature")
   prog_bar <- as.logical((length(image) >= 10) * as.numeric(!quiet) * 
-                           progressr::handlers(global = NA))
+                           progressr::handlers(global = NA) * check_env())
   iterator <- get_iterator(image)
   pb <- progressr::progressor(steps = length(image), enable = prog_bar)
   pb(amount = sum(lengths(input_list[seq_len(resume_from - 1)])))
   
   # Loop
   for (i in resume_from:iterations) {
-    result[[i]] <- par_lapply(input_list[[i]], function(x) {
-      if (x %% iterator == 0) pb(amount = iterator)
-      img <- list(load_image_internal(image[x]))
-      img <- new_image(img, image[x])
-      if (is.na(img)) return(list(NA, NA))
-      sig <- create_signature_internal(img, bands = bands, 
-                                       rm_black_bars = rm_black_bars)
-      return(sig)
+    # Load images and get hashes
+    result[[i]] <- par_lapply(input_list[[i]], \(j) {
+      if (j %% iterator == 0) pb(amount = iterator)
+      array <- load_image_internal(image[j])
+      if (rm_black_bars) array <- remove_black_bars(array)
+      hash <- create_signature_internal(array)
+      dims <- dim(array)
+      return(list(hash, dims))
       })
+    # Update backup
     if (backup) assign("sig_backup", result, envir = .matchr_env)
   }
   
-  # Construct matchr_signature object and return result
+  # Construct matchr_signature object and return output
   result <- unlist(result, recursive = FALSE)
-  aspect_ratio <- 
-    sapply(result, function(x) ifelse(length(x) == 2, x[[2]][2] / x[[2]][1], 
-                                      NA_real_))
-  
-  result <- new_signature(lapply(result, `[[`, 1), image, aspect_ratio)
-  stopifnot(sig_length(result) == bands * 8 || sig_length(result) == 1)
+  hash <- lapply(result, `[[`, 1)
+  ar <- lapply(result, `[[`, 2)
+  ar <- sapply(ar, \(x) ifelse(is.null(x), NA_real_, x[2] / x[1]))
+  out <- new_signature(hash, image, ar)
   if (backup) rm(sig_backup, sig_hash, envir = .matchr_env)
-  return(result)
+  return(out)
   
 }
 
 # ------------------------------------------------------------------------------
 
-create_signature_internal <- function(image, bands = 20, 
-                                          rm_black_bars = TRUE, ...) {
+create_signature_internal <- function(x) {
   
-  # Error checking and variable initialization
-  stopifnot(is.numeric(bands), is.logical(rm_black_bars))
-  a <- get_array(image)[[1]]
+  # Return NA if input is NA, has wrong dims, or doesn't have enough pixels
+  if (is.logical(x)) return(NA)
+  if (!length(dim(x)) %in% c(2, 3)) return(NA)
+  if (length(dim(x)) == 3 && !dim(x)[[3]] %in% c(1, 3)) return(NA)
+  if (dim(x)[[1]] < 33 || dim(x)[[2]] < 33) return(NA)
   
-  # Return NA if input is NA or doesn't have enough pixels
-  if (is.na(image)) return(NA)
-  if (dim(a)[[1]] < bands || dim(a)[[2]] < bands) return(NA)
+  # Convert to greyscale
+  if (length(dim(x)) == 3 && dim(x)[[3]] == 1) dim(x) <- dim(x)[1:2]
+  if (length(dim(x)) == 3) x_grey <- rgb_to_grey(x) else x_grey <- x
   
-  # Failsafe in case image is greyscale
-  if (length(dim(a)) == 2 || dim(a)[[3]] == 1) {
-    a <- sapply(list(a, a, a), I, simplify = "array")
-  }
-  
-  # Check for black bars
-  if (rm_black_bars) a <- remove_black_bars(a)
-  if (is.logical(a)) return(NA)
-  
-  # Calculate row means
-  rm_1 <- rowMeans(a[,,1])
-  rm_2 <- rowMeans(a[,,2])
-  rm_3 <- rowMeans(a[,,3])
-  rm_1 <- sapply(chunk(rm_1, bands), mean)
-  rm_2 <- sapply(chunk(rm_2, bands), mean)
-  rm_3 <- sapply(chunk(rm_3, bands), mean)
-  rm_total <- (rm_1 + rm_2 + rm_3) / 3
-  
-  # Calculate column means
-  cm_1 <- colMeans(a[,,1])
-  cm_2 <- colMeans(a[,,2])
-  cm_3 <- colMeans(a[,,3])
-  cm_1 <- sapply(chunk(cm_1, bands), mean)
-  cm_2 <- sapply(chunk(cm_2, bands), mean)
-  cm_3 <- sapply(chunk(cm_3, bands), mean)
-  cm_total <- (cm_1 + cm_2 + cm_3) / 3
+  # Calculate hashes
+  out_1 <- OpenImageR::phash(x_grey, MODE = "binary", resize = "nearest")
+  out_2 <- OpenImageR::phash(x_grey, MODE = "binary", resize = "bilinear")
   
   # Return result
-  result <- c(rm_total, cm_total, rm_1, cm_1, rm_2, cm_2, rm_3, cm_3)
-  return(list(result, dim(a)))
+  return(c(as.vector(out_1), as.vector(out_2)))
   
 }

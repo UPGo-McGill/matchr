@@ -4,17 +4,18 @@
 \alias{plot.matchr_signature}
 \title{Plot a matchr_signature vector}
 \usage{
-\method{plot}{matchr_signature}(x, max_plot = 4, with_image = TRUE, ...)
+\method{plot}{matchr_signature}(x, max_plot = 20, n_rows = "auto", ...)
 }
 \arguments{
 \item{x}{Vector of class \code{matchr_signature}}
 
 \item{max_plot}{Positive integer. The maximum number of signatures to plot at
-once.}
+once (default 20).}
 
-\item{with_image}{Logical scalar. Should the underlying image be plotted
-alongside its signature (default TRUE)? If TRUE, \code{\link{load_image}}
-will be called on the paths in \code{x}.}
+\item{n_rows}{Either "auto" or a positive integer. The number of rows with
+which to plot images. If "auto", nine or fewer images will be arranged in an
+adaptive layout which maximizes legibility, while ten or more images will
+always be arranged in a four-column grid.}
 
 \item{...}{Not used.}
 }

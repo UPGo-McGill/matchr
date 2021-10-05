@@ -16,14 +16,10 @@ test_that("matchr_signature handles NA", {
 test_that("matchr_signature objects are printed properly", {
   expect_output(print(test_sig[1]), "aspect ratio")
   expect_output(print(suppressWarnings(create_signature("fdlkj"))), "NA")
-  # Disable colour
-  col_var <- options(crayon.enabled = FALSE)
-  expect_output(print(test_sig[1]), "0.41, 0.48")
-  options(col_var)
-  # Enable colour
-  col_var <- options(crayon.enabled = TRUE)
-  expect_true(crayon::has_style(capture.output(print(test_sig[1]))[[2]]))
-  options(crayon.enabled = col_var)
+})
+
+test_that("length 0 matchr_signature objects are printed properly", {
+  expect_output(print(test_sig[0]), "0 signatures")
 })
 
 test_that("length > 1 matchr_signature objects are printed properly", {
@@ -42,17 +38,15 @@ test_that("long matchr_signature objects are truncated", {
 })
 
 test_that("different displays work", {
-  expect_output(print(test_sig), ".41", width = 20)
-  expect_output(print(test_sig), "a.r.", width = 40)
+  expect_output(print(test_sig), "01c$", width = 20)
+  expect_output(print(test_sig), "a.r.", width = 35)
   expect_output(print(test_sig), "aspect ratio", width = 45)
   expect_output(print(test_sig), "ces", width = 60)
   expect_output(print(test_sig), "aspect ratio", width = 80)
   expect_output(print(test_sig), "https", width = 100)
   expect_output(print(dplyr::tibble(x = test_sig)), "<sig>")
-  col_var <- options(crayon.enabled = TRUE)
-  expect_true(crayon::has_style(capture.output(print(
-    dplyr::tibble(x = rep(test_sig, 15))))[[4]]))
-  options(crayon.enabled = col_var)
+  expect_output(print(dplyr::tibble(a = "fdsalkjfdslakj", x = test_sig)), "88…", 
+                width = 30)
 })
 
 test_that("other methods works", {
@@ -61,32 +55,32 @@ test_that("other methods works", {
 })
 
 test_that("a single NA is printed correctly", {
-  expect_output(print(test_long_sig[4], width = 20), "[^...ab]")
-  expect_output(print(test_long_sig[4], width = 40), "[^...ab]")
-  expect_output(print(test_long_sig[4], width = 45), "[^...ab]")
-  expect_output(print(test_long_sig[4], width = 50), "...ab")
-  expect_output(print(test_long_sig[4], width = 61), "\\(http")
+  expect_output(print(test_long_sig[4], width = 20), "[^a.r.]")
+  expect_output(print(test_long_sig[4], width = 31), "a.r.")
+  expect_output(print(test_long_sig[4], width = 39), "aspect")
+  expect_output(print(test_long_sig[4], width = 50), "…l")
+  expect_output(print(test_long_sig[4], width = 69), "http")
 })
 
 test_that("empty signatures print correctly", {
-  expect_output(print(trim_signature(test_long_sig, 0)), "Empty")
+  expect_output(print(trim_hash(test_long_sig, 0)), "NULL")
 })
 
 test_that("concatenation works", {
-  test_small_bands <- suppressWarnings(create_signature(test_urls, bands = 10))
+  expect_equal(length(c(test_long_sig, test_long_sig)), 30L)
   expect_error(c(test_long_sig, test_long_sig, recursive = TRUE), "recursive")
   expect_error(c(test_long_sig, test_long_sig, use.names = FALSE), "use.names")
-  expect_error(c(test_long_sig, test_small_bands), "concatenated")
 })
 
 test_that("plots work", {
   expect_message(plot(test_long_sig[4:5]), "Only the first")
   expect_message(plot(test_long_sig[c(1:4, 6:15)]), "Only the first")
-  expect_warning(plot(test_na), "No non-NA")
+  expect_warning(plot(create_signature(test_na)), "No non-NA signatures")
   skip_on_ci()
-  plot_1 <- save_png(plot(test_long_img[8]))
-  plot_2 <- save_png(plot(test_long_img[15]))
+  plot_1 <- save_png(plot(test_long_sig[8]))
+  plot_2 <- save_png(plot(test_long_sig[15]))
+  plot_3 <- save_png(plot(test_long_sig[4:10], n_rows = 3))
   expect_snapshot_file(plot_1, "plot_1.png")
   expect_snapshot_file(plot_2, "plot_2.png")
+  expect_snapshot_file(plot_3, "plot_3.png")
 })
-

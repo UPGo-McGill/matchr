@@ -1,17 +1,16 @@
 #### TESTS FOR create_signature ################################################
 
 test_that("a single matchr_image works", {
-  expect_equal(ceiling(sum(create_signature(test_img))), 67)
+  expect_equal(sum(get_hash(create_signature(test_img))[[1]]), 64)
   })
 
 test_that("a vector of matchr_img works", {
-  expect_equal(
-    ceiling(sum(test_sig)), 133)
+  expect_equal(sapply(get_hash(test_sig), sum), c(64, 64))
 })
 
 test_that("a vector of paths works", {
-  expect(ceiling(sum(test_long_sig, na.rm = TRUE)) %in% 1136:1150,
-         "test_long_sig")
+  expect_equal(sapply(get_hash(test_long_sig), sum), 
+               c(64, 64, 64, NA, rep(64, 9), NA, 64))
 })
 
 test_that("NA works", {
@@ -23,16 +22,14 @@ test_that("rm_black_bars works", {
   expect_output(print(create_signature(test_urls[13], rm_black_bars = FALSE)),
                 "1.00")
   expect_output(print(create_signature(test_urls[13])), "2.44")
-  expect(is.na(create_signature(black_image)),
-         "create_signature(black_image) did not return NA.")
-  expect(ceiling(sum(create_signature(
-    c("http://upgo.lab.mcgill.ca/resources/img_8_top.jpg",
-      "http://upgo.lab.mcgill.ca/resources/img_8_bottom.jpg")))) %in% 168:175, 
-    "top and bottom black bars")
+  expect_output(print(create_signature(black_image)), "1.00")
+  expect_output(print(create_signature(
+    "http://upgo.lab.mcgill.ca/resources/img_8_top.jpg")), "2.53")
+  expect_output(print(create_signature(
+    "http://upgo.lab.mcgill.ca/resources/img_8_bottom.jpg")), "2.60")
   expect_equal(sum(dim(remove_black_bars(load_image(
     "http://upgo.lab.mcgill.ca/resources/img_8.jpg")))), 285)
-  expect(is.na(remove_black_bars(black_image)),
-         "remove_black_bars(black_image) NA")
+  expect_equal(black_image, remove_black_bars(black_image))
 })
 
 test_that("tiny images return NA", {
@@ -41,12 +38,19 @@ test_that("tiny images return NA", {
 })
 
 test_that("backups work", {
-  expect_equal(sum(suppressWarnings(create_signature(rep("test", 1200)))), 
-               NA_integer_)
+  expect_equal(sum(is.na(suppressWarnings(
+    create_signature(rep("test", 1200))))), 1200)
   assign("sig_hash", digest::digest(rep("test", 1200)), envir = .matchr_env)
   assign("sig_backup", list(rep(list(list(NA, NA)), 600), NULL), 
          envir = .matchr_env)
   expect_error(sum(suppressWarnings(create_signature(rep("test", 1199)))))
-  expect_equal(sum(suppressWarnings(suppressMessages(
-    create_signature(rep("test", 1200))))), NA_integer_)
+  expect_equal(sum(is.na(suppressWarnings(suppressMessages(
+    create_signature(rep("test", 1200)))))), 1200)
+})
+
+test_that("create_signature_internal edge conditions are handled", {
+  expect_equal(create_signature_internal(array(1:20, dim = c(2, 2, 1, 5))), NA)
+  expect_equal(create_signature_internal(array(1:20, dim = c(2, 2, 5))), NA)
+  expect_equal(length(create_signature_internal(
+    array(1:4000, dim = c(100, 40, 1)))), 128)
 })
