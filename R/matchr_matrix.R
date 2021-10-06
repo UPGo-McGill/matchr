@@ -1,6 +1,6 @@
 #' Create a new matchr_matrix object
 #'
-#' @param array A list of correlation matrices.
+#' @param array A list of Hamming distance matrices.
 #' @param x_ar A list of numeric vectors: the highest and lowest aspect ratio in 
 #' the x vector.
 #' @param y_ar A list of numeric vectors: the highest and lowest aspect ratio in 
@@ -13,13 +13,17 @@
 #' @param y_total An integer scalar: the total number of y signatures analyzed.
 #' @param x_na A character vector: the paths of x signatures which are NA.
 #' @param y_na A character vector: the paths of y signatures which are NA.
+#' @param distance A character string containing the right hand side of a 
+#' formula: how the `nearest` and `bilinear` Hamming distances were combined to 
+#' determine an overall distance.
 #' @return An object of class `matchr_matrix`.
 
 new_matrix <- function(array = list(), x_ar = list(), y_ar = list(),
                        x_sig = list(), y_sig = list(), 
                        x_total = integer(length = 1L), 
                        y_total = integer(length = 1L),
-                       x_na = character(), y_na = character()) {
+                       x_na = character(), y_na = character(),
+                       formula = character()) {
   vec_assert(array, list())
   vec_assert(x_ar, list())
   vec_assert(y_ar, list())
@@ -29,10 +33,11 @@ new_matrix <- function(array = list(), x_ar = list(), y_ar = list(),
   vec_assert(y_total, integer())
   vec_assert(x_na, character())
   vec_assert(y_na, character())
+  vec_assert(formula, character())
   new_rcrd(fields = list(array = array, x_ar = x_ar, y_ar = y_ar, x_sig = x_sig, 
                          y_sig = y_sig), 
            x_total = x_total, y_total = y_total, x_na = x_na, y_na = y_na,
-           class = "matchr_matrix")
+           formula = formula, class = "matchr_matrix")
 }
 
 # ------------------------------------------------------------------------------
@@ -67,8 +72,8 @@ is_matrix <- function(x) inherits(x, "matchr_matrix")
 
 format.matchr_matrix <- function(x, ...) {
   
-  paste(prettyNum(lengths(get_x_sig(x)), ","), "x", 
-        prettyNum(lengths(get_y_sig(x)), ","))
+  if (vec_size(x) > 0) paste(prettyNum(lengths(get_x_sig(x)), ","), "x", 
+                             prettyNum(lengths(get_y_sig(x)), ","))
   
 }
 
@@ -83,8 +88,8 @@ vec_ptype_abbr.matchr_matrix <- function(x, ...) "matrix"
 #' @export
 
 obj_print_header.matchr_matrix <- function(x, ...) {
-  
-  if (vec_size(x) > 1) plural <- " matrices\n" else plural <- " matrix\n"
+  if (vec_size(x) == 0) plural <- " matrices" else 
+    if (vec_size(x) == 1) plural <- " matrix\n" else plural <- " matrices\n"
   header <- paste0(
     '# An image matrix vector: ', 
     prettyNum(attr(x, "x_total"), ","), " x ",
@@ -143,12 +148,13 @@ vec_restore.matchr_matrix <- function(x, to, ..., n = NULL) {
     y_ar = get_y_ar(x),
     x_sig = get_x_sig(x),
     y_sig = get_y_sig(x),
-    x_total = length(unique(c(get_path(do.call("c", get_x_sig(x))), 
+    x_total = length(unique(c(unlist(sapply(get_x_sig(x), get_path)), 
                               attr(to, "x_na")))),
-    y_total = length(unique(c(get_path(do.call("c", get_y_sig(x))), 
+    y_total = length(unique(c(unlist(sapply(get_y_sig(x), get_path)), 
                               attr(to, "y_na")))),
     x_na = attr(to, "x_na"),
-    y_na = attr(to, "y_na")
+    y_na = attr(to, "y_na"),
+    formula = attr(to, "formula")
   )
   
 }

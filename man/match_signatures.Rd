@@ -7,7 +7,7 @@
 match_signatures(
   x,
   y = NULL,
-  method = "grey",
+  distance = ~nearest * bilinear,
   compare_ar = TRUE,
   stretch = 1.2,
   mem_scale = 0.2,
@@ -21,10 +21,13 @@ missing (default), each object in \code{x} will be matched against each other
 object in \code{x.} If \code{y} is present, each object in \code{x} will be matched against
 each object in \code{y}.}
 
-\item{method}{A character scalar. Should images be compared by their
-greyscale signatures ("grey", "greyscale, "gray", or "grayscale", the
-default), their colour signatures ("colour", "color", "rgb", or "RGB), or
-both ("both")?}
+\item{distance}{A one-sided formula (or character string which can be
+coerced to a formula) with one or both of the terms \code{nearest} and \code{bilinear},
+expressing how the Hamming distance between image signature vectors should be
+calculated. The default (\code{~ nearest * bilinear}) takes the Hamming distances
+of each of the two image signature components and multiplies them together.
+Any arithmetical combination of these distances is a valid argument to
+\code{distance}, e.g. \code{~ nearest + log(bilinear)}.}
 
 \item{compare_ar}{A logical scalar. Should signatures only be compared for
 images with similar aspect ratios (default)? If TRUE, k-means clustering is
@@ -49,32 +52,35 @@ calculation (default 0.2)? Increasing this value might speed up function
 execution, but at the cost of significantly increased system instability.}
 
 \item{mem_override}{A logical scalar. Should the function attempt to run even
-if it detects insufficient system memory (default FALSE)?}
+if it detects insufficient system memory (default FALSE)? If so, the usual
+error for insufficient memory will be downgraded to a warning.}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}
 }
 \value{
-A vector of class \code{matchr_matrix}, each element of which is a
-correlation matrix for the \code{x} and \code{y} signatures falling in a given aspect
+A vector of class \code{matchr_matrix}, each element of which is the
+Hamming distance for the \code{x} and \code{y} signatures falling in a given aspect
 ratio range. If \code{x} and \code{y} are both present, each matrix will have
 \code{length(x)} rows and \code{length(y)} columns, and for the matrix \code{Q} the cell
-\code{Q[i, j]} will be the Pearson correlation coefficient between images \code{x[[i]]}
-and \code{y[[j]]}. If \code{y} is not present, each matrix will be square, and the cell
-\code{Q[i, j]} will be the correlation between images \code{x[[i]]} and \code{x[[j]]}.
+\code{Q[i, j]} will be the Hamming distance between images \code{x[[i]]} and \code{y[[j]]}.
+If \code{y} is not present, each matrix will be square, and the cell \code{Q[i, j]}
+will be the Hamming distance between images \code{x[[i]]} and \code{x[[j]]}. The
+formula supplied to the \code{distance} argument will be present as an additional
+attribute to the return vector, named \code{formula}.
 }
 \description{
 \code{match_signatures} takes one or two vectors of image signatures and
-produces a correlation matrix to identify matches.
+produces a Hamming distance matrix to identify matches.
 }
 \details{
 A function for identifying matching images. The function takes one or two
 vectors of images signatures (class \code{matchr_signature}) and compares their
-colour signatures to find matches.
+signatures to find matches.
 
 The comparison is done by creating colour signatures for each input image
-using \code{\link{create_signature}} and then computing the Pearson
-correlation coefficient between these signatures. In general, pairs of images
+using \code{\link{create_signature}} and then computing the Hamming distance
+between these signatures. In general, pairs of images
 which were identical prior to arbitrary resampling and compression will have
 correlation coefficients of at least 0.99.
 
