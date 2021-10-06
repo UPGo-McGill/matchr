@@ -6,31 +6,15 @@
 \alias{identify_matches.matchr_signature}
 \title{Identify matches from a matchr image matrix}
 \usage{
-identify_matches(
-  x,
-  y = NULL,
-  threshold = 0.975,
-  confirm = TRUE,
-  quiet = FALSE,
-  ...
-)
+identify_matches(x, y = NULL, threshold = 12, quiet = FALSE, ...)
 
-\method{identify_matches}{matchr_matrix}(
-  x,
-  y = NULL,
-  threshold = 0.975,
-  confirm = TRUE,
-  quiet = FALSE,
-  ...
-)
+\method{identify_matches}{matchr_matrix}(x, y = NULL, threshold = 200, quiet = FALSE, ...)
 
 \method{identify_matches}{matchr_signature}(
   x,
   y = NULL,
-  threshold = 0.975,
-  confirm = TRUE,
+  threshold = 12,
   quiet = FALSE,
-  method = "grey",
   compare_ar = TRUE,
   stretch = 1.2,
   mem_scale = 0.2,
@@ -40,29 +24,23 @@ identify_matches(
 \arguments{
 \item{x}{A vector of class \code{matchr_sig}, containing image signatures produced
 by \code{\link{create_signature}}, or \code{matchr_matrix}, containing image
-correlation matrices produced by \code{\link{match_signatures}}.}
+signature Hamming distance matrices produced by
+\code{\link{match_signatures}}.}
 
 \item{y}{A vector of class \code{matchr_sig}, containing image signatures produced
 by \code{\link{create_signature}}. If x is not a \code{matchr_sig} vector, this
 argument is ignored, and will trigger a warning if a non-NULL value is
 supplied.}
 
-\item{threshold}{A numeric scalar. The minimum correlation constant to
-consider images to be matched.}
-
-\item{confirm}{A logical scalar. Should the function run
-\code{\link{confirm_matches}} on the results before returning them (default)?
-If TRUE, \code{\link{confirm_matches}} will be called with default
-parameters, i.e. under the assumption that the original signature matching
-was done using greyscale signatures, and the confirmation should be carried
-out with colour signatures with the default tolerance thresholds.}
+\item{threshold}{A numeric scalar. The maximum Hamming distance to consider
+images to be matched.}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}
 
 \item{...}{Additional arguments passed to methods.}
 
-\item{method, compare_ar, stretch, mem_scale}{Arguments passed to
+\item{compare_ar, stretch, mem_scale}{Arguments passed to
 \code{\link{match_signatures}}.}
 }
 \value{
@@ -73,15 +51,20 @@ row per identified match, and the following columns:
 Each element is a length-three integer vector giving, respectively, the
 matrix, row index position, and column index position of the match.
 \item \code{x_path} and \code{y_path}: The file paths for the images which were matched.
-\item \code{correlation}: The Pearson correlation coefficient of the two files'
-image signatures.
-\item \code{match} (if \code{confirm = TRUE}): A character vector indicating match status.
-(See \code{\link{confirm_matches}} for details.)
+\item \code{distance}: An integer vector giving the Hamming distance between the two
+files' image signatures. (The lower the distance, the more perceptually
+similar the images are.)
+\item \code{dd}: An integer vector giving the product of the Hamming distances between
+the two files' primary and secondary image signatures. The secondary image
+signature is less reliable than the primary one, but can be a helpful
+additional data point in assessing potential matches with borderline
+primary-signature Hamming distances. In general, the lower the \code{dd} value,
+the higher the chance that two images are the same.
 }
 }
 \description{
 \code{identify_matches} analyzes a \code{matchr_matrix} vector of image signature
-correlations to identify possible matches. By default it sets a low
+Hamming distances to identify possible matches. By default it sets a low
 threshold for identifying matches, with the assumption that the results will
 be refined using \code{\link{confirm_matches}}, either within the function if
 \code{confirm = TRUE}, or subsequently with a separate function call.
