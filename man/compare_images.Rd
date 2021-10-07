@@ -2,65 +2,69 @@
 % Please edit documentation in R/compare_images.R
 \name{compare_images}
 \alias{compare_images}
-\title{Compare image matches in a Shiny app}
+\title{Compare image pairs in a Shiny app}
 \usage{
 compare_images(
-  result,
-  remove_duplicates = TRUE,
+  x,
+  y,
+  match = NULL,
   batch_size = 100L,
-  corr_thresh = 0.9995,
-  previous = TRUE,
-  quiet = FALSE
+  match_defaults = c(Match = TRUE, `Likely match` = TRUE, `Possible match` = FALSE, `No
+    match` = FALSE),
+  info = NULL,
+  ...
 )
 }
 \arguments{
-\item{result}{A data frame produced by \code{\link{identify_matches}} (with
-\code{confirm = TRUE} or with \code{\link{confirm_matches}} subsequently run on
-the results).}
+\item{x, y}{A \code{matchr_image}, \code{matchr_signature} or character vector which
+contains references to a set of images. If a \code{matchr_image} vector, images
+will be drawn directly from the in-memory pixel information in the vector.
+If a \code{matchr_signature} vector, the images will be retrieved from the file
+paths or URLs contained in each \code{matchr_signature} element. If a character
+vector, the vector elements will be assumed to be file paths or URLs, from
+which the images will be retrieved.}
 
-\item{remove_duplicates}{A logical scalar. Should x-y pairs which are
-identical to other x-y pairs be reduced to a single x-y pair? This step can
-be computationally expensive for large datasets, but can dramatically reduce
-the number of matches to be verified.}
+\item{match}{An optional character vector. Image pairs will be grouped by
+these values. (If there are more than 10 unique values, the function will
+issue a warning, since this probably implies that the wrong vector was
+passed to the argument.)}
 
 \item{batch_size}{An integer scalar. The number of images to display at a
 time in the Shiny app (default 100).}
 
-\item{corr_thresh}{A numeric scalar between 0 and 1. Matches with signature
-correlations above this value (default 0.9995) will be pre-emptively marked
-as "match". If \code{remove_duplicates} is TRUE, this same value will be used to
-identify duplicated images. (I.e. if the correlation between two x or two y
-images is >= \code{corr_thresh}, the images will be considered duplicates.) If
-\code{corr_thresh} is set to 1, all image matches will be presented for manual
-verification unless they are bit-for-bit identical.}
+\item{match_defaults}{A named logical vector. Rows whose \code{match} argument
+value corresponds to a name in this vector will have a starting status of
+"match" in the comparison app if the named element's value is TRUE and "no
+match" if it is FALSE. If this argument is NULL, all image pairs will have a
+starting status of "match".}
 
-\item{previous}{A logical scalar. Should the results of previous runs of
-\code{compare_images} be incorporated into the new results (default TRUE), or
-should previously compared matches be compared again? If this argument is
-TRUE, then any rows in \code{result} with a \code{confirmed} value of TRUE will be
-removed from the data frame before processing (and so will not be present
-in the comparison interface) and then re-added unchanged to the output.}
+\item{info}{An optional data frame with information to be shown at the top of
+the comparison app.}
 
-\item{quiet}{A logical scalar. Should the function execute quietly, or should
-it return status updates throughout the function (default)?}
+\item{...}{Additional named vectors which will be displayed per-image pair
+when the "Show details" button is toggled in the comparison app. These
+vectors must be the same length as the \code{x} and \code{y} inputs, and their contents
+will be truncated to fit in the comparison app, so they should be relatively
+terse. Names are only to identify \code{...} arguments; they will not be
+displayed alongside the vector contents. If multiple arguments to \code{...} are
+supplied, they will be concatenated with "; ".}
 }
 \value{
-A data frame with the following fields: \code{matrix}, \code{x_index} and
-\code{y_index} from the original \code{result} data frame; \code{new_match_status}, which is
-a character vector with possible entries "match" and "no match"; and a
-logical vector \code{new_highlight} which is TRUE for any matches which were
-highlighted using the in-app interface. The output will have one row for each
-image pairing that was confirmed, which is determined by how many pages into
-the Shiny app the user proceeded, and thus how many pairings were viewed. If
-all pages are viewed, then the output will have the same number of rows as
-the input.
+A data frame with the following fields: \code{x} and \code{y} (or whatever
+these fields were originally named) from the original \code{df} data frame;
+\code{new_match_status}, which is a character vector with possible entries "match"
+and "no match"; and a logical vector \code{new_highlight} which is TRUE for any
+matches which were highlighted using the in-app interface. The output will
+only have non-missing \code{new_match_status} values for each image pairing that
+confirmed, which is determined by how many pages into the Shiny app the user
+proceeded, and thus how many pairings were viewed. Rows with pairings which
+were not viewed will have an NA value in \code{new_match_status} and
+\code{new_highlight}. If all pages are viewed, then the output will have no NA
+values.
 }
 \description{
-\code{compare_images} takes the image matches produced by
-\code{\link{identify_matches}} and \code{\link{confirm_matches}} and displays
-them in an interactive Shiny app for visual inspection and confirmation.
-Image matches with extremely high correlation can be optionally excluded, and
-pairwise duplicates can be detected and excluded as well.
+\code{compare_images} takes two sets of images and displays them in pairs
+for comparison.
 }
 \details{
 The interface presents pairs of images alongside a best guess as to the match
@@ -71,19 +75,27 @@ are presented in batches, and at any point the user can click the "Save and
 exit" button to close the comparison app and retrieve the results up through
 the last batch which was viewed. This means that even extremely large sets of
 potential matches can be manually verified over the course of several
-sessions.
+sessions. Through the "Enable highlighting" button, specific matches can be
+highlighted for further follow-up after image comparison is finished.
 
-Through the "Enable highlighting" button, specific matches can be highlighted
-for further follow-up after image comparison is finished.
+The \code{match} field can contain any character strings, and image pairs will be
+grouped by these values. (If there are more than 10 unique values for
+\code{match}, the function will issue a warning, since this probably implies that
+the \code{match} field was misidentified.) By default, all image pairs will start
+with a value of "match" in the comparison app. But if the values of the
+\code{match} field correspond to a name in the function's "match" argument, then
+the value will be "match" if the corresponding "match" argument value is
+TRUE, and "no match" if the corresponding "match" argument value is FALSE.
+For example, by default the "match" argument is:
+\verb{c("Match" = TRUE, "Likely match" = TRUE, "Possible match" = FALSE}.
+So any image pairs with a \code{match} field value of "Match" or "Likely match"
+will start with a value of "match" in the comparison app, while any image
+pairs with a \code{match} field value of "Possible match" will start with a value
+of "no match" in the comparison app.
 }
 \examples{
 \dontrun{
-# Setup
-sigs <- create_signature(test_urls)
-matches <- match_signatures(sigs)
-result <- identify_matches(matches)
-
 # Assign the output of compare_images to retrieve results
-change_table <- compare_images(result)
+change_table <- compare_images(test_urls, test_urls)
 }
 }

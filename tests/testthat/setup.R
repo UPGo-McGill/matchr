@@ -11,7 +11,7 @@ test_na <- suppressWarnings(load_image(test_urls[4]))
 
 # create_signature
 test_sig <- create_signature(c(test_img, test_img))
-test_long_sig <- suppressWarnings(create_signature(test_urls))
+test_long_sig <- suppressWarnings(create_signature(test_long_img))
 
 # match_signatures
 test_match <- match_signatures(test_long_sig)
@@ -19,20 +19,17 @@ test_match <- match_signatures(test_long_sig)
 # identify_matches
 test_identify <- identify_matches(test_match, confirm = FALSE)
 
-# confirm_matches
-test_confirm <- confirm_matches(test_identify)
-
 # integrate_changes
-test_changes <- test_confirm
-test_changes[6,]$match <- "no match"
-test_changes$new_match_status <- test_changes$match
-test_changes$match <- test_changes$x_sig <- test_changes$y_sig <- NULL
-test_changes$new_highlight <- FALSE
-test_integrate <- integrate_changes(test_confirm, test_changes)
-test_confirm_2 <- test_confirm
-test_confirm_2$confirmed <- c(TRUE, FALSE, FALSE, FALSE, FALSE, FALSE)
-test_changes_2 <- test_changes[2:6,]
-test_integrate_2 <- integrate_changes(test_confirm_2, test_changes_2)
+test_changes <- test_identify["index"]
+test_changes$new_match_status <- NA
+test_changes$new_highlight <- NA
+test_changes[1:3,]$new_match_status <- TRUE
+test_changes[1:3,]$new_highlight <- FALSE
+test_integrate <- integrate_changes(test_identify, test_changes)
+test_changes_2 <- test_changes
+test_changes_2[4,]$new_match_status <- FALSE
+test_changes_2[4,]$new_highlight <- TRUE
+test_integrate_2 <- integrate_changes(test_integrate, test_changes_2)
 
 
 # Data to be loaded for tests ---------------------------------------------

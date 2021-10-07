@@ -79,7 +79,7 @@ test_that("plots work", {
   skip_on_ci()
   plot_1 <- save_png(plot(test_long_sig[8]))
   plot_2 <- save_png(plot(test_long_sig[15]))
-  plot_3 <- save_png(plot(test_long_sig[4:10], n_rows = 3))
+  plot_3 <- save_png(plot(test_long_sig[5:10], n_rows = 3))
   expect_snapshot_file(plot_1, "plot_1.png")
   expect_snapshot_file(plot_2, "plot_2.png")
   expect_snapshot_file(plot_3, "plot_3.png")

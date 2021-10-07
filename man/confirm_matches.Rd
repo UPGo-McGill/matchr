@@ -2,74 +2,104 @@
 % Please edit documentation in R/confirm_matches.R
 \name{confirm_matches}
 \alias{confirm_matches}
-\title{Confirm matches using a more detailed colour signature}
+\title{Confirm image matches in a Shiny app}
 \usage{
 confirm_matches(
-  data,
-  check_threshold = 0.99,
-  confirm_thresholds = c(0.95, 0.98),
-  quiet = FALSE,
-  ...
+  result,
+  remove_duplicates = TRUE,
+  batch_size = 100L,
+  thresholds = c(Identical = 80L, Match = 100L, `Likely match` = 120L, `Possible match`
+    = 150L),
+  previous = TRUE,
+  quiet = FALSE
 )
 }
 \arguments{
-\item{data}{A data frame produced from \code{\link{identify_matches}}.}
+\item{result}{A data frame produced by \code{\link{identify_matches}}, which
+has fields \code{index} (list of integer vectors), \code{x_sig} (matchr_signature
+vector), \code{y_sig} (matchr_signature vector) and \code{distance} (numeric vector).}
 
-\item{check_threshold}{A numeric scalar. Matches with correlations higher
-than this value (default 0.99) will be treated as matching and not
-re-checked.}
+\item{remove_duplicates}{A logical scalar. Should x-y pairs which are
+identical to other x-y pairs be reduced to a single x-y pair? This step can
+be computationally expensive for large datasets, but can dramatically reduce
+the number of matches to be verified.}
 
-\item{confirm_thresholds}{A numeric vector of length 2. New correlation
-coefficients below the first value (default 0.95) will be classified as "no
-match", coefficients above the second value (default 0.98) will be classified
-as "likely match", and coefficients between the two values will be classified
-as "possible match".}
+\item{batch_size}{An integer scalar. The number of images to display at a
+time in the Shiny app (default 100).}
+
+\item{thresholds}{A named integer vector. Which Hamming distances establish
+thresholds for an "Identical" match (default 2L), a "Match" (default 4L), a
+"Likely match" (default 12L), a "Possible match" (default 15L), and "No
+match" (remaining values)? Image pairs with a distance equal to or less than
+the "Identical" threshold will be considered exact duplicates and will not be
+shown for verification in the comparison app. (Set "Identical" to -1L to
+force manual verification of all image pairs). Remaining image pairs will be
+grouped in the comparison app by these thresholds. Image pairs with distances
+equal to or under the "Likely match" value will be given a default value of
+"match" in the comparison app, while others will be given a default value of
+"no match". If \code{remove_duplicates} is TRUE, the "Identical" threshold will be
+used to identify duplicated images. (I.e. if the distance between two \code{x} or
+two \code{y} images is <= the "Identical" threshold value, the images will be
+considered duplicates.) If \code{thresholds} elements are not named, their names
+will be inferred by ordering the values from smallest to largest. If
+\code{thresholds} elements are not integers, they will be silently converted to
+integers by truncating all digits to the right of the decimal point.}
+
+\item{previous}{A logical scalar. Should the results of previous runs of
+\code{compare_images} be incorporated into the new results (default TRUE), or
+should previously compared matches be compared again? If this argument is
+TRUE, then any rows in \code{result} with a \code{confirmed} value of TRUE will be
+removed from the data frame before processing (and so will not be present
+in the comparison interface) and then re-added unchanged to the output.}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
 it return status updates throughout the function (default)?}
-
-\item{...}{Additional named arguments to pass to
-\code{\link{match_signatures}}.}
 }
 \value{
-The input \code{data} data frame, with an additional \code{match} field which
-is a character vector with the following possible values:
-\itemize{
-\item "match": the original correlation coefficient was greater than or equal to
-\code{check_threshold}.
-\item "likely match": the original correlation coefficient was less than
-\code{check_threshold} and the new coefficient was greater than or equal to
-\code{confirm_thresholds[2]}.
-\item "possible match: the original correlation coefficient was less than
-\code{check_threshold} and the new coefficient was less than
-\code{confirm_thresholds[2]} and greater than or equal to
-\code{confirm_thresholds[1]}.
-\item "no match": the original correlation coefficient was less than
-\code{check_threshold} and the new coefficient was less than
-\code{confirm_thresholds[1]}.
-}
+A data frame with the following fields: \code{index} from the original
+\code{result} data frame; a logical vector \code{new_match_status}, which is TRUE for
+confirmed matches, FALSE for confirmed non-matches, and NA for matches which
+were not confirmed; and a logical vector \code{new_highlight} which is TRUE for
+any matches which were highlighted using the in-app interface, FALSE for
+matches which were not highlighted, and NA for matches which were not
+confirmed. Confirmation is determined by how many pages into the Shiny app
+the user proceeded, and thus how many pairings were viewed. If all pages are
+viewed, then the output will have no NA values.
 }
 \description{
-\code{confirm_matches} takes the results of \code{\link{identify_matches}}
-and performs an additional analysis on image signature pairs whose
-correlations were not high enough to guarantee a match but not low enough to
-discount a match. The default implementation assumes that image signatures
-were compared using the greyscale components, and so it performs an
-additional correlation using the colour components.
+\code{confirm_matches} takes the image matches produced by
+\code{\link{identify_matches}} and displays them in an interactive Shiny app
+for visual inspection and confirmation. Image matches with extremely low
+Hamming distances can be optionally excluded, and pairwise duplicates can be
+detected and excluded as well.
 }
 \details{
-By default, \code{confirm_matches} is called with default parameters by
-\code{\link{identify_matches}}. It is therefore usually only necessary to
-run \code{confirm_matches} on its own in order to change the parameters.
+The interface presents pairs of images alongside a best guess as to the match
+status ("Match" or "No match"). For matches which are correctly identified,
+no further action is necessary, while incorrect identifications can be
+corrected by clicking "Match" or "No match" next to the image pair. Images
+are presented in batches, and at any point the user can click the "Save and
+exit" button to close the comparison app and retrieve the results up through
+the last batch which was viewed. This means that even extremely large sets of
+potential matches can be manually verified over the course of several
+sessions.
+
+Through the "Enable highlighting" button, specific matches can be highlighted
+for further follow-up after image comparison is finished.
+
+The Shiny app will only launch in an interactive R session; if
+\code{confirm_matches} is called in a non-interactive context, it will
+identify identical matches according to the \code{thresholds} argument and return
+only those results.
 }
 \examples{
 \dontrun{
 # Setup
 sigs <- create_signature(test_urls)
 matches <- match_signatures(sigs)
+result <- identify_matches(matches)
 
-# compare_images is only necessary to run if identify_matches was run with `confirm = FALSE`
-matches <- identify_matches(matches, confirm = FALSE)
-confirm <- confirm_matches(matches, check_threshold = 0.995)
+# Assign the output of compare_images to retrieve results
+change_table <- confirm_matches(result)
 }
 }
