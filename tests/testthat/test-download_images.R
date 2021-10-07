@@ -2,8 +2,8 @@
 
 test_that("the function works", {
   skip_if_offline()
-  url_groups <- list(test_urls[1:3], test_urls[4], test_urls[5], test_urls[6:7], 
-                     test_urls[8:9], test_urls[10:11], test_urls[12], 
+  url_groups <- list(test_urls[1:3], test_urls[4], test_urls[5], test_urls[6:7],
+                     test_urls[8:9], test_urls[10:11], test_urls[12],
                      test_urls[13], test_urls[14], test_urls[15], "fdlskajfd")
   di_df <- data.frame(id = 1:11)
   di_df$photos <- url_groups
