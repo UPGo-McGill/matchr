@@ -121,7 +121,7 @@ sig
 In a GUI such as RStudio, `matchr_signature` vectors print as a series of colour blocks to allow for easy visual inspection of the underlying data; in this vignette the class falls back on a simpler presentation of the average values for each of the greyscale, red, green and blue colour bands. This simple presentation abstracts away a more detailed internal data structure: by default, `create_signature` generates average values for 20 horizontal bands and 20 vertical bands in greyscale, red, green and blue. This yields a numeric vector of length 160:
 
 ```{r get_signature}
-get_signature(sig[1])
+get_hash(sig[1])
 ```
 
 While this is a drastic simplification of the data present in an image, it is sufficient to identify distinctive patterns which are highly unlikely to be exactly shared by other images. Using the `plot` method for `matchr_signature` vectors, the signature can be visualized as follows:
@@ -156,9 +156,9 @@ TKTK
 ```{r match_scatterplot, fig.height = 4, fig.width = 7}
 library(ggplot2)
 
-sig_1 <- get_signature(sig)[[1]][1:40] 
-sig_2 <- get_signature(sig)[[2]][1:40]
-sig_5 <- get_signature(sig)[[5]][1:40]
+sig_1 <- get_hash(sig)[[1]][1:40] 
+sig_2 <- get_hash(sig)[[2]][1:40]
+sig_5 <- get_hash(sig)[[5]][1:40]
 
 data.frame(
   x = c(sig_1, sig_1),
