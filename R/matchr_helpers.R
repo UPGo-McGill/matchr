@@ -229,20 +229,12 @@ get_iterator <- function(x) {
 
 # ------------------------------------------------------------------------------
 
-trim_signature <- function(x, range) {
+trim_hash <- function(x, range) {
   
   vec_assert(x, new_signature())
-  field(x, "signature") <- lapply(field(x, "signature"), `[`, range)
+  get_hash(x) <- lapply(get_hash(x), `[`, range)
   x
   
-}
-
-# ------------------------------------------------------------------------------
-
-fast_cor <- function(x, y) {
-  x <- t((t(x) - colMeans(x)) / apply(x, 2, stats::sd))
-  y <- t((t(y) - colMeans(y)) / apply(y, 2, stats::sd))
-  crossprod(x, y) / (nrow(x) - 1)
 }
 
 # ------------------------------------------------------------------------------

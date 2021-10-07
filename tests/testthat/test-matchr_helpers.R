@@ -9,7 +9,7 @@ test_that("chunk splits vectors correctly", {
 #   requireNamespace1 <- function(...) FALSE
 #   unlockBinding("requireNamespace", as.environment("package:base"))
 #   assign("requireNamespace", requireNamespace1, "package:base")
-#   
+# 
 #   suppressMessages(expect_message(.onAttach(), "Install"))
 #   expect_equal(n_threads(), 1)
 #   expect_true(
@@ -17,11 +17,11 @@ test_that("chunk splits vectors correctly", {
 #              "matchr_image"))
 #   expect_equal(ceiling(sum(create_signature(test_img))), 67)
 #   r1 <- match_signatures(test_long_sig, compare_ar = FALSE)
-#   expect_equal(attr(r1, "x_total"), sum(sapply(field(r1, "matrix"), sapply, nrow), 
+#   expect_equal(attr(r1, "x_total"), sum(sapply(field(r1, "matrix"), sapply, nrow),
 #                                         length(attr(r1, "x_na"))))
 #   expect_equal(round(sum(match_signatures_pairwise(
 #     test_identify$x_sig, test_identify$y_sig)), 2), 5.83)
-#   
+# 
 #   requireNamespace2 <- function(x, ...) {
 #     if (x %in% c("crayon", "future.apply")) FALSE else TRUE
 #   }
@@ -30,16 +30,16 @@ test_that("chunk splits vectors correctly", {
 #   expect_equal(length(handler_matchr("test")), 1)
 #   expect_equal(round(sum(suppressMessages(match_signatures_pairwise(
 #     test_identify$x_sig, test_identify$y_sig))), 2), 5.83)
-#   
+# 
 #   assign("requireNamespace", old_fn, "package:base")
 #   lockBinding("requireNamespace", as.environment("package:base"))
 # 
 # })
 
-test_that("future.globals are set and unset correctly", {
-  fut_var <- getOption("future.globals.maxSize")
-  .onLoad()
-  expect_equal(getOption("future.globals.maxSize"), +Inf)
-  .onUnload()
-  expect_equal(getOption("future.globals.maxSize"), fut_var)
-})
+# test_that("future.globals are set and unset correctly", {
+#   fut_var <- getOption("future.globals.maxSize")
+#   .onLoad()
+#   expect_equal(getOption("future.globals.maxSize"), +Inf)
+#   .onUnload()
+#   expect_equal(getOption("future.globals.maxSize"), fut_var)
+# })

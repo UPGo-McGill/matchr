@@ -87,34 +87,18 @@ get_array <- function(x) {
 
 #' @name get_*
 #' @export
-get_signature <- function(x) {
-  stopifnot("x must be a matchr_signature vector" = 
-              "signature" %in% vctrs::fields(x))
-  field(x, "signature")
-  }
-
-#' @name get_*
-#' @export
 get_hash <- function(x) {
-  stopifnot("x must be a matchr_signature_2 vector" = 
+  stopifnot("x must be a matchr_signature vector" = 
               "hash" %in% vctrs::fields(x))
   field(x, "hash")
 }
 
 #' @name get_*
 #' @export
-get_ahash <- function(x) {
-  stopifnot("x must be a matchr_signature_2 vector" = 
-              "ahash" %in% vctrs::fields(x))
-  field(x, "ahash")
-}
-
-#' @name get_*
-#' @export
-`get_signature<-` <- function(x, value) {
+`get_hash<-` <- function(x, value) {
   stopifnot("x must be a matchr_signature vector" = 
-              "signature" %in% vctrs::fields(x))
-  field(x, "signature") <- value
+              "hash" %in% vctrs::fields(x))
+  field(x, "hash") <- value
   x
 }
 

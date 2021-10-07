@@ -14,7 +14,7 @@
 \alias{get_y_ar}
 \alias{get_path<-}
 \alias{get_array<-}
-\alias{get_signature<-}
+\alias{get_hash<-}
 \alias{get_x_sig<-}
 \alias{get_y_sig<-}
 \alias{get_ar<-}
@@ -30,13 +30,9 @@ get_array(x)
 
 get_array(x) <- value
 
-get_signature(x)
-
 get_hash(x)
 
-get_ahash(x)
-
-get_signature(x) <- value
+get_hash(x) <- value
 
 get_x_sig(x)
 
