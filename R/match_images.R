@@ -1,13 +1,13 @@
-#' TKTK
+#' Find matches from vectors of image paths
 #'
 #' \code{match_images} is a convenience wrapper around the core workflow of 
 #' matchr. It reads in one or two character vectors of image paths and then
 #' runs \code{\link{load_image}}, \code{\link{create_signature}},
-#' \code{\link{match_signatures}}, \code{\link{identify_matches}}, and
-#' \code{\link{confirm_matches}} on these inputs (in each case with the 
-#' respective function's default arguments), and then optionally sends the 
-#' results to the \code{\link{compare_images}} interactive Shiny app for manual
-#' verification and integrates any manual changes into the output data frame.
+#' \code{\link{match_signatures}}, and \code{\link{identify_matches}}, (in each 
+#' case with the respective function's default arguments), and then optionally 
+#' sends the results to the \code{\link{confirm_matches}} interactive Shiny app 
+#' for manual verification and integrates any manual changes into the output 
+#' data frame.
 #' 
 #' For large datasets where performance and memory considerations make it 
 #' prudent to save intermediate outputs, or if any non-default options are 
@@ -19,7 +19,7 @@
 #' matches will be identified between the two input vectors `x` and `y`; if it 
 #' is not supplied then matches will be identified within the input vector `x`.
 #' @param compare A logical scalar. Should the interactive 
-#' \code{\link{compare_images}} Shiny app be run to manually verify match
+#' \code{\link{confirm_matches}} Shiny app be run to manually verify match
 #' results (default)?
 #' @param quiet A logical scalar. Should the function execute quietly, or should
 #' it return status updates throughout the function (default)?
@@ -54,7 +54,7 @@ match_images <- function(x, y = NULL, compare = TRUE, quiet = FALSE) {
   matches <- identify_matches(x_sig, y_sig, quiet = quiet)
   
   if (compare) {
-    changes <- compare_images(matches, quiet = quiet)
+    changes <- confirm_matches(matches, quiet = quiet)
     matches <- integrate_changes(matches, changes)
     }
   
