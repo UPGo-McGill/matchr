@@ -2,7 +2,7 @@
 % Please edit documentation in R/match_images.R
 \name{match_images}
 \alias{match_images}
-\title{TKTK}
+\title{Find matches from vectors of image paths}
 \usage{
 match_images(x, y = NULL, compare = TRUE, quiet = FALSE)
 }
@@ -12,7 +12,7 @@ matches will be identified between the two input vectors \code{x} and \code{y}; 
 is not supplied then matches will be identified within the input vector \code{x}.}
 
 \item{compare}{A logical scalar. Should the interactive
-\code{\link{compare_images}} Shiny app be run to manually verify match
+\code{\link{confirm_matches}} Shiny app be run to manually verify match
 results (default)?}
 
 \item{quiet}{A logical scalar. Should the function execute quietly, or should
@@ -33,11 +33,11 @@ image signatures.
 \code{match_images} is a convenience wrapper around the core workflow of
 matchr. It reads in one or two character vectors of image paths and then
 runs \code{\link{load_image}}, \code{\link{create_signature}},
-\code{\link{match_signatures}}, \code{\link{identify_matches}}, and
-\code{\link{confirm_matches}} on these inputs (in each case with the
-respective function's default arguments), and then optionally sends the
-results to the \code{\link{compare_images}} interactive Shiny app for manual
-verification and integrates any manual changes into the output data frame.
+\code{\link{match_signatures}}, and \code{\link{identify_matches}}, (in each
+case with the respective function's default arguments), and then optionally
+sends the results to the \code{\link{confirm_matches}} interactive Shiny app
+for manual verification and integrates any manual changes into the output
+data frame.
 }
 \details{
 For large datasets where performance and memory considerations make it

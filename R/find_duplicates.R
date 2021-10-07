@@ -40,7 +40,7 @@ find_duplicates <- function(x, threshold = 80, find_all = FALSE,
     x_sig <- x[["x_sig"]]
     y_sig <- x[["y_sig"]]
   } else {
-    sig_names <- names(which(sapply(result, is_signature)))
+    sig_names <- names(which(sapply(x, is_signature)))
     stopifnot("`x` must have at least two matchr_signature fields" = 
                 length(sig_names) >= 2)
     if (length(sig_names) > 2) warning(

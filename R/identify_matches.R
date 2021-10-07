@@ -109,8 +109,8 @@ identify_matches.matchr_signature <- function(
   par_check <- TRUE
   
   # Prepare objects for processing
-  output <- suppressWarnings(
-    match_signatures_prep(x, y, compare_ar, stretch, mem_scale, mem_override))
+  output <- suppressWarnings(match_signatures_prep(
+    x, y, compare_ar, stretch, mem_scale, mem_override = FALSE))
   x <- output[[1]]
   y <- output[[2]]
   x_na <- output[[3]]

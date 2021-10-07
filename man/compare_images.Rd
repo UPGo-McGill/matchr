@@ -5,13 +5,13 @@
 \title{Compare image pairs in a Shiny app}
 \usage{
 compare_images(
-  x,
-  y,
-  match = NULL,
+  x, 
+  y, 
+  match = NULL, 
   batch_size = 100L,
-  match_defaults = c(Match = TRUE, `Likely match` = TRUE, `Possible match` = FALSE, `No
-    match` = FALSE),
-  info = NULL,
+  match_defaults = c(Match = TRUE, `Likely match` = TRUE, 
+    `Possible match` = FALSE, `No match` = FALSE), 
+  info = NULL, 
   ...
 )
 }

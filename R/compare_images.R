@@ -68,6 +68,16 @@
 #' were not viewed will have an NA value in `new_match_status` and
 #' `new_highlight`. If all pages are viewed, then the output will have no NA 
 #' values.
+#' @usage compare_images(
+#'   x, 
+#'   y, 
+#'   match = NULL, 
+#'   batch_size = 100L,
+#'   match_defaults = c(Match = TRUE, `Likely match` = TRUE, 
+#'     `Possible match` = FALSE, `No match` = FALSE), 
+#'   info = NULL, 
+#'   ...
+#' )
 #' @examples
 #' \dontrun{
 #' # Assign the output of compare_images to retrieve results
@@ -76,10 +86,10 @@
 #' @export
 
 compare_images <- function(x, y, match = NULL, batch_size = 100L, 
-                           match_defaults = c("Match" = TRUE, 
-                                              "Likely match" = TRUE, 
-                                              "Possible match" = FALSE,
-                                              "No match" = FALSE),
+                           match_defaults = c(`Match` = TRUE, 
+                                              `Likely match` = TRUE, 
+                                              `Possible match` = FALSE,
+                                              `No match` = FALSE), 
                            info = NULL, ...) {
   
   # Check if necessary packages are installed
@@ -149,7 +159,7 @@ compare_images <- function(x, y, match = NULL, batch_size = 100L,
   new_match_status[match_false] <- FALSE
   UID <- paste0("id-", formatC(seq_along(x), 
                                width = floor(log10(length(x))) + 1, flag = "0"))
-  new_match_status <- setNames(new_match_status, UID)
+  new_match_status <- stats::setNames(new_match_status, UID)
   
   # Need one table_n row per batch_size entries in each match status
   table_n <- table(match)

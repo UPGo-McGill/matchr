@@ -13,7 +13,7 @@
 #' @param y_total An integer scalar: the total number of y signatures analyzed.
 #' @param x_na A character vector: the paths of x signatures which are NA.
 #' @param y_na A character vector: the paths of y signatures which are NA.
-#' @param distance A character string containing the right hand side of a 
+#' @param formula A character string containing the right hand side of a 
 #' formula: how the `nearest` and `bilinear` Hamming distances were combined to 
 #' determine an overall distance.
 #' @return An object of class `matchr_matrix`.

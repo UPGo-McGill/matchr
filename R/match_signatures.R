@@ -298,7 +298,7 @@ match_signatures_prep <- function(x, y, compare_ar, stretch, mem_scale,
 
 match_signatures_internal <- function(x, y, distance) {
   
-  dist <- as.formula(distance)
+  dist <- stats::as.formula(distance)
   dist[[1]] <- quote(I)
   
   x_matrix <- matrix(unlist(get_hash(x)), ncol = vec_size(x))

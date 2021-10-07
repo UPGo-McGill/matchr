@@ -176,24 +176,3 @@ get_y_ar <- function(x) {
   field(x, "y_ar") <- value
   x
 }
-
-
-#' Get the signature length from a matchr_signature vector
-#'
-#' By default the raw image signatures in a matchr_signature vector have a 
-#' length of 160 (20 horizontal and vertical bands of greyscale, red, green, and 
-#' blue). But since the length can take any arbitrary value, \code{sig_length} 
-#' offers a convenient way to access this value on a per-vector basis.
-#'
-#' @param x A matchr_signature vector.
-#' @return An integer scalar.
-#' @export
-
-sig_length <- function(x) {
-  
-  vec_assert(x, new_signature())
-  l <- unique(sapply(get_signature(x), length))
-  if (length(l) == 2 && 1 %in% l) l <- setdiff(l, 1)
-  stopifnot(length(l) == 1)
-  l
-}

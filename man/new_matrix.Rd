@@ -40,7 +40,7 @@ files in the y vector.}
 
 \item{y_na}{A character vector: the paths of y signatures which are NA.}
 
-\item{distance}{A character string containing the right hand side of a
+\item{formula}{A character string containing the right hand side of a
 formula: how the \code{nearest} and \code{bilinear} Hamming distances were combined to
 determine an overall distance.}
 }
