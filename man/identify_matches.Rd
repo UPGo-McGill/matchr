@@ -13,8 +13,9 @@ identify_matches(x, y = NULL, threshold = 12, quiet = FALSE, ...)
 \method{identify_matches}{matchr_signature}(
   x,
   y = NULL,
-  threshold = 12,
+  threshold = 200,
   quiet = FALSE,
+  distance = ~nearest * bilinear,
   compare_ar = TRUE,
   stretch = 1.2,
   mem_scale = 0.2,
@@ -40,7 +41,7 @@ it return status updates throughout the function (default)?}
 
 \item{...}{Additional arguments passed to methods.}
 
-\item{compare_ar, stretch, mem_scale}{Arguments passed to
+\item{distance, compare_ar, stretch, mem_scale}{Arguments passed to
 \code{\link{match_signatures}}.}
 }
 \value{

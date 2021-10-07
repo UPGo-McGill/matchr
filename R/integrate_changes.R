@@ -39,49 +39,40 @@
 #' @export
 
 integrate_changes <- function(result, change_table) {
-
+  
   stopifnot(is.data.frame(result), is.data.frame(change_table))
+  output <- result
+  change <- change_table
   
   # Expand index list column
-  result[c("matrix", "x_index", "y_index")] <- 
-    t(matrix(unlist(result$index), nrow = 3))
-  result$index <- NULL
-  change_table[c("matrix", "x_index", "y_index")] <- 
-    t(matrix(unlist(change_table$index), nrow = 3))
-  change_table$index <- NULL
+  output[c("matrix", "x_index", "y_index")] <- 
+    t(matrix(unlist(output$index), nrow = 3))
+  output$index <- NULL
+  change[c("matrix", "x_index", "y_index")] <- 
+    t(matrix(unlist(change$index), nrow = 3))
+  change$index <- NULL
   
   # Merge results
-  output <- merge(result, change_table, all.x = TRUE)
-  stopifnot(sum(!is.na(output$new_match_status), na.rm = TRUE) ==
-              nrow(change_table))
-  output[!is.na(output$new_match_status),]$match <-
+  output <- merge(output, change, all.x = TRUE)
+  if (suppressWarnings(is.null(output$match))) {
+    output$match <- output$new_match_status
+  } else output[!is.na(output$new_match_status),]$match <-
     output[!is.na(output$new_match_status),]$new_match_status
-
-  # Keep confirmed column if it already exists
-  if (suppressWarnings(!is.null(output$confirmed))) {
-    output$confirmed <- ifelse(is.na(output$new_match_status), output$confirmed,
-                               TRUE)
-  } else output$confirmed <- ifelse(is.na(output$new_match_status), FALSE, TRUE)
   output$new_match_status <- NULL
   
   # Update highlight field
   if (suppressWarnings(is.null(output$highlight))) {
     output$highlight <- output$new_highlight
-    output$highlight <- ifelse(is.na(output$highlight), FALSE, output$highlight)
-    output$new_highlight <- NULL
-  } else {
-    output$highlight <- ifelse(!is.na(output$new_highlight), 
-                               output$new_highlight, output$highlight)
-    output$highlight <- ifelse(is.na(output$highlight), FALSE, output$highlight)
-    output$new_highlight <- NULL
-  }
+  } else output[!is.na(output$new_highlight),]$highlight <- 
+    output[!is.na(output$new_highlight),]$new_highlight
+  output$new_highlight <- NULL
   
   # Re-merge index fields
   output$index <- mapply(c, output$matrix, output$x_index, output$y_index, 
-                          SIMPLIFY = FALSE)
-  output <- output[c("index", "x_sig", "y_sig", "correlation", setdiff(
+                         SIMPLIFY = FALSE)
+  output <- output[c("index", "x_sig", "y_sig", "distance", setdiff(
     names(output), c("index", "matrix", "x_index", "y_index", "x_sig",
-                     "y_sig", "correlation")))]
+                     "y_sig", "distance")))]
   
   # Return output
   if (requireNamespace("dplyr", quietly = TRUE)) output <- dplyr::as_tibble(
