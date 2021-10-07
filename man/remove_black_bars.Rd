@@ -2,26 +2,47 @@
 % Please edit documentation in R/remove_black_bars.R
 \name{remove_black_bars}
 \alias{remove_black_bars}
-\title{Remove horizontal black bars from an image}
+\alias{remove_black_bars.matchr_image}
+\alias{remove_black_bars.list}
+\alias{remove_black_bars.array}
+\alias{remove_black_bars.logical}
+\title{Remove horizontal black bars from an image vector}
 \usage{
-remove_black_bars(x)
+remove_black_bars(x, ...)
+
+\method{remove_black_bars}{matchr_image}(x, ...)
+
+\method{remove_black_bars}{list}(x, ...)
+
+\method{remove_black_bars}{array}(x, ...)
+
+\method{remove_black_bars}{logical}(x, ...)
 }
 \arguments{
-\item{x}{Pixel array or length-1 vector of class \code{matchr_image}.}
+\item{x}{Vector of class \code{matchr_image}, pixel array, or list of pixel
+arrays.}
+
+\item{...}{Not used.}
 }
 \value{
-An array if the input was an array, and a length-1 vector of class
-\code{matchr_image} if the input was a \code{matchr_image} vector.
+Object of the same class and length as the input \code{x}, but with black
+bars removed.
 }
 \description{
-\code{remove_black_bars} takes a single \code{matchr_image} or raw pixel array and
-removes black bars at the top and bottom of the image, if any are identified.
+\code{remove_black_bars} takes a \code{matchr_image} vector, a pixel array, or a
+list of pixel arrays and removes black bars at the top and bottom of the
+images, if any are identified.
 }
 \examples{
 \dontrun{
 # Setup
-img <- load_image(test_urls[13])
+img <- load_image(test_urls)
 
+# Use remove_black_bars on matchr_image vectors
 remove_black_bars(img)
+
+# Or on raw pixel arrays, singly or in a list
+remove_black_bars(get_array(img))
+remove_black_bars(get_array(img)[[13]])
 }
 }
