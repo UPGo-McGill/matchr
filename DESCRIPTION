@@ -29,7 +29,6 @@ Imports:
     OpenImageR (>= 1.1.9),
     pillar (>= 1.6.1),
     Rcpp (>= 1.0.7),
-    RcppArmadillo (>= 0.10.6),
     progressr (>= 0.7.0),
     readbitmap (>= 0.1.5),
     vctrs (>= 0.3.8)

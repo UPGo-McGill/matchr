@@ -38,7 +38,7 @@ test_that("long matchr_signature objects are truncated", {
 })
 
 test_that("different displays work", {
-  expect_output(print(test_sig), "01c$", width = 20)
+  expect_output(print(test_sig), "c$", width = 20)
   expect_output(print(test_sig), "a.r.", width = 35)
   expect_output(print(test_sig), "aspect ratio", width = 45)
   expect_output(print(test_sig), "ces", width = 60)
