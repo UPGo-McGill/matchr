@@ -28,12 +28,19 @@
 find_duplicates <- function(x, threshold = 80, find_all = FALSE, 
                             quiet = FALSE) {
   
+  # Return early if input is empty
+  if (nrow(x) == 0) {
+    x$x_id <- NA_character_
+    x$y_id <- NA_character_
+    return(x)
+  }
+  
   # Identify x_sig and y_sig
   if (all(c("x_sig", "y_sig") %in% names(x))) {
     x_sig <- x[["x_sig"]]
     y_sig <- x[["y_sig"]]
   } else {
-    sig_names <- names(which(sapply(result, is_signature_2)))
+    sig_names <- names(which(sapply(result, is_signature)))
     stopifnot("`x` must have at least two matchr_signature fields" = 
                 length(sig_names) >= 2)
     if (length(sig_names) > 2) warning(
@@ -50,8 +57,8 @@ find_duplicates <- function(x, threshold = 80, find_all = FALSE,
   # Identify x images with correlation ~= 1
   x_matches <- 
     x_sig[!duplicated(x_sig)] |> 
-    match_signatures_2(quiet = quiet) |> 
-    identify_matches_2(threshold = threshold, quiet = quiet)
+    match_signatures(quiet = quiet) |> 
+    identify_matches(threshold = threshold, quiet = quiet)
   
   # Exit early if no matches
   if (nrow(x_matches) == 0) {
@@ -96,8 +103,8 @@ find_duplicates <- function(x, threshold = 80, find_all = FALSE,
   # Identify y images with correlation ~= 1
   y_matches <- 
     y_sig[!duplicated(get_path(y_sig))] |> 
-    match_signatures_2(quiet = quiet) |> 
-    identify_matches_2(threshold = threshold, quiet = TRUE)
+    match_signatures(quiet = quiet) |> 
+    identify_matches(threshold = threshold, quiet = TRUE)
   
   # Exit early if no matches
   if (nrow(y_matches) == 0) {
