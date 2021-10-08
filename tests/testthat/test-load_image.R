@@ -1,10 +1,11 @@
 #### TESTS FOR load_image ######################################################
 
 test_that("remote images are loaded", {
+  expect_true(inherits(test_img, "matchr_image"))
+  skip_on_cran()
   expect_true(
     inherits(load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png"),
              "matchr_image"))
-  expect_true(inherits(test_img, "matchr_image"))
   })
 
 test_that("garbage strings produce NA", {
@@ -15,13 +16,14 @@ test_that("garbage strings produce NA", {
 
 test_that("a directory path works", {
   skip_on_os("windows")
+  skip_on_cran()
   td <- tempdir()
   td_test <- paste0(td, "/matchr_test")
   dir.create(td_test)
-  test_paths <- paste0(td_test, "/", seq_along(test_urls[1:5]), ".jpg")
-  mapply(download.file, test_urls[1:5], test_paths, 
+  test_paths <- paste0(td_test, "/", seq_along(example_urls[5:6]), ".jpg")
+  mapply(download.file, example_urls[5:6], test_paths, 
          MoreArgs = list(quiet = TRUE))
-  expect_equal(sum(!is.na(suppressWarnings(load_image(td_test)))), 4)
+  expect_equal(sum(!is.na(suppressWarnings(load_image(td_test)))), 2)
   unlink(td_test, recursive = TRUE)
 })
 

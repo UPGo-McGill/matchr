@@ -23,6 +23,14 @@ The goal of matchr is to facilitate fast and reliable comparison of large sets o
 library(matchr)
 ```
 
+```{r load_data, echo = FALSE}
+load(here::here("inst", "vignette_matchr.Rdata"))
+img <- 
+  suppressWarnings(load_image(here::here("tests", "testthat", "resources")))
+img <- img[c(3, 1, 2, 5, 6, 8, 7, 10, 9, 12, 11, 13, 16, 17, 4)]
+get_path(img) <- example_urls
+```
+
 ```
 library(matchr)
 ```
@@ -42,27 +50,38 @@ Since some true matches will inevitably have lower signature correlations than s
 
 The simplest way to compare image sets with matchr is to use `match_images`, which is a convenience wrapper around the main functions in a standard matchr workflow. It does not allow much customization of parameters and doesn't scale well to extremely large image sets, but is a good choice when you just want to quickly identify duplicate images.
 
-Here we demonstrate `match_images` being run on a single vector of internet images, using the `test_urls` data object included in matchr:
+Here we demonstrate `match_images` being run on a single vector of internet images, using the `example_urls` data object included in matchr:
 
 ```{r paths}
-test_urls
+example_urls
 ```
 
 `match_images` takes a `compare` argument, which controls whether the interactive `compare_images` Shiny app should be run to manually verify match results. This can only be run in an interactive session, so for the vignette `compare` is set to `FALSE`.
 
-```{r match_images}
-matches <- match_images(test_urls, compare = FALSE)
-matches
+```{r match_images, eval = FALSE}
+match_images(example_urls, compare = FALSE)
+```
+
+```{r match_images_output, echo = FALSE}
+all_matches
+warning("Input 'https://upgo.lab.mcgill.ca/resources/img_2_corrupt.jpg' is ", 
+        "invalid; output is NA.")
 ```
 
 The results are returned as a data frame in which each row is a pairwise match between two of the input images. The data frame has six rows, which correspond to six matches among the fifteen images in `test_urls`. The function also generated a warning that one of the imported images was invalid. ("img_2_corrupt.jpg" is a purposely corrupted image, included in the test set to demonstrate what happens when matchr encounters an image it can't read.)
 
-The "index" field refers to the position of the matches in the correlation matrices which are generated as part of the matching process, but since `match_images` skips a number of intermediate outputs which are normally created by the matchr functions which it wraps, this field isn't meaningful. The next two fields ("x_sig" and "y_sig") contain the `matchr_signature` image signature vectors for the images which were matched. (In an GUI environment such as RStudio, these are displayed as colour patterns, although in this vignette they are monochrome.) These vectors contain the image signatures used for matching, alongside other metadata from the images such as resolution, colour channels, and file path. The final two fields ("correlation" and "match") give, respectively, the Pearson correlation coefficient between the greyscale image signatures of the two matching images and an additional confirmation based on the colour image signatures (which can be "match", "likely match", "possible match" or "no match"). If `match_images` is run with its default `compare = TRUE` setting, using the interactive image comparison Shiny app to manually confirm the results of the matching process will add `confirmed` and `highlight` fields to the output data frame, which respectively identify image pairs whose status ("match" or "no match") were visually confirmed and image pairs flagged for further follow up.
+The "index" field refers to the position of the matches in the correlation matrices which are generated as part of the matching process, but since `match_images` skips a number of intermediate outputs which are normally created by the matchr functions which it wraps, this field isn't meaningful. The next two fields ("x_sig" and "y_sig") contain the `matchr_signature` image signature vectors for the images which were matched. These vectors contain the image signatures used for matching, alongside other metadata from the images such as resolution, colour channels, and file path. The final field ("distance") gives the Hamming distance between the image signatures of the two matching images—a statistical measure of how similar the signatures are, with lower values meaning the two images are more likely to be the same.If `match_images` is run with its default `compare = TRUE` setting, using the interactive image comparison Shiny app to manually confirm the results of the matching process will add `match` and `highlight` fields to the output data frame, which respectively identify image pairs whose status ("match" or "no match") was visually confirmed and image pairs flagged for further follow up.
 
 Image comparison in matchr (either in `match_images` or the component functions) can identify matches within a single image set (as demonstrated above) or can identify matches between two image sets. This latter mode simply requires passing two input vectors to the functions:
 
-```{r match_images_two_inputs}
+```{r match_images_xy, eval = FALSE}
 match_images(test_urls[1:7], test_urls[8:15], compare = FALSE)
+```
+
+```{r match_images_xy_output, echo = FALSE}
+all_matches_xy
+warning("Input 'https://upgo.lab.mcgill.ca/resources/img_2_corrupt.jpg' is ", 
+        "invalid; output is NA.")
 ```
 
 In this case no matches were found, so the output data frame is empty.
@@ -76,10 +95,15 @@ The first step in a matchr workflow is importing images, either directly as `mat
 - As a character vector of URLs or local file paths
 - As a length-one character vector containing the path to a local directory containing images
 
-For small image sets such as the `test_urls` example, we can read the images directly into memory using `load_image`. 
+For small image sets such as the `example_urls` example, we can read the images directly into memory using `load_image`. 
 
-```{r load_image}
-img <- load_image(test_urls)
+```{r load_image, eval = FALSE}
+img <- load_image(example_urls)
+```
+
+```{r load_image_output, echo = FALSE}
+warning("Input 'https://upgo.lab.mcgill.ca/resources/img_2_corrupt.jpg' is ", 
+        "invalid; output is NA.")
 ```
 
 This will create a `matchr_image` vector, each element of which is an array of pixel values. Invalid file paths will produce `NA` values, which will be passed through subsequent matchr functions without "infecting" other results. (I.e., unlike `sum`, which will return `NA` if any inputs are `NA`, matchr functions will ignore `NA` inputs during processing while reporting on the presence of `NA` elements in a fashion appropriate for the given function.) The print method for `matchr_image` vectors displays the resolution, colour profile, and file path of each image.
@@ -118,32 +142,40 @@ sig <- create_signature(img)
 sig
 ```
 
-In a GUI such as RStudio, `matchr_signature` vectors print as a series of colour blocks to allow for easy visual inspection of the underlying data; in this vignette the class falls back on a simpler presentation of the average values for each of the greyscale, red, green and blue colour bands. This simple presentation abstracts away a more detailed internal data structure: by default, `create_signature` generates average values for 20 horizontal bands and 20 vertical bands in greyscale, red, green and blue. This yields a numeric vector of length 160:
+`matchr_signature` vectors print as a string of hexadecimal characters alongside some metadata. These characters represent the values of two 64-bit "perceptual hashes", which can identify images with a high degree of accuracy even in the face of small changes. (See [the matching vignette](matching.html) for more information.) The individual bits of the hashes can be accessed with `get_hash`:
 
 ```{r get_signature}
 get_hash(sig[1])
 ```
 
-While this is a drastic simplification of the data present in an image, it is sufficient to identify distinctive patterns which are highly unlikely to be exactly shared by other images. Using the `plot` method for `matchr_signature` vectors, the signature can be visualized as follows:
+Using the `plot` method for `matchr_signature` vectors, the signatures can be visualized as follows:
 
 ```{r col_img, fig.height = 6, fig.width = 7}
-plot(sig[5])
+plot(sig)
 ```
 
-The `bands` argument to `create_signature` controls how many horizontal and vertical bands will be used to generate an image signature. The default is 20, which was determined through testing to represent a good balance between accuracy and performance. In general, higher values will yield signatures which are less likely to be matched to other signatures, which will avoid false positives but also potentially introduce false negatives. Matching signatures with higher `bands` values will also take more computing resources, in a roughly linear relationship. (E.g. comparing signatures with `bands = 40` will take approximately twice as long as comparing signatures with `bands = 20`.)
 
 ### Removing black bars
 
-A relatively common phenomenon with user-uploaded photographs is horizontal black bars above and below an image. These occur when users take a screenshot of a landscape-oriented photograph and upload the result. These images pose a difficulty for matchr's image signature strategy, because they lead to signatures dominated by black values:
+A relatively common phenomenon with user-uploaded photographs is horizontal black bars above and below an image. These occur when users take a screenshot of a landscape-oriented photograph and upload the result. The `example_urls` image set contains one such image:
 
 ```{r rm_black_bars_1, fig.height = 6, fig.width = 7}
-bb_sig <- create_signature(img[13], rm_black_bars = FALSE)
-plot(bb_sig)
+plot(img[13])
 ```
 
-Because matchr was motivated by the need to compare large numbers of user-uploaded photographs across different web services, it has the ability to detect and remove horizontal black bars, using the `rm_black_bars` argument to `create_signature`, which is TRUE by default. When `rm_black_bars = TRUE`, the underlying image is not modified upon import, but its image signature is only generated from the portion of the image which does not have rows of entirely black pixels:
+These images pose a difficulty for matchr's image signature strategy, because they lead to signatures dominated by black values. Because matchr was motivated by the need to compare large numbers of user-uploaded photographs across different web services, it has the ability to detect and remove horizontal black bars, using the `remove_black_bars` function or the `rm_black_bars` argument to `create_signature`, which is TRUE by default. `remove_black_bars` takes a matchr_image vector, detects and removes black bars, and returns an updated vector:
 
 ```{r rm_black_bars_2, fig.height = 6, fig.width = 7}
+bb_img <- remove_black_bars(img[13])
+get_path(bb_img)[[1]] <- "Black bars removed"
+plot(c(img[13], bb_img))
+```
+
+When `create_signature` is called with `rm_black_bars = TRUE`, image signatures are only generated from the portion of images which do not have rows of entirely black pixels:
+
+```{r rm_black_bars_3, fig.height = 6, fig.width = 7}
+bb_sig <- create_signature(img[13], rm_black_bars = FALSE)
+get_path(bb_sig)[[1]] <- "Black bars not removed"
 plot(c(bb_sig, sig[13]))
 ```
 
@@ -151,7 +183,6 @@ plot(c(bb_sig, sig[13]))
 ## Matching signatures
 
 TKTK
-
 
 ```{r match_scatterplot, fig.height = 4, fig.width = 7}
 library(ggplot2)
@@ -193,4 +224,5 @@ TKTK
 
 ## Further reading
 
+- [`vignette("matching")`](matching.html) discusses how matchr uses perceptual hashing and Hamming distances to compare images and identify mataches.
 - [`vignette("performance")`](performance.html) discusses important performance considerations when using matchr functions on large image sets.

@@ -58,8 +58,8 @@ test_that("a single NA is printed correctly", {
   expect_output(print(test_long_sig[4], width = 20), "[^a.r.]")
   expect_output(print(test_long_sig[4], width = 31), "a.r.")
   expect_output(print(test_long_sig[4], width = 39), "aspect")
-  expect_output(print(test_long_sig[4], width = 50), "…l")
-  expect_output(print(test_long_sig[4], width = 69), "http")
+  expect_output(print(test_long_sig[4], width = 50), "a.r.")
+  expect_output(print(test_long_sig[4], width = 69), ", (tests)|(resources)")
 })
 
 test_that("empty signatures print correctly", {
@@ -70,17 +70,4 @@ test_that("concatenation works", {
   expect_equal(length(c(test_long_sig, test_long_sig)), 30L)
   expect_error(c(test_long_sig, test_long_sig, recursive = TRUE), "recursive")
   expect_error(c(test_long_sig, test_long_sig, use.names = FALSE), "use.names")
-})
-
-test_that("plots work", {
-  expect_message(plot(test_long_sig[4:5]), "Only the first")
-  expect_message(plot(test_long_sig[c(1:4, 6:15)]), "Only the first")
-  expect_warning(plot(create_signature(test_na)), "No non-NA signatures")
-  skip_on_ci()
-  plot_1 <- save_png(plot(test_long_sig[8]))
-  plot_2 <- save_png(plot(test_long_sig[15]))
-  plot_3 <- save_png(plot(test_long_sig[5:10], n_rows = 3))
-  expect_snapshot_file(plot_1, "plot_1.png")
-  expect_snapshot_file(plot_2, "plot_2.png")
-  expect_snapshot_file(plot_3, "plot_3.png")
 })

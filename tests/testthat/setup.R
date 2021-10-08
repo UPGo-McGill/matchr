@@ -2,6 +2,13 @@
 
 # Create objects that will be used multiple times -------------------------
 
+# test_urls
+test_urls <- test_path("resources", c(
+  "img_1.jpg", "img_1_compressed.jpg", "img_1_small.jpg", "img_2_corrupt.jpg",
+  "img_3.jpg", "img_4.jpg", "img_4_large.jpg", "img_5.jpg", "img_5_grey.jpg", 
+  "img_6.jpg", "img_6_duplicate.jpg", "img_7.jpg", "img_8.jpg", "img_9.jpg", 
+  "img_10_grey.jpg"))
+
 # load_image
 test_img <- load_image("https://upgo.lab.mcgill.ca/resources/img_1_small")
 test_long_img <- suppressWarnings(load_image(test_urls))
@@ -34,4 +41,4 @@ test_integrate_2 <- integrate_changes(test_integrate, test_changes_2)
 
 # Data to be loaded for tests ---------------------------------------------
 
-load("test-get_clusters.Rdata")
+load(test_path("test-get_clusters.Rdata"))

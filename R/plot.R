@@ -28,7 +28,7 @@ plot.matchr_image <- function(x, path = TRUE, max_plot = 12, n_rows = "auto",
   # Trim to the first {max_plot} valid images
   y <- x[!is.na(x)]
   if (sum(is.na(x)) > 0 || length(y) > max_plot) {
-    message("Only the first ", max_plot, " valid images will be plotted.")
+    message("Only the first ", max_plot, " non-NA images will be plotted.")
     y <- y[seq_len(min(max_plot, length(y)))]
   }
   
@@ -93,7 +93,7 @@ plot.matchr_signature <- function(x, max_plot = 20, n_rows = "auto", ...) {
   # Trim to the first {max_plot} valid signatures
   y <- x[!is.na(x)]
   if (sum(is.na(x)) > 0 || length(y) > max_plot) {
-    message("Only the first ", max_plot, " valid signatures will be plotted.")
+    message("Only the first ", max_plot, " non-NA signatures will be plotted.")
     y <- y[seq_len(min(max_plot, length(y)))]
   }
   

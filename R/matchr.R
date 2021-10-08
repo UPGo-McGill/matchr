@@ -10,7 +10,7 @@ if (getRversion() >= "2.15.1") {
 
 #' Vector of URLs for examples
 #' 
-#' \code{test_urls} contains 15 file paths for a set of images well suited to
+#' \code{example_urls} contains 15 file paths for a set of images well suited to
 #' exploring the functionality of the matchr package. Elements 1-3 are the same
 #' image at different resolutions and compression levels. Element 4 is a corrupt
 #' image. Element 5 is a unique image. Elements 6-7 are the same image at
@@ -22,22 +22,22 @@ if (getRversion() >= "2.15.1") {
 #' 
 #' @export
 
-test_urls <- 
-  c("inst/resources/img_1.jpg",
-    "inst/resources/img_1_compressed.jpg",
-    "inst/resources/img_1_small.jpg",
-    "inst/resources/img_2_corrupt.jpg",
-    "inst/resources/img_3.jpg",
-    "inst/resources/img_4.jpg",
-    "inst/resources/img_4_large.jpg",
-    "inst/resources/img_5.jpg",
-    "inst/resources/img_5_grey.jpg",
-    "inst/resources/img_6.jpg",
-    "inst/resources/img_6_duplicate.jpg",
-    "inst/resources/img_7.jpg",
-    "inst/resources/img_8.jpg",
-    "inst/resources/img_9.jpg",
-    "inst/resources/img_10_grey.jpg")
+example_urls <- 
+  c("https://upgo.lab.mcgill.ca/resources/img_1.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_1_compressed.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_1_small.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_2_corrupt.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_3.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_4.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_4_large.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_5.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_5_grey.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_6.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_6_duplicate.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_7.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_8.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_9.jpg",
+    "https://upgo.lab.mcgill.ca/resources/img_10_grey.jpg")
 
 # SVG codes for Shiny app
 
