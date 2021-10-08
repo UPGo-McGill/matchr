@@ -6,11 +6,7 @@
 \alias{matchr-package}
 \title{matchr: Fast and Reliable Matching of Images}
 \description{
-Fast and reliable matching of images. It creates unique colour
-    signatures for images by finding average colour values for horizontal and
-    vertical bands. This allows two or more images to be compared to each other 
-    using correlations of colour values, and the comparisons are insensitive to
-    file format, resolution, or compression.
+Fast and reliable matching of images. It creates unique image signatures using perceptual hashing. This allows large sets of images to be compared to each other to identify image matches. The matching process is insensitive to file format, resolution, or compression.
 }
 \seealso{
 Useful links:

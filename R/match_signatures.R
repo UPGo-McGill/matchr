@@ -73,7 +73,7 @@
 #' # Find matches between two matchr_signature vectors
 #' match_signatures(sigs[1:8], sigs[9:15])
 #' 
-#' # To look for matches between images with very different aspect ratios, set `compare_ar = FALSE`
+#' # To find matches between images with different aspect ratios, set `compare_ar = FALSE`
 #' match_signatures(sigs, compare_ar = FALSE)
 #' }
 #' @export

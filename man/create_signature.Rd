@@ -4,7 +4,7 @@
 \alias{create_signature}
 \alias{create_signature.matchr_image}
 \alias{create_signature.character}
-\title{Generate a unique colour signature for an image}
+\title{Generate unique images signatures for an image vector}
 \usage{
 create_signature(image, rm_black_bars = TRUE, ...)
 
@@ -45,17 +45,15 @@ A vector of class \code{matchr_signature} of the same length as the input
 vector.
 }
 \description{
-\code{create_signature} takes an image file and generates a numeric vector of
-average greyscale and colour values, so that the image can be compared to
-others.
+\code{create_signature} takes a vector of image or file paths and generates
+"perceptual hashes" which allow similar images to be matched with each other.
 }
 \details{
-An image is decomposed into horizontal and vertical bands (with the number of
-bands controlled by the \code{bands} argument), and for each band an average
-greyscale and colour value is calculated. The vector of these averages
-becomes a distinctive signature that can identify a given image even if the
-image is rescaled or compressed, and thus serves as a reliable indicator of
-whether two images are the same.
+Images are down-sampled to 8x8 greyscale bitmaps and passed through a
+discrete cosine transformation, from which 128-bit signatures are calculated.
+These signatures can identify a given image even if the image is rescaled or
+compressed, and thus serves as a reliable indicator of whether two images are
+the same.
 }
 \examples{
 \dontrun{
