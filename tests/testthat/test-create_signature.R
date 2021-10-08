@@ -40,7 +40,7 @@ test_that("tiny images return NA", {
 test_that("backups work", {
   expect_equal(sum(is.na(suppressWarnings(
     create_signature(rep("test", 1200))))), 1200)
-  assign("sig_hash", digest::digest(rep("test", 1200)), envir = .matchr_env)
+  assign("sig_hash", rlang::hash(rep("test", 1200)), envir = .matchr_env)
   assign("sig_backup", list(rep(list(list(NA, NA)), 600), NULL), 
          envir = .matchr_env)
   expect_error(sum(suppressWarnings(create_signature(rep("test", 1199)))))

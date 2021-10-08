@@ -120,7 +120,7 @@ create_signature.character <- function(image, rm_black_bars = TRUE,
     if (exists("sig_backup", envir = .matchr_env)) {
       
       # Only proceed if old hash is identical to new hash
-      if (.matchr_env$sig_hash == digest::digest(image) &&
+      if (.matchr_env$sig_hash == rlang::hash(image) &&
           length(.matchr_env$sig_backup) == iterations) {
         result <- .matchr_env$sig_backup
         resume_from <- length(result[!sapply(result, is.null)]) + 1
@@ -133,7 +133,7 @@ create_signature.character <- function(image, rm_black_bars = TRUE,
              "`remove_backups()` to proceed.", call. = FALSE)
       }
     } else {
-      assign("sig_hash", digest::digest(image), envir = .matchr_env)
+      assign("sig_hash", rlang::hash(image), envir = .matchr_env)
     }
   }
   
