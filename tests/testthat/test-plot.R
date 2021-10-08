@@ -10,7 +10,6 @@ save_png <- function(code, width = 400, height = 400) {
 }
 
 test_that("matchr_image plots work", {
-  print(test_long_sig)
   expect_message(plot(test_long_img[4:5]), "Only the first")
   expect_message(plot(test_long_img[c(1:4, 6:15)]), "Only the first")
   expect_warning(plot(test_na), "No non-NA")

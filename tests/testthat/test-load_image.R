@@ -2,6 +2,7 @@
 
 test_that("remote images are loaded", {
   expect_true(inherits(test_img, "matchr_image"))
+  skip_on_ci()
   skip_on_cran()
   expect_true(
     inherits(load_image("https://upgo.lab.mcgill.ca/img/UPGo_logo.png"),
