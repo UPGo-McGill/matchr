@@ -23,10 +23,12 @@ A tibble if {dplyr} is installed or a data frame if not, with one
 row per identified match, and the following columns:
 \itemize{
 \item \code{x_path} and \code{y_path}: The file paths for the images which were matched.
-\item \code{correlation}: The Pearson correlation coefficient of the two files'
-image signatures.
-\item \code{match}: A character vector indicating match status.
-(See \code{\link{confirm_matches}} for details.)
+\item \code{x_sig} and \code{y_sig}: The \code{matchr_signature} vectors of the matched images.
+\item \code{distance}: The Hamming distance between the two files' image signatures.
+\item \code{match}: If \code{compare = TRUE}, a logical vector indicating match status.
+\item \code{highlight}: If \code{compare = TRUE}, a logical vector indicating matches
+flagged for future review.
+#' (See \code{\link{confirm_matches}} for details.)
 }
 }
 \description{
@@ -49,12 +51,12 @@ to image matches.
 \examples{
 \dontrun{
 # Use match_images with a single argument to identify matches within a set of images
-match_images(test_urls)
+match_images(example_urls)
 
 # Or add a second argument to identify matches between two sets of images
-match_images(test_urls[1:8], test_urls[9:15])
+match_images(example_urls[1:8], example_urls[9:15])
 
-# To retrieve results without manual verification through the Shiny app, set `compare = FALSE`
-match_images(test_urls, compare = FALSE)
+# To retrieve results without verification through the Shiny app, set `compare = FALSE`
+match_images(example_urls, compare = FALSE)
 }
 }

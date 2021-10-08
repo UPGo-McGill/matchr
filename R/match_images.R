@@ -26,20 +26,22 @@
 #' @return A tibble if {dplyr} is installed or a data frame if not, with one
 #' row per identified match, and the following columns:
 #' - `x_path` and `y_path`: The file paths for the images which were matched.
-#' - `correlation`: The Pearson correlation coefficient of the two files'
-#' image signatures.
-#' - `match`: A character vector indicating match status.
-#' (See \code{\link{confirm_matches}} for details.)
+#' - `x_sig` and `y_sig`: The `matchr_signature` vectors of the matched images.
+#' - `distance`: The Hamming distance between the two files' image signatures.
+#' - `match`: If `compare = TRUE`, a logical vector indicating match status.
+#' - `highlight`: If `compare = TRUE`, a logical vector indicating matches
+#' flagged for future review.
+#' #' (See \code{\link{confirm_matches}} for details.)
 #' @examples
 #' \dontrun{
 #' # Use match_images with a single argument to identify matches within a set of images
-#' match_images(test_urls)
+#' match_images(example_urls)
 #'
 #' # Or add a second argument to identify matches between two sets of images
-#' match_images(test_urls[1:8], test_urls[9:15])
+#' match_images(example_urls[1:8], example_urls[9:15])
 #' 
-#' # To retrieve results without manual verification through the Shiny app, set `compare = FALSE`
-#' match_images(test_urls, compare = FALSE)
+#' # To retrieve results without verification through the Shiny app, set `compare = FALSE`
+#' match_images(example_urls, compare = FALSE)
 #' }
 #' @export
 
@@ -57,6 +59,14 @@ match_images <- function(x, y = NULL, compare = TRUE, quiet = FALSE) {
     changes <- confirm_matches(matches, quiet = quiet)
     matches <- integrate_changes(matches, changes)
     }
+  
+  # Remove `index` and add `x_name` and `y_name`
+  matches$x_path <- get_path(matches$x_sig)
+  matches$y_path <- get_path(matches$y_sig)
+  if (compare) {
+    matches <- matches[c("x_path", "y_path", "x_sig", "y_sig", "distance", 
+                         "match", "highlight")]
+  } else matches <- matches[c("x_path", "y_path", "x_sig", "y_sig", "distance")]
   
   return(matches)
 }
