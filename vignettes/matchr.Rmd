@@ -49,12 +49,33 @@ Here we demonstrate `match_images` being run on a single vector of internet imag
 example_urls
 ```
 
-```{r modify_urls, echo = FALSE}
+```{r modify_urls_and_make_custom_functions, echo = FALSE}
+# This is necessary to allow the vignette to build offline and still give proper
+# error messages
+
+# Start by replacing example_urls with links to local resources
 display_urls <- example_urls
 example_urls <- list.files(here::here("tests", "testthat", "resources"), 
                            full.names = TRUE)
 example_urls <- example_urls[c(3, 1:2, 5:6, 8, 7, 10, 9, 12, 11, 13, 16:17, 4)]
-example_urls[4] <- display_urls[4]
+
+# Next overwrite match_images and load_images to give a different warning
+match_images <- function(...) {
+  tryCatch(matchr::match_images(...), warning = function(w) {
+    warning(paste0("Input 'https://upgo.lab.mcgill.ca/resources/img_2_",
+                   "corrupt.jpg' is invalid; output is NA."), call. = FALSE)
+    suppressWarnings(matchr::match_images(...))
+  }) 
+}
+
+load_image <- function(...) {
+  tryCatch(matchr::load_image(...), warning = function(w) {
+    warning(paste0("Input 'https://upgo.lab.mcgill.ca/resources/img_2_",
+                   "corrupt.jpg' is invalid; output is NA."), call. = FALSE)
+    suppressWarnings(matchr::load_image(...))
+  }) 
+}
+
 ```
 
 `match_images` takes a `compare` argument, which controls whether the interactive `compare_images` Shiny app should be run to manually verify match results. This can only be run in an interactive session, so for the vignette `compare` is set to `FALSE`.
@@ -157,6 +178,8 @@ Using the `plot` method for `matchr_signature` vectors, the signatures can be vi
 ```{r col_img, fig.height = 6, fig.width = 7}
 plot(sig)
 ```
+
+The plot reveals strong similarities between, e.g., the three "img_1" signatures—all of which are in fact taken from variants of the same image.
 
 ### Removing black bars
 

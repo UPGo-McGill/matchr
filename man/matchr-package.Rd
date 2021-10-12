@@ -6,7 +6,10 @@
 \alias{matchr-package}
 \title{matchr: Fast and Reliable Matching of Images}
 \description{
-Fast and reliable matching of images. It creates unique image signatures using perceptual hashing. This allows large sets of images to be compared to each other to identify image matches. The matching process is insensitive to file format, resolution, or compression.
+Fast and reliable matching of images. It creates unique image
+    signatures using perceptual hashing. This allows large sets of images to be 
+    compared to each other to identify image matches. The matching process is 
+    insensitive to file format, resolution, or compression.
 }
 \seealso{
 Useful links:

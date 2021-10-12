@@ -5,6 +5,3 @@ all_matches_xy <- match_images(example_urls[1:7],
                                example_urls[8:15], compare = FALSE)
 
 save(all_matches, all_matches_xy, file = "inst/vignette_matchr.Rdata")
-
-create_signature(img) |> get_hash()
-img <- load_image(example_urls)
