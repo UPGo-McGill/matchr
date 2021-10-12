@@ -207,12 +207,17 @@ plot(c(bb_sig, sig[13]))
 
 ## Matching signatures
 
-Once image signatures have been generated, they can be compared to each other using Hamming distances, which use the bit-wise distance between signatures to assess the likelihood that the underlying images are the same. This measurement is carried out with `match_signatures`, which can take either one or two `matchr_signature` vectors as inputs. If you supply a single input, `match_signatures` will identify all potential pairwise matches within that vector If you supply two inputs, `match_signatures` will identify all potential pairwise matches *between* the two vectors. The following examples demonstrate the one-input mode of the function.
+Once image signatures have been generated, they can be compared to each other using Hamming distances, which use the bit-wise distance between signatures to assess the likelihood that the underlying images are the same. This measurement is carried out with `match_signatures`, which can take either one or two `matchr_signature` vectors as inputs. If you supply a single input, `match_signatures` will identify all potential pairwise matches within that vector If you supply two inputs, `match_signatures` will identify all potential pairwise matches *between* the two vectors. The following examples demonstrate the one-input mode of the function:
 
 ```{r match_signatures}
 matches <- match_signatures(sig)
 matches
 ```
+
+The output of `match_signatures` is a `matchr_matrix` vector, each element of which is a matrix whose values give a measure of similarity between two of the input image signatures. By default, image signatures are segmented into groups with similar aspect ratios; this is discussed below.
+
+
+
 
 ```{r match_signatures_plot}
 matches_all <- match_signatures(sig, compare_ar = FALSE)
@@ -251,7 +256,23 @@ data.frame(
 ```
 
 
-By default, only the greyscale portion of the image signatures are compared, in order to allow for matches 
+
+
+### Aspect ratios
+
+By default, image signatures are segmented into groups with similar aspect ratios. This is usually desirable, firstly because images with very different aspect ratios are unlikely to be the same, so segmenting by aspect ratio reduces the chance of false positives. Secondly, splitting by aspect ratios can dramatically reduce the computation time required to match signatures. The printed output from `matches` shows that, of the fifteen image signatures in `img`, two were skipped because they were NA, and then the remaining thirteen were grouped into a 4x4 block, an 8x8 block, and a 1x1 block. In total, this means that 81 comparisons had to be made. If the images weren't split by aspect ratios, it would be necessary to make 13 x 13 = 169 comparisons—more than twice as many.
+
+Splitting by aspect ratios happens using a deterministic version of k-means clustering, with k values between 3 and 8 assessed to identify one that will maximize between-group distance and minimize computational time. In order to avoid any problems with aspect ratios very near a threshold value, the `y` image signatures are split into groups somewhat lower than the lower-bound aspect ratio for a group and somewhat higher than the upper-bound aspect ratio. The `stretch` argument to `match_signatures` controls this parameter. Increasing this value will possibly catch matches between extremely distorted images, but at the cost of potentially larger numbers of false positives, and substantially increased processing time.
+
+If you know that the images you are trying to match may contain significantly distorted aspect ratios, you can set `compare_ar = FALSE` to match all image signatures together:
+
+```{r match_signatures_no_ar}
+matches_no_ar <- match_signatures(sig, compare_ar = FALSE)
+matches_no_ar
+```
+
+
+
 
 
 
@@ -275,3 +296,8 @@ TKTK
 
 - [`vignette("matching")`](matching.html) discusses how matchr uses perceptual hashing and Hamming distances to compare images and identify mataches.
 - [`vignette("performance")`](performance.html) discusses important performance considerations when using matchr functions on large image sets.
+
+```{r clean_up, echo = FALSE}
+match_images <- matchr::match_images
+load_image <- matchr::load_image
+```
