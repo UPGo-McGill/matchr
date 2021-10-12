@@ -28,7 +28,7 @@ arma::cube rm_bb_c(arma::cube x) {
   // Get black_strips
   arma::uvec start_strips = find(rm < 0.02);
   int n = start_strips.size();
-  
+
   // Exit if the image has no black bars
   if (n == 0) {
     return(x);
@@ -46,13 +46,18 @@ arma::cube rm_bb_c(arma::cube x) {
     }
   }
   black_strips.set_size(j);
-
+  
+  // Exit if the image has no black bars
+  if (black_strips.size() == 0) {
+    return(x);
+  }
+  
   // Remove the bottom bar, if it exists
-  if (black_strips(n - 1) == rm.size() - 1) {
+  if (black_strips(j - 1) == rm.size() - 1) {
     
-    // Get smallest index position which is in a continuous sequence with n
+    // Get smallest index position which is in a continuous sequence with j
     arma::uword bottom_bound = rm.size() - 1;
-    for (int i = n - 1; i > 0; --i) {
+    for (int i = j - 1; i > 0; --i) {
       if (black_strips(i) == black_strips(i - 1) + 1) {
         bottom_bound -= 1;
       } else {
@@ -63,7 +68,6 @@ arma::cube rm_bb_c(arma::cube x) {
     // Drop corresponding rows
     arma::uword end(x.n_rows - 1);
     x.shed_rows(bottom_bound, end);
-    
   }
   
   // Remove the top bar, if it exists
@@ -71,7 +75,7 @@ arma::cube rm_bb_c(arma::cube x) {
     
     // Get largest index position which is in a continuous sequence with 1
     arma::uword top_bound = 0;
-    for (int i = 0; i < (n - 1); ++i) {
+    for (int i = 0; i < (j - 1); ++i) {
       if (black_strips[i + 1] == black_strips[i] + 1) {
         top_bound += 1;
       } else {
@@ -124,12 +128,17 @@ arma::mat rm_bb_g(arma::mat x) {
   }
   black_strips.set_size(j);
   
+  // Exit if the image has no black bars
+  if (black_strips.size() == 0) {
+    return(x);
+  }
+  
   // Remove the bottom bar, if it exists
-  if (black_strips(n - 1) == rm.size() - 1) {
+  if (black_strips(j - 1) == rm.size() - 1) {
     
-    // Get smallest index position which is in a continuous sequence with n
+    // Get smallest index position which is in a continuous sequence with j
     arma::uword bottom_bound = rm.size() - 1;
-    for (int i = n - 1; i > 0; --i) {
+    for (int i = j - 1; i > 0; --i) {
       if (black_strips(i) == black_strips(i - 1) + 1) {
         bottom_bound -= 1;
       } else {
@@ -148,7 +157,7 @@ arma::mat rm_bb_g(arma::mat x) {
     
     // Get largest index position which is in a continuous sequence with 1
     arma::uword top_bound = 0;
-    for (int i = 0; i < (n - 1); ++i) {
+    for (int i = 0; i < (j - 1); ++i) {
       if (black_strips[i + 1] == black_strips[i] + 1) {
         top_bound += 1;
       } else {
