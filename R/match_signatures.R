@@ -25,7 +25,7 @@
 #' @param distance A one-sided formula (or character string which can be
 #' coerced to a formula) with one or both of the terms `nearest` and `bilinear`,
 #' expressing how the Hamming distance between image signature vectors should be
-#' calculated. The default (`~ nearest * bilinear`) takes the Hamming distances
+#' calculated. The default (`~nearest * bilinear`) takes the Hamming distances
 #' of each of the two image signature components and multiplies them together.
 #' Any arithmetical combination of these distances is a valid argument to
 #' `distance`, e.g. `~ nearest + log(bilinear)`.
@@ -78,7 +78,7 @@
 #' }
 #' @export
 
-match_signatures <- function(x, y = NULL, distance = ~ nearest * bilinear,
+match_signatures <- function(x, y = NULL, distance = ~nearest * bilinear,
                                compare_ar = TRUE, stretch = 1.2, 
                                mem_scale = 0.2, mem_override = FALSE, 
                                quiet = FALSE) {

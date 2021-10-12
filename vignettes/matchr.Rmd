@@ -139,13 +139,13 @@ img
 
 One reason to load entire images into memory with `load_image` rather than to just generate image signatures directly from the file paths with `create_signature` is to be able to conveniently see the images themselves. By default, the `plot` method for `matchr_image` vectors will display the first 12 non-NA images in the vector in a grid, along with their file names. Here we set the `max_plot` argument to 15 to show all the non-NA images in the vector.
 
-```{r plot_img, fig.height = 7, fig.width = 7}
+```{r plot_img, fig.height = 6, fig.width = 6}
 plot(img, max_plot = 15)
 ```
 
 Since the `matchr_image` vectors contain raw arrays of pixel values, it is also possible to apply linear transformations directly to the arrays:
 
-```{r transform_img, fig.height = 6, fig.width = 7}
+```{r transform_img, fig.height = 5, fig.width = 6}
 img_cube <- img[c(1, 5)]
 img_root <- img[c(1, 5)]
 # Get or set values "inside" matchr vectors with the get_* functions
@@ -175,7 +175,7 @@ get_hash(sig[1])
 
 Using the `plot` method for `matchr_signature` vectors, the signatures can be visualized as follows:
 
-```{r col_img, fig.height = 6, fig.width = 7}
+```{r col_img, fig.height = 5, fig.width = 6}
 plot(sig)
 ```
 
@@ -185,13 +185,13 @@ The plot reveals strong similarities between, e.g., the three "img_1" signatures
 
 A relatively common phenomenon with user-uploaded photographs is horizontal black bars above and below an image. These occur when users take a screenshot of a landscape-oriented photograph and upload the result. The `example_urls` image set contains one such image:
 
-```{r rm_black_bars_1, fig.height = 6, fig.width = 7}
+```{r rm_black_bars_1, fig.height = 3, fig.width = 3}
 plot(img[13])
 ```
 
 These images pose a difficulty for matchr's image signature strategy, because they lead to signatures dominated by black values. Because matchr was motivated by the need to compare large numbers of user-uploaded photographs across different web services, it has the ability to detect and remove horizontal black bars, using the `remove_black_bars` function or the `rm_black_bars` argument to `create_signature`, which is TRUE by default. `remove_black_bars` takes a matchr_image vector, detects and removes black bars, and returns an updated vector:
 
-```{r rm_black_bars_2, fig.height = 6, fig.width = 7}
+```{r rm_black_bars_2, fig.height = 5, fig.width = 6}
 bb_img <- remove_black_bars(img[13])
 get_path(bb_img)[[1]] <- "Black bars removed"
 plot(c(img[13], bb_img))
@@ -199,7 +199,7 @@ plot(c(img[13], bb_img))
 
 When `create_signature` is called with `rm_black_bars = TRUE`, image signatures are only generated from the portion of images which do not have rows of entirely black pixels:
 
-```{r rm_black_bars_3, fig.height = 4, fig.width = 7}
+```{r rm_black_bars_3, fig.height = 2, fig.width = 6}
 bb_sig <- create_signature(img[13], rm_black_bars = FALSE)
 get_path(bb_sig)[[1]] <- "Black bars not removed"
 plot(c(bb_sig, sig[13]))
@@ -214,49 +214,13 @@ matches <- match_signatures(sig)
 matches
 ```
 
-The output of `match_signatures` is a `matchr_matrix` vector, each element of which is a matrix whose values give a measure of similarity between two of the input image signatures. By default, image signatures are segmented into groups with similar aspect ratios; this is discussed below.
+The output of `match_signatures` is a `matchr_matrix` vector, each element of which is a matrix whose values give a measure of similarity between two of the input image signatures. By default, image signatures are segmented into groups with similar aspect ratios (this is discussed below); in this case, there are groupings for several portrait images, several landscape images, and one very wide landscape image. The key component of a `matchr_matrix` vector is the matrices which measure the similarity between the input image signatures. These matrices can be accessed with `get_array`:
 
-
-
-
-```{r match_signatures_plot}
-matches_all <- match_signatures(sig, compare_ar = FALSE)
-matches_all |> 
-  get_array() |> 
-  {\(x) x[[1]]}() |> 
-  dplyr::as_tibble() |> 
-  setNames(paste0("y_", 1:13)) |> 
-  dplyr::mutate(x_id = paste0("x_", dplyr::row_number()), .before = y_1) |> 
-  tidyr::pivot_longer(-x_id, names_to = "y_id", values_to = "distance") |> 
-  ggplot2::ggplot(ggplot2::aes(x_id, y_id, colour = distance)) +
-  ggplot2::geom_point() +
-  ggplot2::scale_colour_viridis_c() +
-  ggplot2::theme_minimal()
+```{r get_array}
+get_array(matches)
 ```
 
-The output
-
-
-
-```{r match_scatterplot, fig.height = 4, fig.width = 7}
-library(ggplot2)
-
-sig_1 <- get_hash(sig)[[1]][1:40] 
-sig_2 <- get_hash(sig)[[2]][1:40]
-sig_5 <- get_hash(sig)[[5]][1:40]
-
-data.frame(
-  x = c(sig_1, sig_1),
-  y = c(sig_2, sig_5),
-  correlation = c(rep(cor(sig_1, sig_2), 40), rep(cor(sig_1, sig_5), 40))) |> 
-  ggplot(aes(x, y)) + 
-  geom_point() +
-  facet_wrap(vars(correlation)) +
-  theme_minimal()
-```
-
-
-
+Smaller numbers indicate closer matches between the `x` and the `y` input signature elements. Since in this example `x` and `y` are both the same `sig` signature vector, unsurprisingly the diagonal values of the matrices are all 0, indicating a perfect match. The actual numbers that are calculated in each matrix element depend on the `distance` argument to `match_signatures`. This argument takes a one-sided formula with some combination of "nearest" and "bilinear", which are the two components of the image signatures. (See [the matching vignette](matching.html) for more information.) The default is `distance = ~nearest * bilinear`, which takes the Hamming distances of each of the two image signature components and multiplies them together. The use of multiplication in effect penalizes any signature pair that has a high distance for *either* of the two signature components, and has been empirically determined to do the best job of distinguishing between matching and non-matching image pairs. However, any arithmetical combination of "nearest" and "bilinear" is a valid argument to `distance`—e.g. `~ nearest + log(bilinear)`—and it could be that non-default formulas are better suited to specific image matching tasks.
 
 ### Aspect ratios
 
@@ -268,29 +232,103 @@ If you know that the images you are trying to match may contain significantly di
 
 ```{r match_signatures_no_ar}
 matches_no_ar <- match_signatures(sig, compare_ar = FALSE)
+
 matches_no_ar
+
+get_array(matches_no_ar)
 ```
-
-
-
-
-
 
 ## Identifying matches
 
-TKTK
+All the information about potential matches is embedded in the `matchr_matrix` vector which is generated by `match_signatures`, but it can be cumbersome to manually extract Hamming distances and link them to the input image signatures. This is the job of `identify_matches`: it takes a `matchr_matrix` vector and a numeric threshold, and gathers all the image signature pairs whose Hamming distances are less than or equal to the threshold.
 
+```{r identify_matches}
+result <- identify_matches(matches)
+
+result
+```
+
+The output of `identify_matches` is a four-column data frame. The first column (`index`) gives the match's index position in the input `matchr_matrix` vector. Each element is a length-three integer vector giving, respectively, the matrix, row index position, and column index position of the match. It is rarely necessary to interact directly with this field, but it is used by other matchr functions. The `x_sig` and `y_sig` fields are `matchr_signature` vectors containing the image signatures which were matched. And the `distance` field gives the Hamming distance for the match. The default value for the `threshold` argument is 200, which is a reasonable value if `match_signatures` was run with the default `distance = ~nearest * bilinear`; otherwise, `threshold` will need to be adjusted.
 
 ## Manually verifying matches
 
-TKTK
+The final step in the matchr workflow is to manually verify the match status of potential matches, using the `confirm_matches` interactive Shiny app designed for this purpose.
 
+```{r confirm_matches}
+changes <- confirm_matches(result)
 
-## Helper functions
+changes
+```
 
-- get_* functions
-- download_images
+`confirm_matches` has a number of different arguments to control how it operates, but with default settings it performs the following actions:
 
+- Any image pairs which have been verified through a previous call to `confirm_matches` are excluded, so the user does not have to verify them again.
+- Any image pairs with a sufficiently low Hamming distance (established by the "Identical" entry in the `thresholds` argument) are automatically marked as `match = TRUE`, to avoid wasting the user's time.
+- Remaining image pairs are analyzed for any pairwise duplicates; in other words, if x[1] matches y[1] and x[2] matches y[2], but x[1] and x[2] are identical and y[1] and y[2] are identical as well, the app will only present the x[1]-y[1] pair for verification, and apply the results to both pairs.
+- Remaining image pairs are presented for visual comparison in the Shiny app.
+
+Since all of the image pairs in our example had extremely low Hamming distances, the Shiny app was never launched when `confirm_matches(result)` was called; all six pairs were simply flagged as being matches. If we change the `thresholds` argument to set a more stringent test for identical images, though, we will be asked to manually verify some of the pairs:
+
+```{r confirm_matches_2, eval = FALSE}
+changes <- confirm_matches(result, thresholds = c(10, 100, 120, 150))
+```
+![confirm_matches(result, thresholds = c(10, 100, 120, 150))](confirm_matches_1.jpg){width=400px}
+
+By design, `confirm_matches` presents a streamlined interface, to make it as easy as possible to verify large numbers of potential matches with minimal distractions. However, the Shiny app can expose a number of additional options and affordances. The following screenshot shows 1) a pair of tables summarizing information about the input dataset and preliminary match statuses; 2) a highlighting interface, where matches of interest can be flagged for subsequent follow up; 3) The Hamming distance for each potential map, along with the number of duplicate pairs which were detected; and 4) the paths of the input images.
+
+![confirm_matches additional options](confirm_matches_2.jpg){width=400px}
+
+Once you have finished verifying image matches with the Shiny app, the `integrate_changes` function adds the information to your `result` data frame, and the matchr workflow is finished:
+
+```{r integrate_changes}
+integrate_changes(result, changes)
+```
+
+The `result` data frame now has a `match` column which reports the results of `confirm_matches`, and a `highlight` column which identifies any matches which were flagged for follow up in the comparison app. A common final step would be to filter the data frame to only confirmed matches and then extract the corresponding file paths:
+
+```{r get_final_matches}
+integrate_changes(result, changes) |> 
+  dplyr::filter(match) |> 
+  dplyr::transmute(x_path = get_path(x_sig), y_path = get_path(y_sig))
+```
+
+## Utility functions
+
+matchr includes several functions to make it easier to work with the matchr vector classes and with image sets in general.
+
+### get_* functions
+
+matchr vectors are implemented as "record"-style classes (using `vctrs::new_rcrd`), which store their data and metadata as a set of lists of equal length, called "fields". Usually these fields do not need to be accessed independently of the vectors they comprise. But, for the cases when they do, matchr has a series of get_* functions which allow convenient access to fields, and which are all straightforward wrappers of `vctrs::field`. In each case, get_\*(x) is equivalent to `vctrs::field(x, "*")`:
+
+```{r get_functions}
+get_path(img)
+
+get_hash(sig)
+
+get_ar(sig)
+
+get_array(matches)
+
+get_x_sig(matches)
+
+get_x_ar(matches)
+```
+
+New values can be assigned to these fields in the same manner, e.g. `get_path(x) <- "new_path"`.
+
+### download_images
+
+The main matchr functions assume you already have image sets downloaded, but realistically the kinds of workflows matchr supports will also frequently include mass downloads of images from URLs. The function `download_images` is designed to facilitate convenient download of large numbers of images, with progress reporting, duplicate checking, and summary reporting.
+
+### compare_images
+
+The interactive Shiny app used by `confirm_matches` can also be used to compare any two vectors of images (given as either `matchr_image` vectors or as file paths), by calling `compare_images` directly on a pair of vectors:
+
+```{r compare_images, eval = FALSE}
+compare_images(img, img)
+```
+
+Additional arguments to `compare_images` let you control the presentation of additional image metadata and the default match status for image pairs.
 
 ## Further reading
 

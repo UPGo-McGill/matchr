@@ -24,16 +24,11 @@
 #' - `index`: The match's index position in the input `matchr_matrix` vector.
 #' Each element is a length-three integer vector giving, respectively, the
 #' matrix, row index position, and column index position of the match.
-#' - `x_path` and `y_path`: The file paths for the images which were matched.
+#' - `x_sig` and `y_sig`: `matchr_signature` vectors containing the image 
+#' signatures which were matched.
 #' - `distance`: An integer vector giving the Hamming distance between the two 
 #' files' image signatures. (The lower the distance, the more perceptually 
 #' similar the images are.)
-#' - `dd`: An integer vector giving the product of the Hamming distances between
-#' the two files' primary and secondary image signatures. The secondary image
-#' signature is less reliable than the primary one, but can be a helpful
-#' additional data point in assessing potential matches with borderline 
-#' primary-signature Hamming distances. In general, the lower the `dd` value, 
-#' the higher the chance that two images are the same.
 #' @examples
 #' \dontrun{
 #' # Setup
@@ -48,7 +43,7 @@
 #' }
 #' @export
 
-identify_matches <- function(x, y = NULL, threshold = 12, quiet = FALSE, ...) {
+identify_matches <- function(x, y = NULL, threshold = 200, quiet = FALSE, ...) {
   
   UseMethod("identify_matches")
   

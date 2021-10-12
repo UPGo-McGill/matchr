@@ -24,7 +24,7 @@ each object in \code{y}.}
 \item{distance}{A one-sided formula (or character string which can be
 coerced to a formula) with one or both of the terms \code{nearest} and \code{bilinear},
 expressing how the Hamming distance between image signature vectors should be
-calculated. The default (\code{~ nearest * bilinear}) takes the Hamming distances
+calculated. The default (\code{~nearest * bilinear}) takes the Hamming distances
 of each of the two image signature components and multiplies them together.
 Any arithmetical combination of these distances is a valid argument to
 \code{distance}, e.g. \code{~ nearest + log(bilinear)}.}

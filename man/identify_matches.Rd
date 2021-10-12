@@ -6,7 +6,7 @@
 \alias{identify_matches.matchr_signature}
 \title{Identify matches from a matchr image matrix}
 \usage{
-identify_matches(x, y = NULL, threshold = 12, quiet = FALSE, ...)
+identify_matches(x, y = NULL, threshold = 200, quiet = FALSE, ...)
 
 \method{identify_matches}{matchr_matrix}(x, y = NULL, threshold = 200, quiet = FALSE, ...)
 
@@ -51,16 +51,11 @@ row per identified match, and the following columns:
 \item \code{index}: The match's index position in the input \code{matchr_matrix} vector.
 Each element is a length-three integer vector giving, respectively, the
 matrix, row index position, and column index position of the match.
-\item \code{x_path} and \code{y_path}: The file paths for the images which were matched.
+\item \code{x_sig} and \code{y_sig}: \code{matchr_signature} vectors containing the image
+signatures which were matched.
 \item \code{distance}: An integer vector giving the Hamming distance between the two
 files' image signatures. (The lower the distance, the more perceptually
 similar the images are.)
-\item \code{dd}: An integer vector giving the product of the Hamming distances between
-the two files' primary and secondary image signatures. The secondary image
-signature is less reliable than the primary one, but can be a helpful
-additional data point in assessing potential matches with borderline
-primary-signature Hamming distances. In general, the lower the \code{dd} value,
-the higher the chance that two images are the same.
 }
 }
 \description{
