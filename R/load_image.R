@@ -30,7 +30,7 @@ load_image <- function(file, quiet = FALSE) {
   ## Error checking and options setting ----------------------------------------
   
   stopifnot(is.character(file), is.logical(quiet))
-  par_check <- set_par("load_image")
+  par_check <- set_par("load_image", l = length(file))
   
   # If `file` is a directory, convert it to a vector of file paths
   if (length(file) == 1 && dir.exists(file)) 

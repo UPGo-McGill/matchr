@@ -160,7 +160,7 @@ set_par <- function(fun, ...) {
   par_check <- TRUE
   
   # Version for load_image
-  if (fun == "load_image") par_check <- FALSE
+  if (fun == "load_image") par_check <- args$l >= 5000
   
   # Version for create_signature.character
   if (fun == "create_signature_character") par_check <- args$l >= 100
