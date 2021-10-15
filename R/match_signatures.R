@@ -206,14 +206,18 @@ get_clusters <- function(x, y, stretch = 1.2, max_clust = 10) {
 
 get_mem_limit <- function(x_list, y_list, mem_scale, mem_override) {
   
+  # Get system RAM
   sys_mem <- memuse::Sys.meminfo()
   max_mem <- as.numeric(sys_mem$totalram * mem_scale) / 1e6
-  out <- mapply(function(x, y) ceiling(1.5e-05 * x * y),
-                as.numeric(lengths(x_list)), as.numeric(lengths(y_list)))
   
-  if (sum(out) > as.numeric(sys_mem$totalram) / 1.5e6) {
+  # Get RAM needed per list element
+  ram_size <- mapply(function(x, y) ceiling(1.5e-05 * x * y),
+                     as.numeric(lengths(x_list)), as.numeric(lengths(y_list)))
+  
+  # Check total available RAM against needed RAM
+  if (sum(ram_size) > as.numeric(sys_mem$totalram) / 1.5e6) {
     total_mem <- as.character(sys_mem$totalram)
-    needed_mem <- paste0(sum(out) / 1000 * 1.5, " GiB")
+    needed_mem <- paste0(sum(ram_size) / 1000 * 1.5, " GiB")
     if (mem_override) stop(
       "Total system memory is likely insufficient to run `match_signatures`. ",
       "(", needed_mem, " needed, but only ", total_mem, " available.) ",
@@ -226,8 +230,18 @@ get_mem_limit <- function(x_list, y_list, mem_scale, mem_override) {
       call. = FALSE)
   }
   
-  out <- ceiling(out / max_mem)
-  out
+  # Get number of splits per list element based on RAM
+  ram_size <- as.integer(ceiling(ram_size / max_mem))
+  
+  # Check to make sure no element has length(x) * length(y) out of 32-bit range
+  mat_size <- mapply(\(x, y) {
+    size <- as.numeric(length(x_list[[1]])) * as.numeric(length(y_list[[1]]))
+    size <- as.integer(ceiling(size / 4e9))
+    }, x_list, y_list)
+  
+  # Take largest number of splits for each list element
+  out <- pmax.int(ram_size, mat_size)
+  return(out)
   
 }
 
@@ -278,15 +292,15 @@ match_signatures_prep <- function(x, y, compare_ar, stretch, mem_scale,
   
   # Split lists to stay within memory limits
   if (sum(mem_limits > 1) > 0) {
-    x_list <- mapply(chunk, x_list, mem_limits)
+    x_list <- mapply(chunk, x_list, mem_limits, SIMPLIFY = FALSE)
     x_list <- unlist(x_list, recursive = FALSE)
-    y_list <- mapply(rep, y_list, mem_limits)
-    y_list <- mapply(chunk, y_list, mem_limits)
+    y_list <- mapply(rep, y_list, mem_limits, SIMPLIFY = FALSE)
+    y_list <- mapply(chunk, y_list, mem_limits, SIMPLIFY = FALSE)
     y_list <- unlist(y_list, recursive = FALSE)
-    x_sig <- mapply(chunk, x_sig, mem_limits)
+    x_sig <- mapply(chunk, x_sig, mem_limits, SIMPLIFY = FALSE)
     x_sig <- unlist(x_sig, recursive = FALSE)
-    y_sig <- mapply(rep, y_sig, mem_limits)
-    y_sig <- mapply(chunk, y_sig, mem_limits)
+    y_sig <- mapply(rep, y_sig, mem_limits, SIMPLIFY = FALSE)
+    y_sig <- mapply(chunk, y_sig, mem_limits, SIMPLIFY = FALSE)
     y_sig <- unlist(y_sig, recursive = FALSE)
   }
   
