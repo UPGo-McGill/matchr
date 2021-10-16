@@ -57,9 +57,9 @@
 #' Hamming distance for the `x` and `y` signatures falling in a given aspect
 #' ratio range. If `x` and `y` are both present, each matrix will have 
 #' `length(x)` rows and `length(y)` columns, and for the matrix `Q` the cell 
-#' `Q[i, j]` will be the Hamming distance between images `x[[i]]` and `y[[j]]`. 
+#' `Q[i, j]` will be the Hamming distance between images `x[i]` and `y[j]`. 
 #' If `y` is not present, each matrix will be square, and the cell `Q[i, j]` 
-#' will be the Hamming distance between images `x[[i]]` and `x[[j]]`. The
+#' will be the Hamming distance between images `x[i]` and `x[j]`. The
 #' formula supplied to the `distance` argument will be present as an additional
 #' attribute to the return vector, named `formula`.
 #' @examples
@@ -249,16 +249,6 @@ get_mem_limit <- function(x_list, y_list, mem_scale, mem_override) {
 
 get_ratios <- function(x) c(min(get_ar(x), na.rm = TRUE),
                             max(get_ar(x), na.rm = TRUE))
-
-# ------------------------------------------------------------------------------
-
-match_signatures_pairwise <- function(x, y, distance = ~ nearest * bilinear, 
-                                      quiet = FALSE) {
-  out <- par_mapply(match_signatures_internal, x, y, 
-                    MoreArgs = list(distance = distance), SIMPLIFY = TRUE)
-  out[lengths(out) == 0] <- NA_integer_
-  unlist(out)
-}
 
 # ------------------------------------------------------------------------------
 
