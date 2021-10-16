@@ -5,6 +5,12 @@
 #' processing (via \code{future} and \code{future.apply}) and progress 
 #' reporting.
 #'
+#' \code{load_image} only supports 3-channel (RGB) or 1-channel (greyscale)
+#' images; 4-channel (RGBA) images will have their alpha channel silently 
+#' dropped and 2-channel (greyscale with alpha) images will have *only* their
+#' alpha channel preserved, while images with 5 or more channels will return as 
+#' NA.
+#'
 #' Because the memory requirements of storing image representations in memory
 #' so large, it is usually not feasible to read in more than several hundred
 #' images at a time with \code{load_image}. For these cases, use
@@ -76,11 +82,16 @@ load_image_internal <- function(x) {
   # Import image
   img <- tryCatch({
     utils::capture.output(img <- readbitmap::read.bitmap(d), type = "message")
+    stopifnot(length(dim(img)) == 2 || dim(img)[3] %in% 1:4)
     img
     }, error = function(e) {
       warning("Input '", x, "' is invalid; output is NA.", call. = FALSE)
       NA
       })
+  
+  # Drop transparency channel if present
+  if (length(dim(img)) == 3 && dim(img)[3] == 4) img <- img[,,1:3]
+  if (length(dim(img)) == 3 && dim(img)[3] == 2) img <- 1 - img[,,2]
     
   if (is_url(x)) unlink(d)
   

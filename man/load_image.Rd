@@ -25,6 +25,12 @@ processing (via \code{future} and \code{future.apply}) and progress
 reporting.
 }
 \details{
+\code{load_image} only supports 3-channel (RGB) or 1-channel (greyscale)
+images; 4-channel (RGBA) images will have their alpha channel silently
+dropped and 2-channel (greyscale with alpha) images will have \emph{only} their
+alpha channel preserved, while images with 5 or more channels will return as
+NA.
+
 Because the memory requirements of storing image representations in memory
 so large, it is usually not feasible to read in more than several hundred
 images at a time with \code{load_image}. For these cases, use
