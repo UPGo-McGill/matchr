@@ -29,7 +29,7 @@ The key takeaways are:
 - Enable parallel processing with the {future} package, most simply by setting `future::plan(multisession)`.
 - By default, matchr functions only enable parallel processing where empirical testing suggests that this will improve performance, but parallel processing can be forced by setting the global option `options(matchr.force_parallel = TRUE)`.
 - Avoid loading large numbers of images at once with `load_image`, and instead use `create_signatures` to generate the image signatures required for matching directly from a vector of file paths.
-- For large datasets, avoid using `match_signatures` to generate a `matchr_matrix` vector of image signature correlations for further processing, and instead use `identify_matches` directly on the `matchr_signature` vectors to find potential image matches without the need for holding a gigantic correlation matrix in memory.
+- For large datasets, avoid using `match_signatures` to generate a `matchr_matrix` vector of image signature correlations for further processing, and instead use `identify_matches` directly on the `matchr_signature` vectors to find potential image matches without the need for holding a gigantic distance matrix in memory.
 
 The following discussion will rely on examples taken from two large sets of images. The `paths_low` vector contains low-resolution images (roughly 200 x 150 pixels, and 8 kB), while the `paths_high` vector contains higher-resolution images (between 640 x 480 and 1200 x 800, and 170 kB). To reproduce the benchmarks and analysis in this vignette, point the following lines at a pair of folders with low- and high- resolution images, respectively.
 
@@ -38,21 +38,19 @@ paths_low <- list.files("example_low", full.names = TRUE)
 paths_high <- list.files("example_high", full.names = TRUE)
 ```
 
-The benchmarks were taken on a 2019 Mac Pro with a 3.2 GHz 16-core Intel Xeon W and 512 GB of RAM, running R 4.1 in RStudio 1.4.1717, reading images from a SATA-3 SSD drive.
+The benchmarks were taken on a 2019 Mac Pro with a 3.2 GHz 16-core Intel Xeon W and 384 GB of RAM, running R 4.1.1 in RStudio RStudio 2021.09.0, reading images from a SATA-3 SSD drive.
 
 ## BLAS
 
-R relies on a "BLAS" (Basic Linear Algebra Subprograms) library for carrying out common linear algebra tasks such as matrix multiplication and solving systems of linear equations. However, the BLAS library included in R is far slower than other stable, free alternatives. Certain functions in matchr (in particular `match_signatures`) rely heavily on linear algebra, and consequently will run much faster if the default BLAS library is replaced with a faster one.
+R relies on "BLAS" (Basic Linear Algebra Subprograms) and "LAPACK" (Linear Algebra Package) libraries for carrying out common linear algebra tasks such as matrix multiplication and solving systems of linear equations. However, the BLAS and LAPACK libraries included in R are far slower than other stable, free alternatives. Certain functions in matchr (in particular `match_signatures`) rely heavily on linear algebra, and consequently will run much faster if the default BLAS library (and perhaps to a lesser extent the default LAPACK library) are replaced with faster ones.
 
-The guidelines for replacing the BLAS library vary from platform to platform, but are usually quite straightforward. In general, OpenBLAS is a simple choice for Windows and Linux, and Apple's vecLib is a simple choice for macOS (and in fact [is included in binary installations of R, and can be enabled with a simple command](https://cran.r-project.org/bin/macosx/RMacOSX-FAQ.html#Which-BLAS-is-used-and-how-can-it-be-changed_003f)).
+The guidelines for replacing these libraries vary from platform to platform, but are usually quite straightforward. In general, OpenBLAS is a simple choice for Windows and Linux, and Apple's vecLib is a simple choice for macOS.
 
-Using OpenBLAS or vecLib may speed up `match_signature` by anywhere from 50% to 400%, depending on the system and the task, and other functions by a smaller amount. If you are running R on a system with the slow, default BLAS library and are unable to upgrade it, you can alert matchr to this fact by setting the global option `matchr.blas` to FALSE (with `options(matchr.blas = FALSE)`) for a temporary override, or by adding the line `MATCHR_BLAS = FALSE` to the .Renviron file for a permanent override. This will cause `match_signatures` to fall back on a parallel execution strategy which is slower than its default execution strategy using an optimized BLAS library, but faster than its default strategy using the default BLAS library.
-
-All the benchmarks which follow below were run using vecLib on macOS 11.4.
+Using OpenBLAS or vecLib may speed up `match_signatures` by approximately 400%, depending on the system and the task, and other functions by a smaller amount. All the benchmarks which follow below were run using the vecLib BLAS and LAPACK libraries on macOS 11.6.
 
 ## Parallel processing
 
-All of the time-consuming functions in matchr support parallel and remote processing via the [future](https://cran.r-project.org/web/packages/future/vignettes/future-1-overview.html) package. If a multisession, multicore, or cluster plan is set through future, matchr functions will generally perform substantially faster. For local workloads (i.e. workloads not being executed on a remote computing cluster), the most straightforward way to leverage parallel processing will be to run the following two lines before executing matchr functions:
+With the exception of `match_signatures`, all of the time-consuming functions in matchr support parallel and remote processing via the [future](https://cran.r-project.org/web/packages/future/vignettes/future-1-overview.html) package. If a multisession, multicore, or cluster plan is set through future, matchr functions will generally perform substantially faster. For local workloads (i.e. workloads not being executed on a remote computing cluster), the most straightforward way to leverage parallel processing will be to run the following two lines before executing matchr functions:
 
 ```
 library(future)
@@ -65,7 +63,7 @@ While in theory running a function using four cores instead of a single core mig
 
 (The preceding paragraph only applies to "multisession" or "socketed" versions of parallel processing, where R creates a set of new processes and then copies the necessary objects to memory for each process. There is also a paradigm of parallel processing referred to as "forked" or "multicore", which is only available on Unix and macOS, and can be set from {future} with `plan(multicore)`. In forked parallel processing, the parallel processes work off the single R process containing all the session's data and share memory. This avoids the need to copy memory and thus a substantial amount of inter-process overhead, but at the cost of significant instability, particularly when R is run with a graphical interface in RStudio. Under extensive testing, matchr functions complete much more quickly with forked parallelism (`plan(multicore)`) than with socketed parallelism (`plan(multisession)`), but will occasionally fail to complete in the former instance, which in practice swamps the speed gains. It is therefore recommended to avoid forked parallelism in matchr.)
 
-By default, regardless of the plan which has been set with `future::plan`, matchr will only enable parallel processing in scenarios where testing has indicated that this will reduce computation time. For example, in `create_signature`, parallel processing is enabled by default when operating on file paths, but disabled by default when operating on images which have already been loaded into memory with `load_image`, since in the latter case the communication overhead of passing data to and from each parallel worker swamps the speed gains from parallelizing the relatively quick calculations. To override this default, set the `matchr.force_parallel` option to TRUE (with `options(matchr.force_parallel = TRUE)`) for a temporary override, or add the line `MATCHR_FORCE_PARALLEL = TRUE` to the .Renviron file for a permanent override.
+By default, regardless of the plan which has been set with `future::plan`, matchr will only enable parallel processing in scenarios where testing has indicated that this will reduce computation time. For example, in `create_signature`, parallel processing is enabled by default when operating on file paths, but disabled by default when operating on images which have already been loaded into memory with `load_image`, since in the latter case the communication overhead of passing data to and from each parallel worker negates the speed gains from parallelizing the relatively quick calculations. To override this default, set the `matchr.force_parallel` option to TRUE (with `options(matchr.force_parallel = TRUE)`) for a temporary override, or add the line `MATCHR_FORCE_PARALLEL = TRUE` to the .Renviron file for a permanent override.
 
 In order to explore the impacts of parallel processing on computation time, the following benchmarks enable the `force_parallel` option.
 
@@ -79,8 +77,6 @@ We begin with timings for reading vectors of 100, 1000 and 10,000 file paths wit
 
 ```{r li_timing, eval = FALSE}
 library(future)
-library(dplyr)
-library(tidyr)
 library(ggplot2)
 
 li_bench <- 
@@ -95,8 +91,8 @@ li_bench <-
       })
 
 li_bench |> 
-  filter(expression == "low" | length < 10000) |>  
-  unnest(c(time, gc)) |> 
+  dplyr::filter(expression == "low" | length < 10000) |>  
+  tidyr::unnest(c(time, gc)) |> 
   ggplot() +
   geom_boxplot(aes(time, as.factor(length), colour = as.factor(workers))) +
   scale_colour_viridis_d(name = "workers") +
@@ -109,15 +105,11 @@ li_bench |>
 
 ``` {r li_timing_graph, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 6}
 library(bench)
-library(dplyr)
-library(tidyr)
 library(ggplot2)
 
-load(here::here("inst", "li_bench.Rdata"))
+load(here::here("vignettes", "li_bench.Rdata"))
 
-li_bench |> 
-  filter(expression == "low" | length < 10000) |> 
-  unnest(c(time, gc)) |> 
+li_bench_graph |> 
   ggplot() +
   geom_boxplot(aes(time, as.factor(length), colour = as.factor(workers))) +
   scale_colour_viridis_d(name = "workers") +
@@ -128,7 +120,7 @@ li_bench |>
   theme(legend.position = "bottom")
 ```
 
-The figure shows the relationship between the number of parallel threads ("workers"), the size and length of the input vector, and the computational time of the load_image function. Under each scenario, the non-parallel version of `load_image` is the fastest. For this reason, load_image by default will operate sequentially unless parallel processing is forced with the option `matchr.force_parallel`.
+The figure shows the relationship between the number of parallel threads ("workers"), the size and length of the input vector, and the computational time of the load_image function. Under each scenario except for loading 10,000 images, the non-parallel version of `load_image` is the fastest. For this reason, `load_image` by default will operate sequentially unless 5,000 or more images are being loaded, or unless parallel processing is forced with the option `matchr.force_parallel`.
 
 ### create_signature
 
@@ -147,7 +139,7 @@ cs_bench <-
       })
 
 cs_bench |> 
-  unnest(c(time, gc)) |> 
+  tidyr::unnest(c(time, gc)) |> 
   ggplot() +
   geom_boxplot(aes(time, as.factor(length), colour = as.factor(workers))) +
   scale_colour_viridis_d(name = "workers") +
@@ -159,123 +151,121 @@ cs_bench |>
 ```
 
 ``` {r cs_timing_graph, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 6}
-
-load(here::here("inst", "cs_bench.Rdata"))
+load(here::here("vignettes", "cs_bench.Rdata"))
 
 d_by_60 <- function(x) x / 60
 
 cs_low_1k_1 <- 
   cs_bench |> 
-  filter(expression == "low", length == 1000, workers == 1) |> 
-  pull(median) |> 
+  dplyr::filter(expression == "low", length == 1000, workers == 1) |> 
+  dplyr::pull(median) |> 
   as.numeric() |> 
   round(1)
 
 cs_low_10k_1 <- 
   cs_bench |> 
-  filter(expression == "low", length == 10000, workers == 1) |> 
-  pull(median) |> 
+  dplyr::filter(expression == "low", length == 10000, workers == 1) |> 
+  dplyr::pull(median) |> 
   as.numeric() |> 
   round(1)
 
 cs_high_1k_1 <- 
   cs_bench |> 
-  filter(expression == "high", length == 1000, workers == 1) |> 
-  pull(median) |> 
+  dplyr::filter(expression == "high", length == 1000, workers == 1) |> 
+  dplyr::pull(median) |> 
   as.numeric() |> 
   d_by_60() |> 
   round(1)
 
 cs_high_10k_1 <- 
   cs_bench |> 
-  filter(expression == "high", length == 10000, workers == 1) |> 
-  pull(median) |> 
+  dplyr::filter(expression == "high", length == 10000, workers == 1) |> 
+  dplyr::pull(median) |> 
   as.numeric() |> 
   d_by_60() |> 
   round(1)
 
 cs_high_1k_dif_2 <- 
   cs_bench |> 
-  filter(expression == "high", length == 1000, workers %in% 1:2) |> 
-  summarize(dif = max(median) / min(median)) |> 
-  pull(dif) |> 
+  dplyr::filter(expression == "high", length == 1000, workers %in% 1:2) |> 
+  dplyr::summarize(dif = max(median) / min(median)) |> 
+  dplyr::pull(dif) |> 
   as.numeric() |> 
   round(1)
 
 cs_high_10k_dif_2 <- 
   cs_bench |> 
-  filter(expression == "high", length == 10000, workers %in% 1:2) |> 
-  summarize(dif = max(median) / min(median)) |> 
-  pull(dif) |> 
+  dplyr::filter(expression == "high", length == 10000, workers %in% 1:2) |> 
+  dplyr::summarize(dif = max(median) / min(median)) |> 
+  dplyr::pull(dif) |> 
   as.numeric() |> 
   round(1)
 
 cs_high_1k_dif_4 <- 
   cs_bench |> 
-  filter(expression == "high", length == 1000, workers %in% 1:4) |> 
-  summarize(dif = max(median) / min(median)) |> 
-  pull(dif) |> 
+  dplyr::filter(expression == "high", length == 1000, workers %in% 1:4) |> 
+  dplyr::summarize(dif = max(median) / min(median)) |> 
+  dplyr::pull(dif) |> 
   as.numeric() |> 
   round(1)
 
 cs_high_10k_dif_4 <- 
   cs_bench |> 
-  filter(expression == "high", length == 10000, workers %in% 1:4) |> 
-  summarize(dif = max(median) / min(median)) |> 
-  pull(dif) |> 
+  dplyr::filter(expression == "high", length == 10000, workers %in% 1:4) |> 
+  dplyr::summarize(dif = max(median) / min(median)) |> 
+  dplyr::pull(dif) |> 
   as.numeric() |> 
   round(1)
 
 cs_high_1k_dif_8 <- 
   cs_bench |> 
-  filter(expression == "high", length == 1000, workers %in% 1:8) |> 
-  summarize(dif = max(median) / min(median)) |> 
-  pull(dif) |> 
+  dplyr::filter(expression == "high", length == 1000, workers %in% 1:8) |> 
+  dplyr::summarize(dif = max(median) / min(median)) |> 
+  dplyr::pull(dif) |> 
   as.numeric() |> 
   round(1)
 
 cs_high_10k_dif_8 <- 
   cs_bench |> 
-  filter(expression == "high", length == 10000, workers %in% 1:8) |> 
-  summarize(dif = max(median) / min(median)) |> 
-  pull(dif) |> 
+  dplyr::filter(expression == "high", length == 10000, workers %in% 1:8) |> 
+  dplyr::summarize(dif = max(median) / min(median)) |> 
+  dplyr::pull(dif) |> 
   as.numeric() |> 
   round(1)
 
 cs_high_1k_dif_8 <- 
   cs_bench |> 
-  filter(expression == "high", length == 1000, workers %in% 1:8) |> 
-  summarize(dif = max(median) / min(median)) |> 
-  pull(dif) |> 
+  dplyr::filter(expression == "high", length == 1000, workers %in% 1:8) |> 
+  dplyr::summarize(dif = max(median) / min(median)) |> 
+  dplyr::pull(dif) |> 
   as.numeric() |> 
   round(1)
 
 cs_high_10k_dif_8 <- 
   cs_bench |> 
-  filter(expression == "high", length == 10000, workers %in% 1:8) |> 
-  summarize(dif = max(median) / min(median)) |> 
-  pull(dif) |> 
+  dplyr::filter(expression == "high", length == 10000, workers %in% 1:8) |> 
+  dplyr::summarize(dif = max(median) / min(median)) |> 
+  dplyr::pull(dif) |> 
   as.numeric() |> 
   round(1)
 
 cs_low_1k_dif_8 <- 
   cs_bench |> 
-  filter(expression == "low", length == 1000, workers %in% 1:8) |> 
-  summarize(dif = max(median) / min(median)) |> 
-  pull(dif) |> 
+  dplyr::filter(expression == "low", length == 1000, workers %in% 1:8) |> 
+  dplyr::summarize(dif = max(median) / min(median)) |> 
+  dplyr::pull(dif) |> 
   as.numeric() |> 
   round(1)
 
 cs_low_10k_dif_8 <- 
   cs_bench |> 
-  filter(expression == "low", length == 10000, workers %in% 1:8) |> 
-  summarize(dif = max(median) / min(median)) |> 
-  pull(dif) |> 
+  dplyr::filter(expression == "low", length == 10000, workers %in% 1:8) |> 
+  dplyr::summarize(dif = max(median) / min(median)) |> 
+  dplyr::pull(dif) |> 
   as.numeric() |> 
   round(1)
 
-cs_bench |> 
-  unnest(c(time, gc)) |> 
+cs_bench_graph |> 
   ggplot() +
   geom_boxplot(aes(time, as.factor(length), colour = as.factor(workers))) +
   scale_colour_viridis_d(name = "workers") +
@@ -292,38 +282,44 @@ Secondly, parallel versions of `create_signature` produce dramatic speed increas
 
 ### match_signatures
 
-The core functionality of `match_signatures` is to calculate correlations between the image signatures in a pair of `matchr_signature` vectors. Because each signature in the left-hand vector needs to be compared to each signature in the right-hand vector, the computational requirements increase quadratically with vector size. (E.g. comparing two 100-length vectors implies 100 ^ 2 = 10,000 sets of calculations, while comparing two 200-length vectors implies 200 ^ 2 = 40,000 sets of calculations.) Calculating correlation matrices is one of the operations which can be enormously sped up with a high-performance BLAS library, and the BLAS library is correspondingly the single most important factor influencing the performance of `match_signatures`.
+The core functionality of `match_signatures` is to calculate Hamming distances between the image signatures in a pair of `matchr_signature` vectors. Because each signature in the left-hand vector needs to be compared to each signature in the right-hand vector, the computational requirements increase quadratically with vector size. (E.g. comparing two 100-length vectors implies 100 ^ 2 = 10,000 sets of calculations, while comparing two 200-length vectors implies 200 ^ 2 = 40,000 sets of calculations.) Matrix algebra is one of the operations which can be enormously sped up with a high-performance BLAS library, and the BLAS library is correspondingly the single most important factor influencing the performance of `match_signatures`.
 
 The `match_signatures` function includes an argument `compare_ar`, which uses k-means clustering to split the input image signatures into groups with similar aspect ratios. This has two important implications. First, assuming the image sets being compared don't feature any extremely distorted scaling (e.g. landscape pictures stretched into portrait orientation), splitting by aspect ratio will tend to reduce the possibility for false positive matches, since, e.g., portrait and landscape images will not be compared to each other. Second, using `compare_ar = TRUE` can significantly shrink the number of image comparisons which need to be made, and thus speed up computation time. As a simple example, two sets of 100 images require 100 ^ 2 = 10,000 sets of calculations to be compared, but if each set is split into 50 portrait and 50 landscape images, only 50 ^ 2 * 2 = sets of 5,000 calculations will be needed. The function evaluates a range of different clustering possibilities to identify the one which minimizes total computation time.
 
 ```{r ms_timing, eval = FALSE}
-sig_high <- create_signature(paths_high[1:30000])
-sig_low <- create_signature(paths_low[1:20000])
+sig_high <- create_signature(paths_high)
+sig_low <- create_signature(paths_low)
+shs <- sig_high[1:1000]
+sls <- sig_low[1:1000]
+shm <- sig_high[1:20000]
+slm <- sig_low[1:20000]
+shl <- rep(sig_high, 2)
+sll <- rep(sig_low, 2)
 
-ms_bench <- bench::press(
-  workers = c("1", "2", "4", "8", "32", "BLAS"),
-  ar = c(TRUE, FALSE), {
-    if (workers != "BLAS") {
-      BLAS_opt <- options(matchr.blas = FALSE)
-      if (workers == "1") plan(sequential) else 
-        plan(multisession, workers = as.numeric(workers))
-    }
-    out <- bench::mark(
-      small = match_signatures(sig_high[1:1000], sig_low[1:1000], compare_ar = ar, quiet = TRUE),
-      medium = match_signatures(sig_high, sig_low, compare_ar = ar, quiet = TRUE),
-      large = match_signatures(rep(sig_high, 3), rep(sig_low, 3), compare_ar = ar, quiet = TRUE),
-      iterations = 20, check = FALSE)
-    if (workers != "BLAS") options(BLAS_opt)
-    out
-    })
+# Need to run this twice, once with a fast BLAS and once with reference BLAS
+ms_bench_blas <- bench::press(
+  compare = c(TRUE, FALSE), BLAS = TRUE, bench::mark(
+    small = match_signatures(shs, sls, compare_ar = compare, quiet = TRUE),
+    medium = match_signatures(shm, slm, compare_ar = compare, quiet = TRUE),
+    large = match_signatures(shl, sll, compare_ar = compare, quiet = TRUE),
+    iterations = 20, check = FALSE))
 
-ms_bench |>
-  mutate(workers = factor(workers, c("1", "2", "4", "8", "32", "BLAS")),
-         compare = if_else(compare, "compare_ar = TRUE", "compare_ar = FALSE")) |> 
-  unnest(c(time, gc)) |> 
+ms_bench_no_blas <- bench::press(
+  compare = c(TRUE, FALSE), BLAS = FALSE, bench::mark(
+    small = match_signatures(shs, sls, compare_ar = compare, quiet = TRUE),
+    medium = match_signatures(shm, slm, compare_ar = compare, quiet = TRUE),
+    large = match_signatures(shl, sll, compare_ar = compare, quiet = TRUE),
+    iterations = 20, check = FALSE))
+
+ms_bench <- bind_rows(ms_bench_blas, ms_bench_no_blas)
+
+ms_bench |> 
+  dplyr::mutate(
+    compare = if_else(compare, "compare_ar = TRUE", "compare_ar = FALSE")) |> 
+  tidyr::unnest(c(time, gc)) |> 
   ggplot() +
-  geom_boxplot(aes(time, expression, colour = as.factor(workers))) +
-  scale_colour_viridis_d(name = "workers") +
+  geom_boxplot(aes(time, expression, colour = as.factor(BLAS))) +
+  scale_colour_viridis_d(name = "Fast BLAS") +
   bench:::scale_x_bench_time() +
   scale_y_discrete("length") +
   facet_wrap(vars(compare), nrow = 2) +
@@ -333,49 +329,46 @@ ms_bench |>
 
 ``` {r ms_timing_graph, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 6}
 
-load(here::here("inst", "ms_bench.Rdata"))
+load(here::here("vignettes", "ms_bench.Rdata"))
 
 ms_blas_range <-
   ms_bench |> 
-  arrange(median) |> 
-  group_by(expression, compare) |> 
-  summarize(time_dif = as.numeric(median[2] / median[1])) |> 
-  pull(time_dif) |> 
+  dplyr::arrange(median) |> 
+  dplyr::group_by(expression, compare) |> 
+  dplyr::summarize(time_dif = as.numeric(median[2] / median[1])) |> 
+  dplyr::pull(time_dif) |> 
   range() |> 
   round(1)
 
 ms_ar_mean <- 
   ms_bench |> 
-  filter(expression != "small") |> 
-  arrange(median) |> 
-  group_by(expression, workers) |> 
-  summarize(time_true = median[compare == TRUE],
+  dplyr::filter(expression != "small") |> 
+  dplyr::arrange(median) |> 
+  dplyr::group_by(expression, BLAS) |> 
+  dplyr::summarize(time_true = median[compare == TRUE],
             time_false = median[compare == FALSE],
             time_dif = as.numeric(time_false / time_true)) |> 
-  pull(time_dif) |> 
+  dplyr::pull(time_dif) |> 
   mean() |> 
   round(1)
 
-ms_par_time <- 
+ms_blas_time <- 
   ms_bench |> 
-  filter(expression != "small") |> 
-  arrange(median) |> 
-  group_by(expression, compare) |> 
-  summarize(time_seq = median[workers == "1"],
-            time_2 = median[workers == "2"],
-            time_4 = median[workers == "4"],
-            time_32 = median[workers == "32"],
-            .groups = "drop") |> 
-  summarize(across(c(time_2, time_4, time_32), 
-                   ~round(as.numeric(mean(time_seq / .x)), 1)))
+  dplyr::filter(expression != "small") |> 
+  dplyr::arrange(median) |> 
+  dplyr::group_by(expression, compare) |> 
+  dplyr::summarize(time_BLAS = median[BLAS],
+                   time_no_BLAS = median[!BLAS],
+                   .groups = "drop") |> 
+  dplyr::summarize(dplyr::across(c(time_BLAS, time_no_BLAS), 
+                   ~round(as.numeric(mean(time_no_BLAS / .x)), 1)))
 
-ms_bench |>
-  mutate(workers = factor(workers, c("1", "2", "4", "8", "32", "BLAS")),
-         compare = if_else(compare, "compare_ar = TRUE", "compare_ar = FALSE")) |> 
-  unnest(c(time, gc)) |> 
+ms_bench_graph |>
+  dplyr::mutate(compare = dplyr::if_else(
+    compare, "compare_ar = TRUE", "compare_ar = FALSE")) |> 
   ggplot() +
-  geom_boxplot(aes(time, expression, colour = as.factor(workers))) +
-  scale_colour_viridis_d(name = "workers") +
+  geom_boxplot(aes(time, expression, colour = BLAS)) +
+  scale_colour_viridis_d(name = "Fast BLAS") +
   bench:::scale_x_bench_time() +
   scale_y_discrete("length") +
   facet_wrap(vars(compare), nrow = 2) +
@@ -385,9 +378,8 @@ ms_bench |>
 
 The figure demonstrates a wide range of timings corresponding to the different performance scenarios. The key points are:
 
-- The BLAS-optimized version of `match_signatures` dramatically outperforms all the non-BLAS-optimized versions, achieving a `r ms_blas_range[1]`-`r ms_blas_range[2]` speed up in comparison to the fastest non-BLAS-optimized version. (The vecLib BLAS library used to perform the benchmarks here will take advantage of all available cores, so it is using 32 cores for the correlation calculations.)
-- Setting `compare_ar = TRUE` to cluster input image signatures by aspect ratio yields major performance benefits for large input vectors. In the small test the extra overhead of evaluating clusters and splitting the data for analysis means that it is actually faster to use `compare_ar = FALSE`, although the function execution times are generally one second or less in any case, so the difference isn't practically meaningful. For larger input vectors, by contrast, `compare_ar = TRUE` is on average `r ms_ar_mean` times faster than the non-clustered version. Since the clustered version of `match_signatures` will also avoid potential false positives and thus tend to yield more accurate results, in general `compare_ar` should be set to `FALSE` only when images with significantly different aspect ratios *must* be compared to each other.
-- In the non-BLAS-optimized version of `match_signatures`, enabling parallel processing achieves substantial speed ups for larger input vectors. (And, as with the clustered/non-clustered comparison, for the small vectors where sequential processing is faster than parallel, overall function execution time is short enough to make the difference unimportant in practice.) The 2-worker version is on average `r ms_par_time$time_2` faster than the sequential version, while the 4-worker and 32-worker versions are on average `r ms_par_time$time_4` and `r ms_par_time$time_32` times faster, respectively.
+- The BLAS-optimized version of `match_signatures` dramatically outperforms the non-BLAS-optimized versions, achieving a `r ms_blas_range[1]`-`r ms_blas_range[2]` speed up in comparison to the non-BLAS-optimized version.
+- Setting `compare_ar = TRUE` to cluster input image signatures by aspect ratio yields major performance benefits for large input vectors. In the small test the extra overhead of evaluating clusters and splitting the data for analysis means that `compare_ar` does not have any significant performance implications, although the function execution times are generally one second or less in any case, so the difference isn't practically meaningful. For larger input vectors, by contrast, `compare_ar = TRUE` is on average `r ms_ar_mean` times faster than the non-clustered version. Since the clustered version of `match_signatures` will also avoid potential false positives and thus tend to yield more accurate results, in general `compare_ar` should be set to `FALSE` only when images with significantly different aspect ratios *must* be compared to each other.
 
 `match_signatures` is the most memory-intensive function in matchr, since it needs to compute and then store the results of roughly x * y correlations between the two input vectors. Special considerations for dealing with memory constraints in `match_signatures` are discussed below in [Memory requirements](#memory).
 
@@ -402,8 +394,8 @@ Loading large numbers of images into memory with `load_image` will almost never 
 
 ``` {r li_memory_graph, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4}
 li_bench |> 
-  filter((expression == "low" | length < 10000)) |> 
-  mutate(mem_alloc = mem_alloc / 1024 ^ 2) |> 
+  dplyr::filter((expression == "low" | length < 10000)) |> 
+  dplyr::mutate(mem_alloc = mem_alloc / 1024 ^ 2) |> 
   ggplot() +
   geom_jitter(aes(mem_alloc, as.factor(length), colour = expression), height = 0.05) +
   scale_colour_viridis_d(name = "resolution", end = 0.8) +
@@ -419,54 +411,41 @@ For large-scale image matching workflows, therefore, use `create_signature` dire
 
 ### match_signatures
 
-`match_signatures` is the matchr function with the highest potential to generate memory pressure, because of the necessity for generating a correlation matrix between all the elements in the two input image signatures.
+`match_signatures` is the matchr function with the highest potential to generate memory pressure, because of the necessity for generating a distance matrix between all the elements in the two input image signatures.
+
 ``` {r ms_memory_calcs, echo = FALSE}
 ms_ar_mem <- 
   ms_bench |> 
-  filter(expression != "small") |> 
-  group_by(expression, workers) |> 
-  summarize(mem_dif = as.numeric(mem_alloc[compare] / mem_alloc[!compare]),
+  dplyr::filter(expression != "small") |> 
+  dplyr::group_by(expression, BLAS) |> 
+  dplyr::summarize(mem_dif = as.numeric(mem_alloc[compare] / mem_alloc[!compare]),
             .groups = "drop") |> 
-  pull(mem_dif) |> 
+  dplyr::pull(mem_dif) |> 
   mean() |> 
-  {\(x) x * 100} () |> 
-  round(1)
-
-ms_blas_mem <- 
-  ms_bench |> 
-  filter(expression != "small") |> 
-  group_by(BLAS = workers == "BLAS") |> 
-  summarize(mem = as.numeric(mean(mem_alloc))) |> 
-  summarize(mem_dif = mem[BLAS] / mem[!BLAS]) |> 
-  pull(mem_dif) |> 
-  mean() |> 
-  {\(x) x * 100} () |> 
-  round(1)
-
-ms_total_mem <- 
-  {ms_ar_mem * ms_blas_mem / 100} |> 
+  {\(x) x * 100}() |> 
   round(1)
 ```
 
 ``` {r ms_memory_graph, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4}
 ms_bench |> 
-  mutate(mem_alloc = mem_alloc / 1024 ^ 2,
-         compare = if_else(compare, "compare_ar = TRUE", "compare_ar = FALSE")) |> 
+  dplyr::mutate(mem_alloc = mem_alloc / 1024 ^ 3, compare = dplyr::if_else(
+    compare, "compare_ar = TRUE", "compare_ar = FALSE")) |> 
   ggplot() +
-  geom_jitter(aes(mem_alloc, as.factor(expression), colour = workers == "BLAS"), 
+  geom_jitter(aes(mem_alloc, as.factor(expression), colour = BLAS), 
               height = 0.1, width = 0.05) +
-  scale_colour_viridis_d("BLAS", end = 0.8) +
-  scale_x_log10("memory (MB)") +
+  scale_colour_viridis_d("Fast BLAS", end = 0.8) +
+  scale_x_log10("memory (GB)") +
   scale_y_discrete("length") +
   facet_wrap(vars(compare), nrow = 2) +
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
-For larger datasets (where memory pressure is likelier to be an issue), the clustered version of `match_signatures` (with `compare_ar = TRUE`) uses an average of `r paste0(ms_ar_mem, "%")` of the memory of the non-clustered version, while the BLAS-optimized version uses an average of only `r paste0(ms_blas_mem, "%")` of the memory of the non-BLAS_optimized version. Using the BLAS-optimized version of `match_signatures` with `compare_ar = TRUE` thus requires on average only `r paste0(ms_total_mem, "%")` the memory of the non-BLAS-optimized version with `compare_ar = FALSE`, and is the simplest way to keep memory requirements low.
+
+For larger datasets (where memory pressure is likelier to be an issue), the clustered version of `match_signatures` (with `compare_ar = TRUE`) uses an average of `r paste0(ms_ar_mem, "%")` of the memory of the non-clustered version. Using `compare_ar = TRUE` is thus the simplest way to keep memory requirements low. (The choice of fast or reference BLAS does not have any impact on memory usage.)
 
 There are two further levels of memory management in `match_signatures`. The first (which is controlled with the `mem_scale` function argument) is that `match_signatures` will attempt to detect total system memory and limit its peak memory usage to some fraction of the total by splitting the underlying `matchr_signature` vectors into smaller pieces. This technique will reduce the amount of memory used by the intermediate steps in the calculations (since the slices of the data being computed upon will be smaller), and in general the default `mem_scale` value of 0.2 should only be changed with caution, since higher values have a high likelihood of causing system instability with large datasets.
 
-The second level of memory management in `match_signatures` is a "failsafe" (which can be disabled with `mem_override = TRUE`) which will throw an error if the function detects insufficient system memory to succeed even with splitting the inputs as described above. Unless the system is somehow reporting an incorrect amount of RAM, when this error is triggered there is no possibility of `match_signatures` succeeding, given the input vectors and the total available memory, because the minimal results of the function (i.e. the output correlation matrix itself) would exceed total system memory even leaving aside the necessity for keeping some subset of the input vectors in memory for performing calculations. In this case a viable alternative is to run `identify_matches` directly on the input signature vectors. The `matchr_signature` method for `identify_matches` will not store the complete correlation matrix, but will process slices of the input image signature vectors to 1) generate correlation matrices, 2) identify matches with high correlation values, and then 3) allow the correlation matrices to be released from memory. This allows the function to succeed even in heavily memory-constrained environments, but at the cost of not storing the `matchr_matrix` vector of correlation matrices which `match_signatures` usually produces. In practice, the only significant downside of this method is that it makes it more difficult to experiment with different thresholds for identifying matches in `identify_matches`.
+The second level of memory management in `match_signatures` is a "failsafe" (which can be disabled with `mem_override = TRUE`) which will throw an error if the function detects insufficient system memory to succeed even with splitting the inputs as described above. Unless the system is somehow reporting an incorrect amount of RAM, when this error is triggered there is no possibility of `match_signatures` succeeding, given the input vectors and the total available memory, because the minimal results of the function (i.e. the output `matchr_matrix` vector itself) would exceed total system memory even leaving aside the necessity for keeping some subset of the input vectors in memory for performing calculations. In this case a viable alternative is to run `identify_matches` directly on the input signature vectors. The `matchr_signature` method for `identify_matches` will not store the complete distance matrices, but will process slices of the input image signature vectors to 1) generate distance matrices, 2) identify matches with low distance values, and then 3) allow the distance matrices to be released from memory. This allows the function to succeed even in heavily memory-constrained environments, but at the cost of not storing the `matchr_matrix` vector of distance matrices which `match_signatures` usually produces. In practice, the only significant downside of this method is that it makes it more difficult to experiment with different thresholds for identifying matches in `identify_matches`.
 
 
 ## Progress reporting

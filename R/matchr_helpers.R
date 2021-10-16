@@ -77,23 +77,12 @@ handler_matchr <- function(message) {
   if (!requireNamespace("progress", quietly = TRUE)) {
     progressr::handlers("txtprogressbar")
     } else {
-      format_string <- paste0(
+      format_string <- pillar::style_subtle(paste0(
         message, 
-        " :current of :total (:tick_rate/s) [:bar] :percent, ETA: :eta")
-
-      if (requireNamespace("crayon", quietly = TRUE)) {
-        progressr::handlers(
-          progressr::handler_progress(
-            format = crayon::silver(crayon::italic(format_string)),
-            show_after = 0
-          ))
-      } else {
-        progressr::handlers(
-          progressr::handler_progress(
-            format = format_string,
-            show_after = 0
-          ))
-      }
+        " :current of :total (:tick_rate/s) [:bar] :percent, ETA: :eta"))
+      
+      progressr::handlers(progressr::handler_progress(
+        format = format_string, show_after = 0))
     }
 }
 

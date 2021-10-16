@@ -6,11 +6,6 @@
       "multithreaded processing.")
   }
 
-  if (!requireNamespace("crayon", quietly = TRUE)) {
-    packageStartupMessage("Install the {crayon} package to ",
-                          "enable styled output text.")
-  }
-
   if (!progressr::handlers(global = NA)) {
     packageStartupMessage("To enable progress bars, type ",
                           "'progressr::handlers(global = TRUE)'.")
