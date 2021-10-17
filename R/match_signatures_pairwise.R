@@ -34,8 +34,8 @@
 #' @export
 
 match_signatures_pairwise <- function(x, y, distance = ~ nearest * bilinear) {
-  out <- par_mapply(match_signatures_internal, x, y, 
-                    MoreArgs = list(distance = distance), SIMPLIFY = TRUE)
+  out <- par_mapply(ms_internal, x, y, MoreArgs = list(distance = distance), 
+                    SIMPLIFY = TRUE)
   out[lengths(out) == 0] <- NA_real_
   out <- unlist(out)
   attr(out, "formula") <- as.character(distance)[[2]]

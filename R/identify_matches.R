@@ -73,11 +73,10 @@ identify_matches.matchr_matrix <- function(x, y = NULL, threshold = 200,
                               enable = prog_bar)
   
   # Find matches
-  match_list <- lapply(seq_along(x), identify_matches_internal, x, pb, 
-                       threshold)
+  match_list <- lapply(seq_along(x), im_internal, x, pb, threshold)
   
   # Finish output and return
-  matches <- identify_matches_finish(match_list)
+  matches <- im_finish(match_list)
   return(matches)
   
 }
@@ -104,8 +103,8 @@ identify_matches.matchr_signature <- function(
   par_check <- TRUE
   
   # Prepare objects for processing
-  output <- suppressWarnings(match_signatures_prep(
-    x, y, compare_ar, stretch, mem_scale, mem_override = FALSE))
+  output <- suppressWarnings(ms_prep(x, y, compare_ar, stretch, mem_scale, 
+                                     mem_override = FALSE))
   x <- output[[1]]
   y <- output[[2]]
   x_na <- output[[3]]
@@ -127,7 +126,7 @@ identify_matches.matchr_signature <- function(
   for (i in seq_along(x_list)) {
     
     # Create distance matrix
-    result[[i]] <- match_signatures_internal(x_list[[i]], y_list[[i]], distance)
+    result[[i]] <- ms_internal(x_list[[i]], y_list[[i]], distance)
     
     # Create intermediate matchr_matrix
     result[[i]] <- new_matrix(
@@ -144,20 +143,20 @@ identify_matches.matchr_signature <- function(
     )
     
     # Find matches from intermediate matrix
-    result[[i]] <- identify_matches_internal(1, result[[i]], pb, threshold)
+    result[[i]] <- im_internal(1, result[[i]], pb, threshold)
     result[[i]]$matrix <- i
     
     pb(amount = sum(sapply(x_list[[i]], vec_size)))
   }
   
   # Finish and return output
-  matches <- identify_matches_finish(result)
+  matches <- im_finish(result)
   return(matches)
 }
 
 # ------------------------------------------------------------------------------
 
-identify_matches_internal <- function(n, x, pb, threshold) {
+im_internal <- function(n, x, pb, threshold) {
   
   match_index <- which(get_array(x)[[n]] <= threshold, arr.ind = TRUE)
   
@@ -181,7 +180,7 @@ identify_matches_internal <- function(n, x, pb, threshold) {
 
 # ------------------------------------------------------------------------------
 
-identify_matches_finish <- function(match_list) {
+im_finish <- function(match_list) {
   
   # Consolidate and arrange output
   if (requireNamespace("dplyr", quietly = TRUE)) {

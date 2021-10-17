@@ -52,7 +52,7 @@ create_signature.matchr_image <- function(image, rm_black_bars = TRUE,
   
   # Error checking and variable initialization
   stopifnot(is.logical(rm_black_bars))
-  par_check <- set_par("create_signature_matchr_image")
+  par_check <- set_par("cs_matchr_image")
   
   # Initialize progress reporting
   handler_matchr("Creating signature")
@@ -68,7 +68,7 @@ create_signature.matchr_image <- function(image, rm_black_bars = TRUE,
   arrays <- get_array(image)
   hash <- par_lapply(seq_along(arrays), function(x) {
     if (x %% iterator == 0) pb(amount = iterator)
-    create_signature_internal(arrays[[x]])
+    cs_internal(arrays[[x]])
   })
   
   # Return output
@@ -97,7 +97,7 @@ create_signature.character <- function(image, rm_black_bars = TRUE,
   
   # Error checking and variable initialization
   stopifnot(is.character(image), is.logical(c(rm_black_bars, backup, quiet)))
-  par_check <- set_par("create_signature_character", l = length(image))
+  par_check <- set_par("cs_character", l = length(image))
   if (length(image) <= 1000) backup <- FALSE
   iterations <- 1
   input_list <- list(seq_along(image))
@@ -148,9 +148,9 @@ create_signature.character <- function(image, rm_black_bars = TRUE,
     # Load images and get hashes
     result[[i]] <- par_lapply(input_list[[i]], \(j) {
       if (j %% iterator == 0) pb(amount = iterator)
-      array <- load_image_internal(image[j])
+      array <- li_internal(image[j])
       if (rm_black_bars) array <- remove_black_bars(array)
-      hash <- create_signature_internal(array)
+      hash <- cs_internal(array)
       dims <- dim(array)
       return(list(hash, dims))
       })
@@ -171,7 +171,7 @@ create_signature.character <- function(image, rm_black_bars = TRUE,
 
 # ------------------------------------------------------------------------------
 
-create_signature_internal <- function(x) {
+cs_internal <- function(x) {
   
   # Return NA if input is NA, has wrong dims, or doesn't have enough pixels
   if (is.logical(x)) return(NA)

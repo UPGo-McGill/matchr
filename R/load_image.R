@@ -56,7 +56,7 @@ load_image <- function(file, quiet = FALSE) {
   imgs <- par_lapply(seq_along(file), \(i) {
     
     if (i %% iterator == 0) pb(amount = iterator)
-    load_image_internal(file[i])
+    li_internal(file[i])
     
   })
   
@@ -69,7 +69,7 @@ load_image <- function(file, quiet = FALSE) {
 }
 
 
-load_image_internal <- function(x) {
+li_internal <- function(x) {
   
   # Download to tempfile if path is URL
   if (is_url(x)) {

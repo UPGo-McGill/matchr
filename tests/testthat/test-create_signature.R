@@ -48,9 +48,8 @@ test_that("backups work", {
     create_signature(rep("test", 1200)))))), 1200)
 })
 
-test_that("create_signature_internal edge conditions are handled", {
-  expect_equal(create_signature_internal(array(1:20, dim = c(2, 2, 1, 5))), NA)
-  expect_equal(create_signature_internal(array(1:20, dim = c(2, 2, 5))), NA)
-  expect_equal(length(create_signature_internal(
-    array(1:4000, dim = c(100, 40, 1)))), 128)
+test_that("cs_internal edge conditions are handled", {
+  expect_equal(cs_internal(array(1:20, dim = c(2, 2, 1, 5))), NA)
+  expect_equal(cs_internal(array(1:20, dim = c(2, 2, 5))), NA)
+  expect_equal(length(cs_internal(array(1:4000, dim = c(100, 40, 1)))), 128)
 })

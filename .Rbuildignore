@@ -8,9 +8,7 @@
 ^pkgdown$
 ^doc$
 ^Meta$
-inst/black_bar_tests
 inst/img_testing
 inst/hash*
-inst/blas.qsm
 inst/cpp_experiments.R
 inst/new_hash.qsm

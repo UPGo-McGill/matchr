@@ -75,14 +75,8 @@ produces a Hamming distance matrix to identify matches.
 }
 \details{
 A function for identifying matching images. The function takes one or two
-vectors of images signatures (class \code{matchr_signature}) and compares their
-signatures to find matches.
-
-The comparison is done by creating colour signatures for each input image
-using \code{\link{create_signature}} and then computing the Hamming distance
-between these signatures. In general, pairs of images
-which were identical prior to arbitrary resampling and compression will have
-correlation coefficients of at least 0.99.
+\code{matchr_signature} vectors and compares their signatures using a calculation
+based on the Hamming distance to find matches.
 
 The function can optionally filter images by aspect ratio, so only images
 with very similar aspect ratios will be compared. This can remove potential

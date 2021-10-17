@@ -4,14 +4,8 @@
 #' produces a Hamming distance matrix to identify matches.
 #'
 #' A function for identifying matching images. The function takes one or two
-#' vectors of images signatures (class `matchr_signature`) and compares their
-#' signatures to find matches.
-#'
-#' The comparison is done by creating colour signatures for each input image
-#' using \code{\link{create_signature}} and then computing the Hamming distance
-#'  between these signatures. In general, pairs of images
-#' which were identical prior to arbitrary resampling and compression will have
-#' correlation coefficients of at least 0.99.
+#' `matchr_signature` vectors and compares their signatures using a calculation 
+#' based on the Hamming distance to find matches.
 #'
 #' The function can optionally filter images by aspect ratio, so only images
 #' with very similar aspect ratios will be compared. This can remove potential
@@ -88,6 +82,7 @@ match_signatures <- function(x, y = NULL, distance = ~nearest * bilinear,
             is.numeric(c(stretch, mem_scale)), 
             is.logical(c(compare_ar, quiet, mem_override)))
   if (missing(y)) y <- x else stopifnot(is_signature(y))
+  
   stopifnot(
     "`distance` must contain one or both of `nearest` and `bilinear" = 
       sum(c("nearest", "bilinear") %in% as.character(distance[[2]])) > 0)
@@ -101,8 +96,7 @@ match_signatures <- function(x, y = NULL, distance = ~nearest * bilinear,
   }
   
   # Prepare objects for processing
-  output <- match_signatures_prep(x, y, compare_ar, stretch, mem_scale, 
-                                  mem_override)
+  output <- ms_prep(x, y, compare_ar, stretch, mem_scale, mem_override)
   x <- output[[1]]
   y <- output[[2]]
   x_na <- output[[3]]
@@ -122,7 +116,7 @@ match_signatures <- function(x, y = NULL, distance = ~nearest * bilinear,
   # Calculate correlation matrices
   result <- vector("list", length(x_list))
   for (i in seq_along(x_list)) {
-    result[[i]] <- match_signatures_internal(x_list[[i]], y_list[[i]], distance)
+    result[[i]] <- ms_internal(x_list[[i]], y_list[[i]], distance)
     pb(amount = sum(sapply(x_list[[i]], vec_size)))
   }
   
@@ -252,8 +246,7 @@ get_ratios <- function(x) c(min(get_ar(x), na.rm = TRUE),
 
 # ------------------------------------------------------------------------------
 
-match_signatures_prep <- function(x, y, compare_ar, stretch, mem_scale, 
-                                  mem_override) {
+ms_prep <- function(x, y, compare_ar, stretch, mem_scale, mem_override) {
   
   # Deal with NAs
   x_na <- x[is.na(x)]
@@ -300,8 +293,9 @@ match_signatures_prep <- function(x, y, compare_ar, stretch, mem_scale,
 
 # ------------------------------------------------------------------------------
 
-match_signatures_internal <- function(x, y, distance) {
+ms_internal <- function(x, y, distance) {
   
+  nearest <- bilinear <- NULL
   dist <- stats::as.formula(distance)
   dist[[1]] <- quote(I)
   
@@ -309,16 +303,19 @@ match_signatures_internal <- function(x, y, distance) {
   y_matrix <- matrix(unlist(get_hash(y)), ncol = vec_size(y))  
   len <- nrow(x_matrix) / 2
   
-  if ("nearest" %in% as.character(distance[[2]])) nearest <- 
-    hamming(matrix(x_matrix[seq_len(len),], len),
-            matrix(y_matrix[seq_len(len),], len))
+  if ("nearest" %in% as.character(distance[[2]])) {
+    x_near <- matrix(x_matrix[seq_len(len),], len)
+    y_near <- matrix(y_matrix[seq_len(len),], len)
+    nearest <- hamming(x_near, y_near)
+  }
   
-  if ("bilinear" %in% as.character(distance[[2]])) bilinear <- 
-      hamming(matrix(x_matrix[seq_len(len) + len,], len),
-              matrix(y_matrix[seq_len(len) + len,], len))
+  if ("bilinear" %in% as.character(distance[[2]])) {
+    x_bi <- matrix(x_matrix[seq_len(len) + len,], len)
+    y_bi <- matrix(y_matrix[seq_len(len) + len,], len)
+    bilinear <- hamming(x_bi, y_bi)
+  }
   
   out <- eval(dist)
-  class(out) <- "integer"
   return(out)
   
 }

@@ -148,14 +148,10 @@ set_par <- function(fun, ...) {
   args <- list(...)
   par_check <- TRUE
   
-  # Version for load_image
+  # Versions for specific functions/methods
   if (fun == "load_image") par_check <- args$l >= 5000
-  
-  # Version for create_signature.character
-  if (fun == "create_signature_character") par_check <- args$l >= 100
-  
-  # Version for create_signature.matchr_image
-  if (fun == "create_signature_matchr_image") par_check <- FALSE
+  if (fun == "cs_character") par_check <- args$l >= 100
+  if (fun == "cs_matchr_image") par_check <- FALSE
   
   # First check global option
   par_opt <- 
