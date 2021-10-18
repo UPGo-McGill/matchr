@@ -88,6 +88,27 @@ download_images <- function(x = NULL, destination, path = photos, id = id,
     if (length(dups) > 0) path <- path[-dups]
   }
   
+  # Exit early if there are no photos
+  if (length(id) == 0) {
+    result <- rep("success", length(id_full))
+    result[lengths(path_full) == 0] <- "empty"
+    if (length(duplicate_id) > 0) result[unique(unlist(sapply(
+      id_full[id_full %in% id_not_empty[duplicate_id]], \(x) 
+      which(id_full %in% x)[-1])))] <- "duplicated ID"
+    if (check_duplicates) result[id_full %in% id_unique_id[dups]] <- 
+      "duplicated file"
+    stopifnot(sum(result == "success") == 0)
+    result <- data.frame(id = id_full, path = I(path_full), result = result)
+    class(result$path) <- "list"
+    if (requireNamespace("dplyr", quietly = TRUE)) result <- 
+      dplyr::as_tibble(result)
+  
+    # Return output
+    if (!quiet) cat("No new files to download.\n")
+    if (check_duplicates && !quiet) cat(n_duplicate, "duplicates detected.\n")
+    invisible(result)
+  }
+  
   # Construct new destination paths
   dest_path <- mapply(\(x, y) {
     ext_match <- regexpr("\\.([A-Za-z0-9]+$)", x)
@@ -131,9 +152,9 @@ download_images <- function(x = NULL, destination, path = photos, id = id,
   error_id <- sub("-\\d*.jpg", "", error_id)
   error_id <- unique(error_id)
   result[id_full %in% error_id] <- "error"
-  if (length(duplicate_id) > 0) result[unique(sapply(
+  if (length(duplicate_id) > 0) result[unique(unlist(sapply(
     id_full[id_full %in% id_not_empty[duplicate_id]], \(x) 
-    which(id_full %in% x)[-1]))] <- "duplicated ID"
+    which(id_full %in% x)[-1])))] <- "duplicated ID"
   if (check_duplicates) result[id_full %in% id_unique_id[dups]] <- 
     "duplicated file"
   n_error <- length(unlist(errors))
