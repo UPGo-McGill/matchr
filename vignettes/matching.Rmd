@@ -1,0 +1,58 @@
+---
+title: "How image matching works: perceptual hashing and Hamming distances"
+author: "David Wachsmuth"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{How image matching works: perceptual hashing and Hamming distances}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+If two image files are identical at the byte level, comparing them is trivial. The motivation for matchr's development, by contrast, was the need to compare images hosted by web services that compress and resize uploads differently. In other words, when the same exact file is uploaded to two services, the resulting files may be visually identical but completely different byte-to-byte. In addition, the same underlying image may be modified in slightly different ways before being uploaded to different services (e.g. with a small text overlay, or with a change to tint or contrast). A human could identify the images as the same, but again the byte-level data will be different. matchr is designed to solve these problems at large scale and efficiently, so that tens of thousands of images can be compared even on a laptop with minimal CPU power and RAM.
+
+The strategy matchr uses is to extract relatively small but expressive "signatures" from each image, and compare these signatures mathematically. Images are converted to greyscale and resized to 8x8 pixels, and then a "perceptual hash" value is calculated  decomposed into horizontal and vertical bands, and for each band an average greyscale, red, green, and blue value is calculated. The vector of these averages becomes a distinctive signature that can identify a given image even if the image is rescaled, compressed or has a small overlay added to it, and thus serves as a reliable indicator of whether two images are the same.
+
+```
+library(matchr)
+```
+
+## Perceptual hashing
+
+
+
+The following discussion will rely on examples taken from two large sets of images. The `paths_low` vector contains low-resolution images (roughly 200 x 150 pixels, and 8 kB), while the `paths_high` vector contains higher-resolution images (between 640 x 480 and 1200 x 800, and 170 kB). To reproduce the benchmarks and analysis in this vignette, point the following lines at a pair of folders with low- and high- resolution images, respectively.
+
+```
+paths_low <- list.files("example_low", full.names = TRUE)
+paths_high <- list.files("example_high", full.names = TRUE)
+```
+
+
+
+
+
+``` {r li_timing_graph, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 6}
+
+#load(here::here("inst", "li_bench.Rdata"))
+
+#li_bench |> 
+#  filter(expression == "low" | length < 10000) |> 
+#  unnest(c(time, gc)) |> 
+#  ggplot() +
+#  geom_boxplot(aes(time, as.factor(length), colour = as.factor(workers))) +
+#  scale_colour_viridis_d(name = "workers") +
+#  bench:::scale_x_bench_time() +
+#  scale_y_discrete("length") +
+#  facet_wrap(vars(expression), nrow = 2, scales = "free_y") +
+#  theme_minimal() +
+#  theme(legend.position = "bottom")
+```

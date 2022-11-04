@@ -5,38 +5,52 @@ plan(multisession)
 library(progressr)
 handlers(global = TRUE)
 
-x <- qread("/Users/dwachsmuth/Documents/Academic/Code/global-file-import/temp_sigs.qs",
-           nthreads = 32)
+qload("inst/hash_test_final.qsm", nthreads = 32)
+x <- sigs_high
+class(x) <- c("matchr_signature", "vctrs_rcrd", "vctrs_vctr")
 y <- x
-method = "grey"
+distance <- ~nearest + bilinear
 compare_ar = TRUE
 stretch = 1.2
 mem_scale = 0.2
 quiet = FALSE
 par_check <- TRUE
+output <- ms_prep(x, y, compare_ar, stretch, mem_scale, mem_override)
+x <- output[[1]]
+y <- output[[2]]
+x_na <- output[[3]]
+y_na <- output[[4]]
+x_list <- output[[5]]
+y_list <- output[[6]]
+x_sig <- output[[7]]
+y_sig <- output[[8]]
+rm(output)
 
-install.packages("memuse")
+
+# install.packages("memuse")
 library(memuse)
 memuse::Sys.meminfo()
 
 lengths(x_list)
 
-i <- 5
-x_matrix <- matrix(unlist(field(x_list[[i]], "signature")), 
-                   ncol = vec_size(x_list[[i]]))
-y_matrix <- matrix(unlist(field(y_list[[i]], "signature")), 
-                   ncol = vec_size(y_list[[i]]))
+i <- 2
+x_matrix <- matrix(unlist(get_hash(x_list[[i]])), ncol = vec_size(x_list[[i]]))
+y_matrix <- matrix(unlist(get_hash(y_list[[i]])), ncol = vec_size(y_list[[i]]))  
+len <- nrow(x_matrix) / 2
 
-
-
-
-vec_size <- c(100, 200, 500, 750, 1000, 1500, 2000, 2500)
-mem_results <- vector("numeric", length(vec_size))
+vec_sizes <- c(100, 200, 500, 750, 1000, 1500, 2000, 2500)
+mem_results <- vector("numeric", length(vec_sizes))
 i <- 1
 
-for (n in vec_size) {
+for (n in vec_sizes) {
   start <- gc(verbose = FALSE, reset = TRUE)
-  result <- stats::cor(x_matrix[, 1:n], y_matrix[, 1:n])
+  x_near <- matrix(x_matrix[seq_len(len),], len)[, 1:n]
+  y_near <- matrix(y_matrix[seq_len(len),], len)[, 1:n]
+  nearest <- hamming(x_near, y_near)
+  x_bi <- matrix(x_matrix[seq_len(len) + len,], len)[, 1:n]
+  y_bi <- matrix(y_matrix[seq_len(len) + len,], len)[, 1:n]
+  bilinear <- hamming(x_bi, y_bi)
+  result <- nearest * bilinear
   end <- gc(verbose = FALSE, reset = FALSE)
   mem_results[[i]] <- end[2,7] - start[2,7]
   i <- i + 1
@@ -44,21 +58,67 @@ for (n in vec_size) {
 
 mem_results
 
-plot(vec_size^2, mem_results)
+plot(vec_sizes^2, mem_results)
 
-lm(mem ~ vec, data = tibble(vec = vec_size ^ 2, mem = mem_results))
+lm(mem ~ vec, data = tibble(vec = vec_sizes ^ 2, mem = mem_results)) |> summary()
 
 
-mem_results
+
+# Get memory usage for entire vector --------------------------------------
+
+mem_results_full <- vector("numeric", length(x_list))
+
+result <- vector("list", length(x_list))
+for (i in seq_along(x_list)) {
+  start <- gc(verbose = FALSE, reset = TRUE)
+  result[[i]] <- ms_internal(x_list[[i]], y_list[[i]], distance)
+  end <- gc(verbose = FALSE, reset = FALSE)
+  mem_results_full[[i]] <- end[2,7] - start[2,7]
+}
+
+mem_results_full
 
 
 # Estimate memory usage ---------------------------------------------------
 
-map2_dbl(lengths(x_list), lengths(y_list), ~{7.872e-06 * .x * .y})
+ram_size <- ceiling(as.numeric(lengths(x_list)) * 
+                      as.numeric(lengths(y_list)) * 2.4e-05)
+start_mem_2 <- gc(verbose = FALSE, reset = TRUE)
+out_2 <- match_signatures(x)
+end_mem_2 <- gc(verbose = FALSE, reset = FALSE)
+end_mem_2[2,7] - start_mem_2[2,7]
+# Seems to be a 20:12 relationship between ram_size and final memory
+
+start_mem_002 <- gc(verbose = FALSE, reset = TRUE)
+out_002 <- match_signatures(x, mem_scale = 0.002)
+end_mem_002 <- gc(verbose = FALSE, reset = FALSE)
+end_mem_002[2,7] - start_mem_002[2,7]
+end_mem_002[2,2] - start_mem_002[2,2]
+ram_size <- c(450, 8958, 210, 245, 9220, 1309, 2)
+
+start_mem_0002 <- gc(verbose = FALSE, reset = TRUE)
+out_0002 <- match_signatures(x, mem_scale = 0.0002)
+end_mem_0002 <- gc(verbose = FALSE, reset = FALSE)
+end_mem_0002[2,7] - start_mem_0002[2,7]
+ram_size <- c(450, 8958, 210, 245, 9220, 1309, 2)
 
 
 
 
+object.size(out_002) / 1024 ^ 2
+
+7415207656 / 1024 ^ 2
+
+
+sum(map2_dbl(lengths(x_list), lengths(y_list), ~{2.4e-05 * .x * .y}))
+sum(mem_results_full)
+start_mem_nc <- gc(verbose = FALSE, reset = TRUE)
+out_nc <- match_signatures(x, compare_ar = FALSE)
+end_mem_nc <- gc(verbose = FALSE, reset = FALSE)
+end_mem_nc[2,7] - start_mem_nc[2,7]
+
+length(x) * length(y) * 2.4e-05
+sum(lengths(x_list) * lengths(y_list)) * 2.4e-05
 
 
 

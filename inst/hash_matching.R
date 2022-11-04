@@ -11,13 +11,18 @@ handlers(global = TRUE)
 qs::qload("~/Desktop/new_hash.qsm", nthreads = 32)
 qs::qload("~/Desktop/hash_match_test.qsm", nthreads = 32)
 
+paths_low <- list.files("/Volumes/Data 2/Scrape photos/vancouver/kj", 
+                        full.names = TRUE)
+paths_high <- list.files("/Volumes/Data 2/Scrape photos/vancouver/ab", 
+                         full.names = TRUE)
+
 
 # Calculate hashes and get matches ----------------------------------------
 
-x <- create_signature_2(get_path(sigs_new_high))
-y <- create_signature_2(get_path(sigs_new_low))
+x <- create_signature_2(paths_high)
+y <- create_signature_2(paths_low)
 matches <- match_signatures_2(x, y)
-result <- identify_matches_2(matches, threshold = 18)
+result <- identify_matches_2(matches, threshold = 300)
 
 x_bi <- create_signature_2(get_path(x), resize = "bilinear")
 y_bi <- create_signature_2(get_path(y), resize = "bilinear")

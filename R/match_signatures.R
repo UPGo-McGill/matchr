@@ -205,27 +205,37 @@ get_mem_limit <- function(x_list, y_list, mem_scale, mem_override) {
   max_mem <- as.numeric(sys_mem$totalram * mem_scale) / 1e6
   
   # Get RAM needed per list element
-  ram_size <- mapply(function(x, y) ceiling(1.5e-05 * x * y),
-                     as.numeric(lengths(x_list)), as.numeric(lengths(y_list)))
-  
+  needed_mem <- ceiling(as.numeric(lengths(x_list)) * 
+                          as.numeric(lengths(y_list)) * 2.4e-05)
+
   # Check total available RAM against needed RAM
-  if (sum(ram_size) > as.numeric(sys_mem$totalram) / 1.5e6) {
-    total_mem <- as.character(sys_mem$totalram)
-    needed_mem <- paste0(sum(ram_size) / 1000 * 1.5, " GiB")
-    if (mem_override) stop(
+  if (sum(needed_mem) / 2000 > max_mem) {
+    total_mem <- sub('\\.\\d*', "", as.character(sys_mem$totalram))
+    needed_mem_pr <- paste0(round(sum(needed_mem) / 2000), " GiB")
+    if (!mem_override && !compare_ar) stop(
       "Total system memory is likely insufficient to run `match_signatures`. ",
-      "(", needed_mem, " needed, but only ", total_mem, " available.) ",
+      "(", needed_mem_pr, " needed, but only ", total_mem, " available.) ",
+      "Try re-running `match_signatures` with `compare_ar = TRUE`, which cuts ",
+      "memory usage by approximately 2/3, or try running `identify_matches` ", 
+      "directly on the input matchr_signature vectors. To override this ", 
+      "error, re-run `match_signatures` with `mem_override = TRUE`.",
+      call. = FALSE
+    )
+    if (!mem_override) stop(
+      "Total system memory is likely insufficient to run `match_signatures`. ",
+      "(", needed_mem_pr, " needed, but only ", total_mem, " available.) ",
       "Try running `identify_matches` directly on the input matchr_signature ",
-      "vectors, or, to override this error, set `mem_override = TRUE`.",
+      "vectors. To override this error, re-run `match_signatures` with ", 
+      "`mem_override = TRUE`.",
       call. = FALSE)
-    if (!mem_override) warning(
+    if (mem_override) warning(
       "Total system memory is likely insufficient to run `match_signatures`. ",
-      "(", needed_mem, " needed, but only ", total_mem, " available.) ",
+      "(", needed_mem_pr, " needed, but only ", total_mem, " available.) ",
       call. = FALSE)
   }
   
   # Get number of splits per list element based on RAM
-  ram_size <- as.integer(ceiling(ram_size / max_mem))
+  ram_size <- as.integer(ceiling(needed_mem / max_mem))
   
   # Check to make sure no element has length(x) * length(y) out of 32-bit range
   mat_size <- mapply(\(x, y) {

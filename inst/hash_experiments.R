@@ -4,7 +4,7 @@
 
 library(matchr)
 library(future)
-plan(multisession, workers = 25)
+plan(multisession)
 progressr::handlers(global = TRUE)
 
 
@@ -17,7 +17,7 @@ paths_high <- list.files("/Volumes/Data 2/Scrape photos/vancouver/ab",
 
 sigs_old_low <- create_signature(paths_low)
 sigs_old_high <- create_signature(paths_high)
-sigs_new_low_dhash <- create_signature_2(paths_low)
+sigs_new_low <- create_signature_2(paths_low)
 sigs_new_high <- create_signature_2(paths_high)
 
 matches <- match_signatures(sigs_old_low, sigs_old_high)
