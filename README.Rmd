@@ -24,7 +24,7 @@ library(matchr)
 
 The goal of matchr is to facilitate fast and reliable comparison of large sets of images to identify identical or nearly-identical pairs. It works by generating distinctive image signatures from pixel data then correlating these signatures between sets of images. matchr's approach allows for image comparisons to be made on large sets of images (tens or hundreds of thousands of files) on even modest computer hardware.
 
-Images are down-sampled to 8x8 greyscale bitmaps and passed through a discrete cosine transformation, from which 128-bit signatures are calculated. These signatures can identify a given image even if the image is rescaled or compressed, and thus serves as a reliable indicator of whether two images are the same.
+Images are down-sampled to 8x8 greyscale bitmaps and passed through a discrete cosine transformation, from which 128-bit signatures are calculated. These signatures can identify a given image even if the image is rescaled or compressed, and thus serve as a reliable indicator of whether two images are the same.
 
 Using matrix algebra, matchr can compare multiple sets of images and identify likely matches. The method is robust to changes in tint, compression or aspect ratio, and to other minor differences such as small overlays added to one of a pair of matching images.
 
