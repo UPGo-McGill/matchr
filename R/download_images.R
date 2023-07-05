@@ -59,9 +59,11 @@ download_images <- function(x = NULL, destination, path = photos, id = id,
   path_full <- path
   id_full <- id
   
-  # Remove empty path elements
+  # Remove empty/NA path elements
   id <- id[lengths(path) > 0]
   path <- path[lengths(path) > 0]
+  if (is.character(path)) id <- id[!is.na(path)]
+  if (is.character(path)) path <- path[!is.na(path)]
   id_not_empty <- id
   
   # Consolidate duplicated IDs
