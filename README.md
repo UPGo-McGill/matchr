@@ -13,23 +13,24 @@ status](https://github.com/UPGo-McGill/matchr/workflows/R-CMD-check/badge.svg)](
 The goal of matchr is to facilitate fast and reliable comparison of
 large sets of images to identify identical or nearly-identical pairs. It
 works by generating distinctive image signatures from pixel data then
-correlating these signatures between sets of images.
+correlating these signatures between sets of images. matchr’s approach
+allows for image comparisons to be made on large sets of images (tens or
+hundreds of thousands of files) on even modest computer hardware.
 
-Image are decomposed into horizontal and vertical bands, and for each
-band an average greyscale, red, green and blue value is calculated. The
-vector of these averages becomes a distinctive signature that can
-identify a given image even if the image is rescaled or compressed, and
-thus serves as a reliable indicator of whether two images are the same:
-
-<img src="man/figures/README-col_img-1.png" width="100%" />
+Images are down-sampled to 8x8 greyscale bitmaps and passed through a
+discrete cosine transformation, from which 128-bit signatures are
+calculated. These signatures can identify a given image even if the
+image is rescaled or compressed, and thus serve as a reliable indicator
+of whether two images are the same.
 
 Using matrix algebra, matchr can compare multiple sets of images and
 identify likely matches. The method is robust to changes in tint,
 compression or aspect ratio, and to other minor differences such as
 small overlays added to one of a pair of matching images.
 
-The package includes a Shiny app (`compare_matches`) for visually
-inspecting match results and confirming or rejecting the matches.
+The package includes a Shiny app (`compare_images` and
+`confirm_matches`) for visually inspecting match results and confirming
+or rejecting the matches.
 
 All time-consuming matchr functions can be parallelized through the
 [future](https://cran.r-project.org/web/packages/future/vignettes/future-1-overview.html)
@@ -39,7 +40,7 @@ package, and can save incremental backups in case of an error.
 
 ## Installation
 
-(NOT YET WORKING) You can install the released version of matchr from
+You can install the released version of matchr from
 [CRAN](https://CRAN.R-project.org) with:
 
 ``` r
@@ -59,16 +60,16 @@ The standard matchr workflow involves importing one or more sets of
 images with `load_image`, generating image signatures from the image
 sets (or the underlying file paths) using `create_signature`, matching
 image signatures using `match_signatures`, then refining and verifying
-the matches using `identify_matches`, `confirm_matches`,
-`compare_images`, and `integrate_changes`.
+the matches using `identify_matches`, `confirm_matches`, and
+`integrate_changes`.
 
-Because each of these steps can be very time- or computation-intensive,
-it is usually the most convenient to run the functions separately. But
-in the case of relatively small comparison tasks, `match_images`
-provides an “all-in-one” function which performs each task sequentially
-and delivers the final results.
+Because each of the matchr functions can be very time- or
+computation-intensive, it is usually most convenient to run the
+functions separately. But in the case of relatively small comparison
+tasks, `match_images` provides an “all-in-one” function which performs
+each task sequentially and delivers the final results.
 
-When the {shiny} package is installed, `compare_images` loads an
+When the {shiny} package is installed, `confirm_matches` loads an
 interactive Shiny app for verifying the results of the comparison
 algorithm and for flagging individual matches for follow up.
 

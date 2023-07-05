@@ -13,6 +13,10 @@ knitr::opts_chunk$set(
 )
 
 library(matchr)
+
+test_urls <- list.files("tests/testthat/resources")
+test_urls <- test_urls[1:15]
+
 ```
 
 # matchr
@@ -50,78 +54,6 @@ remotes::install_github("UPGo-McGill/matchr")
 ## Usage
 
 The standard matchr workflow involves importing one or more sets of images with `load_image`, generating image signatures from the image sets (or the underlying file paths) using `create_signature`, matching image signatures using `match_signatures`, then refining and verifying the matches using `identify_matches`, `confirm_matches`, and `integrate_changes`.
-
-TKTK
-matchr uses the average grey, red, blue and green values from horizontal and vertical bands of an image to create a distinctive signature which efficiently identifies an image and allows it to be compared to others:
-
-```{r col_img, echo = FALSE, fig.height = 6, fig.width = 7}
-library(matchr)
-col_img <- load_image(test_urls[5])
-col_sig <- create_signature(col_img)
-
-# Get signatures
-grey_h <- get_signature(col_sig)[[1]][1:20]
-grey_v <- get_signature(col_sig)[[1]][21:40]
-red_h <- get_signature(col_sig)[[1]][41:60]
-red_v <- get_signature(col_sig)[[1]][61:80]
-green_h <- get_signature(col_sig)[[1]][81:100]
-green_v <- get_signature(col_sig)[[1]][101:120]
-blue_h <- get_signature(col_sig)[[1]][121:140]
-blue_v <- get_signature(col_sig)[[1]][141:160]
-
-# Process greyscale
-grey_h_img <- col_img
-get_array(grey_h_img) <- list(array(rep(grey_h, 27 * 3), dim = c(20, 27, 3)))
-grey_v_img <- col_img
-get_array(grey_v_img) <- list(array(c(
-  do.call(rbind, rep(list(grey_v), 15)),
-  do.call(rbind, rep(list(grey_v), 15)),
-  do.call(rbind, rep(list(grey_v), 15))), dim = c(15, 20, 3)))
-
-
-# Process red -------------------------------------------------------------
-
-red_h_img <- col_img
-get_array(red_h_img) <- list(array(c(do.call(cbind, rep(list(red_h), 27)), 
-                                     rep(0, 1080)), dim = c(20, 27, 3)))
-red_v_img <- col_img
-get_array(red_v_img) <- list(array(c(do.call(rbind, rep(list(red_v), 15)),
-                                     rep(0, 600)), dim = c(15, 20, 3)))
-
-
-# Process green -----------------------------------------------------------
-
-green_h_img <- col_img
-get_array(green_h_img) <- list(array(c(rep(0, 540),
-                                       do.call(cbind, rep(list(green_h), 27)), 
-                                       rep(0, 540)), dim = c(20, 27, 3)))
-green_v_img <- col_img
-get_array(green_v_img) <- list(array(c(rep(0, 300),
-                                       do.call(rbind, rep(list(green_v), 15)),
-                                       rep(0, 300)), dim = c(15, 20, 3)))
-
-
-# Process blue ------------------------------------------------------------
-
-blue_h_img <- col_img
-get_array(blue_h_img) <- list(array(c(rep(0, 1080), 
-                                      do.call(cbind, rep(list(blue_h), 27))), 
-                                    dim = c(20, 27, 3)))
-blue_v_img <- col_img
-get_array(blue_v_img) <- list(array(c(rep(0, 600), 
-                                      do.call(rbind, rep(list(blue_v), 15))), 
-                                    dim = c(15, 20, 3)))
-
-
-# Plot --------------------------------------------------------------------
-
-col_img <- c(col_img, grey_h_img, grey_v_img, red_h_img, red_v_img, green_h_img,
-             green_v_img, blue_h_img, blue_v_img)
-get_path(col_img) <- c("img_3.jpg", "grey horizontal", "grey vertical",
-                       "red horizontal", "red vertical", "green horizontal",
-                       "green vertical", "blue horizontal", "blue vertical")
-plot(col_img)
-```
 
 Because each of the matchr functions can be very time- or computation-intensive, it is usually most convenient to run the functions separately. But in the case of relatively small comparison tasks, `match_images` provides an "all-in-one" function which performs each task sequentially and delivers the final results.
 
