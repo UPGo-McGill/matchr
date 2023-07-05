@@ -21,7 +21,7 @@ arma::cube rm_bb_c(arma::cube x) {
   arma::vec rm = row_means(x);
   
   // Exit if the image is all black
-  if (mean(rm) < 0.005) {
+  if (mean(rm) < 0.01) {
     return(x);
   }
   
